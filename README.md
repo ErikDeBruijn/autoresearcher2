@@ -10,11 +10,23 @@ Current autonomous research agents (including [Karpathy's autoresearch](https://
 
 Bayesian optimization (BO) is better but treats the search space as a black box. It doesn't build *structural* knowledge ("RoPE is generally better than learned positional encodings") that transfers across campaigns.
 
+## Three Kinds of Simplification
+
+This project uses multiple layers, each serving a different purpose. They should not be confused:
+
+| Layer | What it is | Purpose |
+|---|---|---|
+| **Toy validation environment** | Synthetic 27-cell POMDP | Test whether canonical active inference behaves as claimed. Theoretical sandbox only — not used in production. |
+| **Proxy workload** | Cheap real ML experiments (small/short NanoGPT-style runs, ~5 min each) | Gather practical evidence cheaply. Stand-in for expensive full-scale training. |
+| **Surrogate predictor** | Bayesian linear model learned from experiment history | Predict outcomes and choose the next experiment. Generalizes across the intervention space. |
+
+The toy environment validates the theory. The proxy workload provides real data cheaply. The surrogate predictor learns from that data and steers exploration.
+
 ## What This Does
 
 autoresearcher2 adds three things:
 
-1. **A structured surrogate model** that learns factor-level effects and interactions across the intervention space — not per-cell, but across the whole schema
+1. **A surrogate predictor** that learns factor-level effects and interactions across the intervention space — not per-cell, but across the whole schema
 2. **Thompson sampling** for experiment selection — exploration emerges naturally from posterior uncertainty, no hand-tuned explore/exploit schedule
 3. **Persistent memory** with activation/decay dynamics that carries knowledge across experiments and campaigns
 
@@ -26,7 +38,7 @@ autoresearcher2 adds three things:
 - LLM proposes candidate interventions from structured context
 
 **Inner loop** (val_bpb-driven): "What happened when I tried it?"
-- Run experiment, observe outcome
+- Run a proxy workload experiment, observe outcome
 - Update surrogate posterior (exact Bayesian update)
 - Store result in memory
 
@@ -70,12 +82,12 @@ autoresearcher2 adds three things:
 | Layer | Responsibility | Does NOT |
 |---|---|---|
 | **A: Controller** | Selects next experiment via Thompson sampling | Know about memory, LLMs, or language |
-| **B: Surrogate** | Predicts outcomes, provides uncertainty estimates | Make decisions |
+| **B: Surrogate predictor** | Predicts outcomes, provides uncertainty estimates | Make decisions |
 | **C: Memory** | Stores history, retrieves patterns, feeds LLM | Do inference or define latent states |
 
 Plus a **Transfer** subsystem for reusing knowledge across campaigns (with negative-transfer guards).
 
-## The Surrogate Model
+## The Surrogate Predictor
 
 A Bayesian linear model over one-hot encoded factors with pairwise interactions:
 
@@ -192,7 +204,9 @@ If these criteria are not met, the system does not work. No moving goalposts.
 
 ## Toy Validation Environment
 
-A 27-cell POMDP (3 factors × 3 levels) with canonical active inference (expected free energy, policy-conditioned beliefs). This is where we verify the theoretical properties independently before trusting the practical system's claims.
+A 27-cell synthetic POMDP (3 factors × 3 levels) with canonical active inference (expected free energy, policy-conditioned beliefs).
+
+This exists **only to validate the theory** — it is not a proxy workload, not a component of the practical system, and not a surrogate predictor. It is a theoretical sandbox where we verify that canonical active inference produces the expected epistemic → pragmatic shift, proper calibration, and baseline-beating convergence. If these properties don't emerge in the toy environment, the practical system inherits no credibility from "active inference inspiration."
 
 ## Theoretical Roots
 
@@ -224,11 +238,12 @@ It is: a structured acquisition function with memory, inspired by active inferen
 
 ## Implementation Phases
 
-1. **Toy validation** — 27-cell POMDP with canonical active inference. Verify: calibration, crossover, baselines, stopping.
-2. **Surrogate + controller** — Bayesian linear model, Thompson sampling, ML environment. Benchmark against BO, ASHA, random.
+1. **Toy validation environment** — 27-cell synthetic POMDP with canonical active inference. Verify: calibration, crossover, baselines, stopping. Theoretical sandbox only.
+2. **Surrogate predictor + controller** — Bayesian linear model, Thompson sampling, wired to proxy ML workload (small NanoGPT-style runs). Benchmark against BO, ASHA, random.
 3. **Memory + LLM** — Experiment memory with decay. LLM proposal generation. Memory ablation study.
 4. **Transfer** — Cross-campaign transfer with guards. Related task pairs. Negative transfer measurement.
 5. **Visualization + evaluation** — Dashboard, calibration plots, regret curves, full report.
+6. **Scale validation** — Test whether knowledge from proxy workloads transfers to more expensive target runs.
 
 ## License
 
