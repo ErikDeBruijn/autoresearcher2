@@ -154,14 +154,31 @@ The LLM can suggest which cells to visit and propose schema extensions between p
 
 ## Memory System
 
-Memory serves the agent — it does not *be* the agent.
+The surrogate predictor learns *statistical patterns* (factor weights, interaction effects). Memory stores *episodic knowledge* that the surrogate can't capture: which experiments were run, what the LLM's reasoning was, which combinations were tried and abandoned, and why.
 
-Inspired by neuroscience (as metaphor, not claim):
-- **Activation decay** (Ebbinghaus): unused results fade. This is the complexity penalty — the system forgets dead ends.
-- **Recall boost** (spaced repetition): frequently retrieved results persist longer.
-- **Association** (Hebbian): co-occurring successes link together.
+### What memory does that the surrogate doesn't
 
-Memory helps with: avoiding repeats, retrieving related results, forming summaries for LLM context, tracking calibration over time.
+| Need | Surrogate predictor | Memory |
+|---|---|---|
+| "Is RoPE generally good?" | Yes — it's a factor weight | No |
+| "Did I already try this exact config?" | No — it only predicts outcomes | Yes — deduplication |
+| "What happened last time I explored this region?" | No — it has no episodic recall | Yes — retrieval by similarity |
+| "What should the LLM know for its next proposal?" | No — it outputs numbers, not context | Yes — structured summaries |
+| "Was I calibrated last week?" | No — it only has current posterior | Yes — historical tracking |
+
+### How memory interacts with the other layers
+
+- **Feeds Layer C → LLM**: when the LLM proposes candidate interventions, memory provides context: "last 3 experiments in this region all failed with divergence" or "this factor combination hasn't been tried."
+- **Informs transfer**: memory stores campaign-level summaries and calibration history that the transfer subsystem uses to decide what's reusable.
+- **Does NOT feed Layer A or B directly**: the controller and surrogate operate on the structured posterior, not on memory. Memory influences decisions only indirectly, through LLM proposals and transfer priors.
+
+### Dynamics (neuroscience as metaphor, not claim)
+
+- **Activation decay** (Ebbinghaus): old, unretrieved results lose accessibility. The system naturally forgets dead ends instead of accumulating noise.
+- **Recall boost** (spaced repetition): results that keep being useful — because the LLM retrieves them for context — persist longer.
+- **Association** (Hebbian): experiments that co-occur in successful runs link together, making them easier to retrieve as a cluster.
+
+These dynamics determine *what the LLM sees* when generating proposals. High-activation memories surface; decayed ones don't. This shapes exploration indirectly without contaminating the surrogate's statistical inference.
 
 ## Transfer Across Campaigns
 
