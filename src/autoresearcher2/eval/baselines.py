@@ -26,6 +26,39 @@ class RandomAgent(BaselineAgent):
         return int(self.rng.integers(0, self.schema.n_cells))
 
 
+class TabularAgent(BaselineAgent):
+    """Per-cell mean tracking. No generalization across cells."""
+
+    def __init__(self, schema: InterventionSchema, seed: int | None = None):
+        super().__init__(schema)
+        self.rng = np.random.default_rng(seed)
+        self.observations: dict[int, list[float]] = {}
+
+    def select_next(self) -> int:
+        untried = [
+            c for c in range(self.schema.n_cells) if c not in self.observations
+        ]
+        if untried:
+            return int(self.rng.choice(untried))
+
+        # UCB1-style: mean + exploration bonus
+        best_cell = -1
+        best_score = -np.inf
+        total_n = sum(len(v) for v in self.observations.values())
+        for cell, outcomes in self.observations.items():
+            mean = np.mean(outcomes)
+            n = len(outcomes)
+            bonus = np.sqrt(2 * np.log(total_n) / n)
+            score = mean + bonus
+            if score > best_score:
+                best_score = score
+                best_cell = cell
+        return best_cell
+
+    def observe(self, cell_index: int, outcome: float) -> None:
+        self.observations.setdefault(cell_index, []).append(outcome)
+
+
 class GreedyAgent(BaselineAgent):
     def __init__(self, schema: InterventionSchema, seed: int | None = None):
         super().__init__(schema)
