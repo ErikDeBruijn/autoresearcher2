@@ -8,7 +8,11 @@ It uses a generative model of the research space to explore efficiently, exploit
 
 Current autonomous research agents (including [Karpathy's autoresearch](https://github.com/karpathy/autoresearch)) run experiments in a semi-random loop: mutate code, train, evaluate, repeat. Each session starts from scratch. There's no cumulative learning, no principled exploration, and no way to know when the search space is sufficiently explored.
 
-Bayesian optimization (BO) is better but treats the search space as a black box. It doesn't build *structural* knowledge ("RoPE is generally better than learned positional encodings") that transfers across campaigns.
+Karpathy's system discovers by *random mutation* of code — brute force creativity. It can stumble onto novel architectures, but it can't explain why something worked, can't transfer that knowledge to the next campaign, and will happily repeat failed approaches it has no memory of.
+
+autoresearcher2 discovers by *structured inference*. The agent maintains a generative model of the research space and notices when its model can't explain the results — "these residuals have systematic structure my schema doesn't capture." The LLM then proposes what the missing dimension might be (e.g., "add a dropout factor" or "split architecture into encoder and decoder type"). Discovery is grounded in evidence rather than luck, and the insight transfers.
+
+Bayesian optimization (BO) is better than random mutation but treats the search space as a black box. It doesn't build *structural* knowledge ("RoPE is generally better than learned positional encodings") that transfers across campaigns.
 
 ## Three Distinct Layers
 
