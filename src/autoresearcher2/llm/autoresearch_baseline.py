@@ -35,14 +35,17 @@ class AutoresearchLLMAgent(BaselineAgent):
         self.ssh_key = ssh_key
         self.history: list[dict] = []
         self._pending_suggestions: list[int] = []
+        self.last_source: str = "unknown"
 
     def select_next(self) -> int:
         # Use pending suggestions from previous LLM call
         if self._pending_suggestions:
+            self.last_source = "llm_flat"
             return self._pending_suggestions.pop(0)
 
         # No history yet — pick randomly
         if not self.history:
+            self.last_source = "random_init"
             return int(self.rng.integers(0, self.schema.n_cells))
 
         # Ask LLM
@@ -53,9 +56,13 @@ class AutoresearchLLMAgent(BaselineAgent):
             if suggestions:
                 cell = suggestions[0]
                 self._pending_suggestions = suggestions[1:]
+                self.last_source = "llm_flat"
                 return cell
+            logger.warning("LLM returned no valid suggestions, falling back to random")
+            self.last_source = "llm_fallback_empty"
         except Exception:
             logger.warning("LLM call failed, falling back to random", exc_info=True)
+            self.last_source = "llm_fallback_error"
 
         # Fallback: random
         return int(self.rng.integers(0, self.schema.n_cells))

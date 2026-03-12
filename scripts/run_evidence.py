@@ -103,7 +103,7 @@ def run_experiment(env: TrainPyEnvironment, cell: int, config: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def run_random(env: TrainPyEnvironment) -> list[dict]:
+def run_random(env: TrainPyEnvironment, save_cb=None) -> list[dict]:
     """Random baseline: pick random cells."""
     log("--- Approach: RANDOM ---")
     agent = RandomAgent(SCHEMA, seed=SEED)
@@ -123,10 +123,12 @@ def run_random(env: TrainPyEnvironment) -> list[dict]:
         else:
             log(f"    → FAILED: {result['error']}")
         results.append(result)
+        if save_cb:
+            save_cb(results)
     return results
 
 
-def run_bayesian(env: TrainPyEnvironment) -> list[dict]:
+def run_bayesian(env: TrainPyEnvironment, save_cb=None) -> list[dict]:
     """Bayesian Thompson sampling + lookahead, no LLM."""
     log("--- Approach: BAYESIAN (no LLM) ---")
     model = BayesianLinearModel(SCHEMA, noise_variance=0.005, prior_variance=1.0)
@@ -162,11 +164,13 @@ def run_bayesian(env: TrainPyEnvironment) -> list[dict]:
             log(f"    → FAILED: {result['error']}")
 
         results.append(result)
+        if save_cb:
+            save_cb(results)
 
     return results
 
 
-def run_autoresearch(env: TrainPyEnvironment) -> list[dict]:
+def run_autoresearch(env: TrainPyEnvironment, save_cb=None) -> list[dict]:
     """Autoresearch-style: LLM with flat results log, no Bayesian model."""
     log("--- Approach: AUTORESEARCH BASELINE (flat LLM) ---")
     agent = AutoresearchLLMAgent(SCHEMA, seed=SEED)
@@ -175,8 +179,7 @@ def run_autoresearch(env: TrainPyEnvironment) -> list[dict]:
     for i in range(N_EXPERIMENTS):
         cell = agent.select_next()
         config = SCHEMA.cell_to_config(cell)
-        is_llm = len(agent.history) > 0  # first pick is random
-        source = "llm_flat" if is_llm else "random_init"
+        source = agent.last_source
         log(f"  [{i+1}/{N_EXPERIMENTS}] cell {cell} {config} [{source}]")
 
         result = run_experiment(env, cell, config)
@@ -192,11 +195,13 @@ def run_autoresearch(env: TrainPyEnvironment) -> list[dict]:
             log(f"    → FAILED: {result['error']}")
 
         results.append(result)
+        if save_cb:
+            save_cb(results)
 
     return results
 
 
-def run_full(env: TrainPyEnvironment) -> list[dict]:
+def run_full(env: TrainPyEnvironment, save_cb=None) -> list[dict]:
     """Full autoresearcher2: Bayesian + LLM with appraisal context."""
     log("--- Approach: FULL (Bayesian + LLM) ---")
     model = BayesianLinearModel(SCHEMA, noise_variance=0.005, prior_variance=1.0)
@@ -204,6 +209,7 @@ def run_full(env: TrainPyEnvironment) -> list[dict]:
     memory = MemoryStore()
     results = []
     llm_suggestions = []
+    llm_consulted_ok = True
 
     for i in range(N_EXPERIMENTS):
         # LLM consultation
@@ -225,14 +231,19 @@ def run_full(env: TrainPyEnvironment) -> list[dict]:
                 for s in suggestions:
                     log(f"    LLM: cell {s['cell']} {s['config']} — {s['reasoning']}")
                 llm_suggestions = suggestions
+                llm_consulted_ok = True
             else:
-                log("    LLM returned no suggestions")
+                log("    LLM returned no suggestions (failed or empty)")
+                llm_consulted_ok = False
 
         # Select cell
         if llm_suggestions:
             s = llm_suggestions.pop(0)
             cell = s["cell"]
             source = "llm_augmented"
+        elif use_llm and not llm_consulted_ok:
+            cell = controller.select_next_lookahead()
+            source = "llm_fallback"
         else:
             cell = controller.select_next_lookahead()
             source = "lookahead"
@@ -263,6 +274,8 @@ def run_full(env: TrainPyEnvironment) -> list[dict]:
             log(f"    → FAILED: {result['error']}")
 
         results.append(result)
+        if save_cb:
+            save_cb(results)
 
     return results
 
@@ -305,7 +318,17 @@ def main():
         approach_start = time.time()
         log(f"\n{'=' * 60}")
         runner = APPROACHES[approach_name]
-        results = runner(env)
+
+        def make_save_cb(name, t0):
+            def cb(current_results):
+                all_results[name] = {
+                    "results": list(current_results),
+                    "total_time_s": round(time.time() - t0, 1),
+                }
+                _save_results(all_results)
+            return cb
+
+        results = runner(env, save_cb=make_save_cb(approach_name, approach_start))
         approach_time = time.time() - approach_start
 
         successful = [r for r in results if r["error"] is None]
