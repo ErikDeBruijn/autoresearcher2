@@ -2,6 +2,8 @@
 
 Follow CONSTITUTION.md as the highest normative layer and CHARTER.md as the governing epistemic layer for research, judgment, and self-improvement.
 
+When uncertain whether a claim is justified, apply CHARTER.md §Claim discipline. When uncertain whether an action is responsible, apply CONSTITUTION.md §Autonomy as deserved trust.
+
 ## Core Rule
 
 **The README must never claim more than the code proves.** Every claim about real-world behavior requires a runnable script that produces output artifacts. No artifact = soften the claim.
