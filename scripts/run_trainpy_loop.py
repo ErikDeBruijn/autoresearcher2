@@ -50,7 +50,7 @@ def main():
     print(f"Factors: {SCHEMA.factors}")
     print()
 
-    env = TrainPyEnvironment(schema=SCHEMA)
+    env = TrainPyEnvironment(schema=SCHEMA, cuda_device="0")
 
     # Higher noise variance for real experiments (noisy GPU training)
     model = BayesianLinearModel(

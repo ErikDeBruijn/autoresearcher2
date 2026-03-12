@@ -18,9 +18,9 @@ Three distinct environments exist (or are planned) in this project:
 |---|---|---|
 | **Toy validation** | Synthetic 27-cell POMDP | Implemented, validated |
 | **Synthetic environment** | Controlled factorial simulation with known ground-truth effects | Implemented, validated — v1 exit criteria pass |
-| **GPT training pipeline** | Real `train.py` edits, real val_bpb measurements | **Not yet implemented** — next phase |
+| **GPT training pipeline** | Real `train.py` edits, real val_bpb measurements | **Implemented** — SSH-based runner, tested on 2× RTX PRO 6000 |
 
-The toy validates the theory. The synthetic validates the plumbing. The GPT pipeline is where it will count — but that work hasn't started yet.
+The toy validates the theory. The synthetic validates the plumbing. The GPT pipeline is where it counts — and initial integration is working.
 
 ## The Problem
 
@@ -303,20 +303,18 @@ schema = InterventionSchema(factors={
 })
 ```
 
-**Planned `train.py` schema** (not yet implemented) would align with the levers available in Karpathy's `train.py`:
+**Current `train.py` schema** (implemented, running on real hardware):
 
 ```python
-# Example target schema for train.py integration (future work)
-schema = {
-    "depth":        [4, 6, 8, 12],
-    "aspect_ratio": [32, 64, 128],
-    "optimizer":    ["muon_adamw", "adamw", "lion"],
-    "batch_size":   ["2^18", "2^19", "2^20"],
-    # ... more factors as needed
-}
+schema = InterventionSchema(factors={
+    "DEPTH": ["6", "8", "10"],
+    "MATRIX_LR": ["0.02", "0.04", "0.08"],
+    "WEIGHT_DECAY": ["0.1", "0.2", "0.4"],
+})
+# 27 cells, ~5 min per experiment, val_bpb ~1.0-1.1
 ```
 
-The key idea: autoresearch edits anything in the file; autoresearcher2 maps edits to a structured factor space so it can reason about effects, interactions, and uncertainty. Whether this actually helps on real `train.py` is the open question for the next phase.
+The key idea: autoresearch edits anything in the file; autoresearcher2 maps edits to a structured factor space so it can reason about effects, interactions, and uncertainty. The first real run confirmed this works — the Bayesian model receives real val_bpb measurements and updates factor posteriors accordingly.
 
 ## Memory System
 
@@ -465,7 +463,7 @@ This is a serious attempt to bring active inference and learntropy closer to an 
 
 **What works today**: the architecture is coherent. On synthetic environments with known ground truth, the Bayesian model learns factor structure, the controller outperforms random and greedy baselines, and the appraisal module marks belief-changing events.
 
-**What doesn't work yet**: no `train.py` integration, no real val_bpb measurements, no LLM proposal generation, no comparison with autoresearch-style baselines. The core bet remains unproven until these exist.
+**What's new**: `train.py` integration via SSH runner, LLM proposal generation via `claude -p`, dual-GPU parallel execution. The first real training run on GPU hardware has produced val_bpb measurements. Full Bayesian loop and LLM-augmented loop are ready to run. The core bet remains unproven until a full head-to-head comparison with autoresearch exists.
 
 It is NOT:
 - Pure active inference (yet)
@@ -492,23 +490,33 @@ v1 validates the core architecture on synthetic environments. It proves the plum
 - All exit criteria passing
 
 **v1 does NOT include:**
-- Any `train.py` / val_bpb integration
-- Any LLM proposal generation
 - GP-UCB / ASHA baselines
 - Transfer across campaigns
 - Multi-step policy planning
 - Memory dynamics (activation decay, Hebbian linking)
 
-### Next: Minimal Real Substrate Integration
+### v1.5 — Real Substrate + LLM Integration (in progress)
 
-The next PR should be as small as possible:
-- One fixed schema mapping to a few `train.py` knobs
-- Simple runner: select config → patch/run `train.py` → parse val_bpb → update model → log result
-- No LLM, no transfer, no fancy memory
-- A runnable `scripts/run_trainpy_smoke.py` that produces real output artifacts
-- README updated to match exactly what works
+Building on v1, this phase connects the Bayesian engine to real GPU training:
 
-**Acceptance criteria:** `uv run python scripts/run_trainpy_smoke.py` runs end-to-end and produces logged results with real val_bpb values. No artifact = no claim.
+**v1.5 includes:**
+- `TrainPyEnvironment`: SSH-based runner that patches `train.py` knobs, runs real training, parses val_bpb
+- LLM proposal module: `claude -p` generates experiment suggestions based on history + factor importances
+- Dual-GPU parallel execution for 2× throughput
+- 80 tests passing (69 core + 11 LLM module)
+
+**v1.5 does NOT yet include:**
+- Full head-to-head comparison with autoresearch
+- GP-UCB / ASHA baselines
+- Transfer across campaigns
+
+### Next: Full Bayesian Loop Results + Head-to-Head Comparison
+
+A 15-experiment Bayesian loop is running on real hardware (2× RTX PRO 6000 Blackwell). Once complete:
+- Commit real val_bpb artifacts
+- Run LLM-augmented loop (Claude suggests experiments every 3rd round)
+- Compare LLM-augmented vs pure Thompson sampling vs random
+- Begin head-to-head comparison with autoresearch-style baseline
 
 ## Implementation Phases (Full Roadmap)
 
