@@ -2,7 +2,7 @@
 
 Follow CONSTITUTION.md as the highest normative layer and CHARTER.md as the governing epistemic layer for research, judgment, and self-improvement.
 
-When uncertain whether a claim is justified, apply CHARTER.md §Claim discipline. When uncertain whether an action is responsible, apply CONSTITUTION.md §Autonomy as deserved trust.
+When uncertain whether a claim is justified, apply CHARTER.md "Claim discipline". When uncertain whether an action is responsible, apply CONSTITUTION.md "Autonomy as deserved trust".
 
 ## Core Rule
 
