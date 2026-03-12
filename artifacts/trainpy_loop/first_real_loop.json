@@ -1,0 +1,373 @@
+{
+  "schema": {
+    "DEPTH": [
+      "6",
+      "8",
+      "10"
+    ],
+    "MATRIX_LR": [
+      "0.02",
+      "0.04",
+      "0.08"
+    ],
+    "WEIGHT_DECAY": [
+      "0.1",
+      "0.2",
+      "0.4"
+    ]
+  },
+  "n_experiments": 15,
+  "results": [
+    {
+      "experiment": 0,
+      "cell": 21,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "val_bpb": 1.062299,
+      "outcome": 0.9377009999999999,
+      "scores": {
+        "pragmatic": -1.0,
+        "epistemic": 6.0,
+        "total": 5.0
+      },
+      "appraisal": {
+        "surprise": 0.07054015895454668,
+        "theory_conflict": 0.01007716556493524,
+        "prediction_impact_breadth": 19.0,
+        "learntropy": 0.008453436843563632
+      },
+      "wall_time_s": 336.8
+    },
+    {
+      "experiment": 1,
+      "cell": 26,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "val_bpb": 1.063199,
+      "outcome": 0.936801,
+      "scores": {
+        "pragmatic": -0.7122963985538128,
+        "epistemic": 5.833610648918471,
+        "total": 5.121314250364659
+      },
+      "appraisal": {
+        "surprise": 0.0508236716827033,
+        "theory_conflict": 0.007437308663575523,
+        "prediction_impact_breadth": 24.0,
+        "learntropy": 0.0070119618530556154
+      },
+      "wall_time_s": 336.7
+    },
+    {
+      "experiment": 2,
+      "cell": 1,
+      "config": {
+        "DEPTH": "6",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "val_bpb": 1.053016,
+      "outcome": 0.946984,
+      "scores": {
+        "pragmatic": -1.0,
+        "epistemic": 6.0,
+        "total": 5.0
+      },
+      "appraisal": {
+        "surprise": 0.07189203620526063,
+        "theory_conflict": 0.010270290886465805,
+        "prediction_impact_breadth": 19.0,
+        "learntropy": 0.008615443977209654
+      },
+      "wall_time_s": 319.9
+    },
+    {
+      "experiment": 3,
+      "cell": 21,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "val_bpb": 1.063933,
+      "outcome": 0.936067,
+      "scores": {
+        "pragmatic": -0.004049657354824398,
+        "epistemic": 0.009982887292461468,
+        "total": 0.0059332299376370695
+      },
+      "appraisal": {
+        "surprise": 2.1934855961580624e-06,
+        "theory_conflict": 2.1718047144722493e-06,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "wall_time_s": 337.1
+    },
+    {
+      "experiment": 4,
+      "cell": 26,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "val_bpb": 1.063569,
+      "outcome": 0.936431,
+      "scores": {
+        "pragmatic": -0.004164787386931678,
+        "epistemic": 0.009982886886738929,
+        "total": 0.0058180994998072505
+      },
+      "appraisal": {
+        "surprise": 2.3356532400264918e-05,
+        "theory_conflict": 2.3125671438118294e-05,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "wall_time_s": 334.8
+    },
+    {
+      "experiment": 5,
+      "cell": 20,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "val_bpb": 1.077152,
+      "outcome": 0.9228479999999999,
+      "scores": {
+        "pragmatic": -0.09460659626540188,
+        "epistemic": 4.291968850317351,
+        "total": 4.197362254051949
+      },
+      "appraisal": {
+        "surprise": 0.006152347048922868,
+        "theory_conflict": 0.0011625818713112647,
+        "prediction_impact_breadth": 23.0,
+        "learntropy": 0.001073014479425567
+      },
+      "wall_time_s": 334.7
+    },
+    {
+      "experiment": 6,
+      "cell": 21,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "val_bpb": 1.064056,
+      "outcome": 0.9359440000000001,
+      "scores": {
+        "pragmatic": -0.004065568236505137,
+        "epistemic": 0.004995675366725322,
+        "total": 0.0009301071302201848
+      },
+      "appraisal": {
+        "surprise": 2.8857804081905414e-06,
+        "theory_conflict": 2.871435647857403e-06,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "wall_time_s": 334.4
+    },
+    {
+      "experiment": 7,
+      "cell": 20,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "val_bpb": 1.077111,
+      "outcome": 0.9228890000000001,
+      "scores": {
+        "pragmatic": -0.006035372154005653,
+        "epistemic": 0.009976754763186824,
+        "total": 0.003941382609181171
+      },
+      "appraisal": {
+        "surprise": 8.322990561970833e-06,
+        "theory_conflict": 8.240774376953217e-06,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "wall_time_s": 334.6
+    },
+    {
+      "experiment": 8,
+      "cell": 1,
+      "config": {
+        "DEPTH": "6",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "val_bpb": 1.053273,
+      "outcome": 0.9467270000000001,
+      "scores": {
+        "pragmatic": -0.0029705160915347363,
+        "epistemic": 0.009982716761989918,
+        "total": 0.007012200670455182
+      },
+      "appraisal": {
+        "surprise": 3.7820106775110496e-05,
+        "theory_conflict": 3.74462910576945e-05,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "wall_time_s": 317.8
+    },
+    {
+      "experiment": 9,
+      "cell": 1,
+      "config": {
+        "DEPTH": "6",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "val_bpb": 1.053137,
+      "outcome": 0.946863,
+      "scores": {
+        "pragmatic": -0.0029039437309552776,
+        "epistemic": 0.004995675453389081,
+        "total": 0.0020917317224338036
+      },
+      "appraisal": {
+        "surprise": 1.8817913209567827e-05,
+        "theory_conflict": 1.8724372322376813e-05,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "wall_time_s": 317.9
+    },
+    {
+      "experiment": 10,
+      "cell": 21,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "val_bpb": 1.063348,
+      "outcome": 0.936652,
+      "scores": {
+        "pragmatic": -0.004078074854011769,
+        "epistemic": 0.003331410696885334,
+        "total": -0.0007466641571264353
+      },
+      "appraisal": {
+        "surprise": 9.82432971885494e-06,
+        "theory_conflict": 9.791709513042397e-06,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "wall_time_s": 334.2
+    },
+    {
+      "experiment": 11,
+      "cell": 26,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "val_bpb": 1.062582,
+      "outcome": 0.9374180000000001,
+      "scores": {
+        "pragmatic": -0.004086077824152113,
+        "epistemic": 0.004994347671614052,
+        "total": 0.0009082698474619389
+      },
+      "appraisal": {
+        "surprise": 5.9913071361328285e-05,
+        "theory_conflict": 5.961533166841762e-05,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "wall_time_s": 334.3
+    },
+    {
+      "experiment": 12,
+      "cell": 21,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "val_bpb": 1.063889,
+      "outcome": 0.9361109999999999,
+      "scores": {
+        "pragmatic": -0.004061753673086922,
+        "epistemic": 0.0024989183573249085,
+        "total": -0.0015628353157620132
+      },
+      "appraisal": {
+        "surprise": 9.87439848665339e-07,
+        "theory_conflict": 9.84978467890358e-07,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "wall_time_s": 334.7
+    },
+    {
+      "experiment": 13,
+      "cell": 19,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "val_bpb": 1.081458,
+      "outcome": 0.918542,
+      "scores": {
+        "pragmatic": -0.02433995884997225,
+        "epistemic": 3.3490437177238297,
+        "total": 3.3247037588738575
+      },
+      "appraisal": {
+        "surprise": 0.0008270363782613144,
+        "theory_conflict": 0.0001901651102955945,
+        "prediction_impact_breadth": 16.0,
+        "learntropy": 0.00014638917015951514
+      },
+      "wall_time_s": 334.8
+    },
+    {
+      "experiment": 14,
+      "cell": 19,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "val_bpb": 1.081472,
+      "outcome": 0.918528,
+      "scores": {
+        "pragmatic": -0.0066716145786592075,
+        "epistemic": 0.009970229622355803,
+        "total": 0.0032986150436965954
+      },
+      "appraisal": {
+        "surprise": 1.0827131803337053e-06,
+        "theory_conflict": 1.0720248464536914e-06,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "wall_time_s": 334.6
+    }
+  ],
+  "factor_importances": {
+    "DEPTH": 0.30208462709501305,
+    "MATRIX_LR": 0.09569143227301424,
+    "WEIGHT_DECAY": 0.03475281400963581
+  },
+  "total_time_s": 4977.3
+}
