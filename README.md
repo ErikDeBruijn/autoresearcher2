@@ -6,9 +6,16 @@ A structured Bayesian research agent with learntropy-inspired appraisal. Active-
 
 ## Why this matters
 
+There are at least two ways to make an autonomous research system more powerful:
+
+1. make it better
+2. make it more dangerous in ways that are initially hard to notice
+
+We're aiming for (1).
+
 The point of autoresearcher2 is not merely to search harder, optimize faster, or become more autonomous.
 
-The deeper goal is to explore whether an autonomous research system can become more capable without becoming less truthful, less corrigible, less humane, or less worthy of trust.
+The deeper goal is to explore whether an autonomous research system can become more capable without becoming less truthful, less corrigible, less caring, or less worthy of trust.
 
 That is why this repository includes two foundational documents:
 
@@ -17,6 +24,8 @@ That is why this repository includes two foundational documents:
 
 The Constitution defines what must remain true.
 The Charter defines how truth-seeking should proceed under those values.
+
+In other words, if this system is going to recursively improve, it should also recursively improve its judgment, not just its ability to get results.
 
 Together they express a simple idea:
 recursive self-improvement should not only increase power, but deepen judgment, responsibility, and care.
