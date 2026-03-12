@@ -20,6 +20,11 @@ viz = [
     { name = "matplotlib" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "matplotlib" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "matplotlib", marker = "extra == 'viz'", specifier = ">=3.8" },
@@ -29,6 +34,9 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.12" },
 ]
 provides-extras = ["dev", "viz"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "matplotlib", specifier = ">=3.10.8" }]
 
 [[package]]
 name = "colorama"
