@@ -32,7 +32,10 @@ class TrainPyEnvironment(Environment):
 
     def _ssh(self, cmd: str, timeout: int | None = None) -> tuple[int, str]:
         result = subprocess.run(
-            ["ssh", "-i", self.ssh_key, "-o", "ConnectTimeout=10",
+            ["ssh", "-i", self.ssh_key,
+             "-o", "ConnectTimeout=10",
+             "-o", "ServerAliveInterval=30",
+             "-o", "ServerAliveCountMax=3",
              self.ssh_host, cmd],
             capture_output=True, text=True,
             timeout=timeout or self.ssh_timeout,
