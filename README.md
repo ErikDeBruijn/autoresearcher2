@@ -504,8 +504,23 @@ Building on v1, this phase connects the Bayesian engine to real GPU training:
 - LLM proposal module: `claude -p` generates experiment suggestions based on history + factor importances
 - Dual-GPU parallel execution for 2× throughput
 - 80 tests passing (69 core + 11 LLM module)
+- **First real results**: 15 experiments in 83 min on RTX PRO 6000 Blackwell
+
+**First real loop results** (15 experiments, pure Bayesian Thompson sampling):
+
+| Metric | Value |
+|---|---|
+| Best val_bpb | 1.053 (DEPTH=6, MATRIX_LR=0.02, WEIGHT_DECAY=0.2) |
+| Worst val_bpb | 1.081 |
+| Factor importances | DEPTH=0.302, MATRIX_LR=0.096, WEIGHT_DECAY=0.035 |
+| Unique cells visited | 5 / 27 |
+| Failures | 0 / 15 |
+| Total time | 83 min (~5.5 min per experiment) |
+
+Full results: `artifacts/trainpy_loop/first_real_loop.json`
 
 **v1.5 does NOT yet include:**
+- LLM-augmented loop results (ready to run)
 - Full head-to-head comparison with autoresearch
 - GP-UCB / ASHA baselines
 - Transfer across campaigns
