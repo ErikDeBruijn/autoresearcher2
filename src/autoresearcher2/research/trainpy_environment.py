@@ -71,7 +71,25 @@ class TrainPyEnvironment(Environment):
 
         val_bpb = float(match.group(1))
 
+        # Parse training metadata (tokens, steps, throughput)
+        self.last_run_metadata = self._parse_metadata(out)
+
         # Transform: val_bpb ~1.0-1.2, lower is better
         # Map to outcome where higher = better, roughly in [0, 1]
         outcome = 2.0 - val_bpb
         return outcome
+
+    def _parse_metadata(self, output: str) -> dict:
+        """Extract training stats from train.py output."""
+        meta = {}
+        patterns = {
+            "total_tokens_M": r"total_tokens_M:\s+([\d.]+)",
+            "num_steps": r"num_steps:\s+(\d+)",
+            "num_params_M": r"num_params_M:\s+([\d.]+)",
+            "steady_state_mfu": r"steady_state_mfu:\s+([\d.]+)",
+        }
+        for key, pattern in patterns.items():
+            m = re.search(pattern, output)
+            if m:
+                meta[key] = float(m.group(1))
+        return meta

@@ -69,6 +69,7 @@ def run_single_experiment(
         outcome = env.run(cell)
         val_bpb = 2.0 - outcome
         wall_time = time.time() - start
+        metadata = getattr(env, "last_run_metadata", {})
         return {
             "cell": cell,
             "config": config,
@@ -77,6 +78,9 @@ def run_single_experiment(
             "wall_time_s": round(wall_time, 1),
             "label": label,
             "error": None,
+            "tokens_M": metadata.get("total_tokens_M"),
+            "num_steps": metadata.get("num_steps"),
+            "mfu": metadata.get("steady_state_mfu"),
         }
     except Exception as e:
         wall_time = time.time() - start
@@ -174,9 +178,10 @@ def main():
             else:
                 log("  LLM returned no suggestions, using Thompson sampling")
 
-        # Determine how many experiments to run this round
-        # Try to run 2 in parallel if we have 2 GPUs and enough budget
-        n_this_round = min(2, N_EXPERIMENTS - experiment_idx)
+        # Only batch 2 experiments when we have 2 GPUs (parallel execution).
+        # With 1 GPU, run one at a time so the model updates between selections.
+        max_parallel = len(GPU_DEVICES)
+        n_this_round = min(max_parallel, N_EXPERIMENTS - experiment_idx)
 
         cells_to_run = []
         labels = []

@@ -68,7 +68,9 @@ def main():
             outcome = env.run(cell)
             val_bpb = 2.0 - outcome
             wall_time = time.time() - exp_start
-            log(f"  Result: val_bpb={val_bpb:.6f} ({wall_time:.0f}s)")
+            metadata = getattr(env, "last_run_metadata", {})
+            tokens_M = metadata.get("total_tokens_M")
+            log(f"  Result: val_bpb={val_bpb:.6f} tokens={tokens_M}M ({wall_time:.0f}s)")
 
             agent.observe(cell, outcome)
 
@@ -81,6 +83,9 @@ def main():
                 "wall_time_s": round(wall_time, 1),
                 "label": "autoresearch_baseline",
                 "error": None,
+                "tokens_M": tokens_M,
+                "num_steps": metadata.get("num_steps"),
+                "mfu": metadata.get("steady_state_mfu"),
             })
         except Exception as e:
             wall_time = time.time() - exp_start
