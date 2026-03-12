@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Build a working v1 that answers: "Is structured Bayesian experiment selection with learntropy-inspired appraisal meaningfully better than random / greedy / GP-UCB / Karpathy-style search?"
+**Goal:** Build a synthetic v1 that validates the architecture and tests whether structured Bayesian experiment selection with learntropy-inspired appraisal outperforms random and greedy baselines on controlled factorial environments. This v1 does not yet answer the full comparison against GP-UCB or Karpathy-style search on real proxy workloads.
 
-**Architecture:** Three layers (controller, generative model, memory) + appraisal module + toy validation environment. One-step EFE-inspired action selection over a fixed intervention schema. Proxy workload runs small NanoGPT-style training jobs (~5 min each). Evaluation harness compares against 4 baselines.
+**Architecture:** Three layers (Thompson-sampling controller, Bayesian linear outcome model, episodic memory) + appraisal module + toy validation environment. One-step action selection with EFE-style diagnostics over a fixed intervention schema. Synthetic environment with known factor effects for controlled testing.
 
 **Tech Stack:** Python 3.11+, numpy, scipy (Bayesian inference), pytest, uv (package management). No ML frameworks in core — only in the proxy workload runner. Optional: matplotlib for visualization.
 
@@ -162,6 +162,20 @@ def test_schema_feature_vector_with_interactions():
     x = schema.feature_vector(0, include_interactions=True)
     # 4 main effects + 4 pairwise interactions = 8
     assert len(x) == 8
+
+
+def test_schema_cell_roundtrip():
+    """cell_to_config → config_to_cell should be identity for all cells."""
+    schema = InterventionSchema(
+        factors={
+            "optimizer": ["adam", "sgd"],
+            "lr": ["low", "high"],
+            "batch": ["small", "large"],
+        }
+    )
+    for cell in range(schema.n_cells):
+        config = schema.cell_to_config(cell)
+        assert schema.config_to_cell(config) == cell
 ```
 
 **Step 2: Run test to verify it fails**
@@ -270,7 +284,7 @@ class InterventionSchema:
 uv run pytest tests/core/test_schema.py -v
 ```
 
-Expected: all 5 tests PASS.
+Expected: all 6 tests PASS.
 
 **Step 5: Commit**
 
@@ -281,9 +295,9 @@ git commit -m "feat: intervention schema with one-hot and interaction features"
 
 ---
 
-## Task 2: Generative Model (v1: Factor Effects + Noise)
+## Task 2: Structured Bayesian Outcome Model (v1)
 
-The Bayesian linear model that learns factor-level structure. v1 scope: factor effects, limited interactions, outcome noise. No regime variable, no per-factor proxy fidelity.
+Bayesian linear regression over schema features that learns factor-level structure. In v1, this approximates the "generative model" from the full design — it predicts outcomes from interventions but does not yet model latent causes, regimes, or proxy fidelity. That's honest: it's a structured reward model, not a full generative model in the active-inference sense.
 
 **Files:**
 - Create: `src/autoresearcher2/generative_model/bayesian_linear.py`
@@ -385,6 +399,16 @@ def test_factor_importance():
     assert "lr" in importances
     # Optimizer should matter more than lr
     assert importances["optimizer"] > importances["lr"]
+
+
+def test_snapshot_is_independent_copy():
+    schema = make_schema()
+    model = BayesianLinearModel(schema)
+    snap = model.snapshot()
+    assert "mu_w" in snap and "sigma_w" in snap and "noise_variance" in snap
+    # Mutating model should not affect snapshot
+    model.update(cell_index=0, outcome=0.8)
+    assert not np.allclose(model.mu_w, snap["mu_w"])
 ```
 
 **Step 2: Run test to verify it fails**
@@ -463,8 +487,16 @@ class BayesianLinearModel:
             sigma_inv @ self.mu_w + x * outcome / self.noise_variance
         )
 
+    def snapshot(self) -> dict:
+        """Return a copy of the current model state for appraisal."""
+        return {
+            "mu_w": self.mu_w.copy(),
+            "sigma_w": self.sigma_w.copy(),
+            "noise_variance": self.noise_variance,
+        }
+
     def factor_importances(self) -> dict[str, float]:
-        """Extract per-factor importance as sum of absolute weight means."""
+        """Heuristic effect magnitude summary: sum of absolute weight means per factor."""
         importances = {}
         offset = 0
         for name in self.schema.factor_names:
@@ -481,20 +513,20 @@ class BayesianLinearModel:
 uv run pytest tests/generative_model/test_bayesian_linear.py -v
 ```
 
-Expected: all 7 tests PASS.
+Expected: all 8 tests PASS.
 
 **Step 5: Commit**
 
 ```bash
 git add src/autoresearcher2/generative_model/bayesian_linear.py tests/generative_model/test_bayesian_linear.py
-git commit -m "feat: Bayesian linear generative model with conjugate updates"
+git commit -m "feat: Bayesian linear generative model with conjugate updates and snapshot"
 ```
 
 ---
 
-## Task 3: Controller (One-Step EFE-Inspired Action Selection)
+## Task 3: Thompson-Sampling Controller with EFE-Style Diagnostics
 
-Selects the next experiment by computing pragmatic + epistemic value for each candidate cell.
+Selects the next experiment via Thompson sampling (sample from posterior, pick best under sample). The actual action selection is posterior sampling, NOT direct EFE minimization. The pragmatic + epistemic decomposition is computed as diagnostics for visualization and evaluation — it reports the decomposition, it doesn't drive the selection.
 
 **Files:**
 - Create: `src/autoresearcher2/core/controller.py`
@@ -523,7 +555,7 @@ def make_setup():
 
 def test_controller_selects_cell():
     schema, model = make_setup()
-    controller = Controller(schema, model, preferred_outcome=1.0)
+    controller = Controller(schema, model, preferred_outcome=1.0, seed=42)
     cell = controller.select_next()
     assert 0 <= cell < schema.n_cells
 
@@ -533,7 +565,7 @@ def test_controller_explores_when_uncertain():
     Controller should select different cells across multiple calls
     (due to Thompson sampling)."""
     schema, model = make_setup()
-    controller = Controller(schema, model, preferred_outcome=1.0)
+    controller = Controller(schema, model, preferred_outcome=1.0, seed=42)
 
     selections = {controller.select_next() for _ in range(50)}
     # Should have visited multiple cells, not stuck on one
@@ -543,7 +575,7 @@ def test_controller_explores_when_uncertain():
 def test_controller_exploits_after_learning():
     """After learning that cell 0 is great, controller should prefer it."""
     schema, model = make_setup()
-    controller = Controller(schema, model, preferred_outcome=1.0)
+    controller = Controller(schema, model, preferred_outcome=1.0, seed=42)
 
     # Train: cell 0 is great, others are bad
     for _ in range(30):
@@ -561,7 +593,7 @@ def test_controller_exploits_after_learning():
 def test_controller_scores_decomposition():
     """Controller should report pragmatic and epistemic scores."""
     schema, model = make_setup()
-    controller = Controller(schema, model, preferred_outcome=1.0)
+    controller = Controller(schema, model, preferred_outcome=1.0, seed=42)
     scores = controller.score_all_cells()
     assert len(scores) == schema.n_cells
     for cell_idx, score in scores.items():
@@ -573,7 +605,7 @@ def test_controller_scores_decomposition():
 def test_epistemic_decreases_with_data():
     """Epistemic score for a cell should decrease after observing it."""
     schema, model = make_setup()
-    controller = Controller(schema, model, preferred_outcome=1.0)
+    controller = Controller(schema, model, preferred_outcome=1.0, seed=42)
 
     scores_before = controller.score_all_cells()
     ep_before = scores_before[0]["epistemic"]
@@ -623,15 +655,17 @@ class Controller:
         model: BayesianLinearModel,
         preferred_outcome: float = 1.0,
         excluded_cells: set[int] | None = None,
+        seed: int | None = None,
     ):
         self.schema = schema
         self.model = model
         self.preferred_outcome = preferred_outcome
         self.excluded_cells = excluded_cells or set()
+        self.rng = np.random.default_rng(seed)
 
     def select_next(self) -> int:
         """Thompson sampling: sample from posterior, pick best under sample."""
-        w_sample = np.random.multivariate_normal(
+        w_sample = self.rng.multivariate_normal(
             self.model.mu_w, self.model.sigma_w
         )
 
@@ -684,7 +718,9 @@ git commit -m "feat: controller with Thompson sampling and EFE-inspired scoring"
 
 ## Task 4: Appraisal Module (3 Grounded Signals)
 
-v1 computes three signals after each experiment: surprise, theory_conflict, transfer_breadth.
+v1 computes three signals after each experiment: surprise, theory_conflict, prediction_impact_breadth.
+
+**Important:** Appraisal does NOT update the model. It takes before/after snapshots around an update that the caller performs. This preserves the layer contract: model updates beliefs, appraisal measures consequences.
 
 **Files:**
 - Create: `src/autoresearcher2/appraisal/signals.py`
@@ -711,70 +747,113 @@ def make_setup():
     return schema, model
 
 
-def test_appraisal_returns_three_signals():
+def test_appraisal_returns_signals():
     schema, model = make_setup()
-    appraisal = compute_appraisal(model, cell_index=0, outcome=0.5)
+    # Appraisal takes before/after snapshots — caller updates model
+    snapshot_before = model.snapshot()
+    model.update(cell_index=0, outcome=0.5)
+    snapshot_after = model.snapshot()
+    appraisal = compute_appraisal(
+        schema, cell_index=0, outcome=0.5,
+        snapshot_before=snapshot_before, snapshot_after=snapshot_after,
+    )
     assert "surprise" in appraisal
     assert "theory_conflict" in appraisal
-    assert "transfer_breadth" in appraisal
+    assert "prediction_impact_breadth" in appraisal
     assert "learntropy" in appraisal
 
 
-def test_surprise_is_high_for_unexpected_outcome():
+def test_appraisal_does_not_mutate_model():
+    """Appraisal must not call model.update() — caller is responsible."""
     schema, model = make_setup()
-    # Train model to expect ~0.9 for cell 0
+    snapshot_before = model.snapshot()
+    mu_before = model.mu_w.copy()
+    model.update(cell_index=0, outcome=0.5)
+    snapshot_after = model.snapshot()
+    compute_appraisal(
+        schema, cell_index=0, outcome=0.5,
+        snapshot_before=snapshot_before, snapshot_after=snapshot_after,
+    )
+    # Model should only reflect the single update we did, not a second one
+    np.testing.assert_array_equal(model.mu_w, snapshot_after["mu_w"])
+
+
+def test_surprising_outcome_scores_higher_than_expected():
+    schema, model = make_setup()
     for _ in range(20):
         model.update(cell_index=0, outcome=0.9)
 
-    # Outcome of 0.1 should be very surprising
-    appraisal = compute_appraisal(model, cell_index=0, outcome=0.1)
-    assert appraisal["surprise"] > 0.5
+    # Surprising outcome (0.1 when expecting ~0.9)
+    snap_before = model.snapshot()
+    model_copy_surprising = BayesianLinearModel(schema)
+    model_copy_surprising.mu_w = snap_before["mu_w"].copy()
+    model_copy_surprising.sigma_w = snap_before["sigma_w"].copy()
+    model_copy_surprising.update(cell_index=0, outcome=0.1)
+    surprising = compute_appraisal(
+        schema, 0, 0.1, snap_before, model_copy_surprising.snapshot(),
+    )
+
+    # Expected outcome (0.9 when expecting ~0.9)
+    model_copy_expected = BayesianLinearModel(schema)
+    model_copy_expected.mu_w = snap_before["mu_w"].copy()
+    model_copy_expected.sigma_w = snap_before["sigma_w"].copy()
+    model_copy_expected.update(cell_index=0, outcome=0.9)
+    expected = compute_appraisal(
+        schema, 0, 0.9, snap_before, model_copy_expected.snapshot(),
+    )
+
+    assert surprising["surprise"] > expected["surprise"]
 
 
-def test_surprise_is_low_for_expected_outcome():
+def test_theory_conflict_higher_when_confident():
     schema, model = make_setup()
-    for _ in range(20):
-        model.update(cell_index=0, outcome=0.9)
 
-    appraisal = compute_appraisal(model, cell_index=0, outcome=0.9)
-    assert appraisal["surprise"] < 0.1
-
-
-def test_theory_conflict_measures_confident_wrongness():
-    schema, model = make_setup()
-    # Build strong confidence
+    # Confident model: many observations
     for _ in range(50):
         model.update(cell_index=0, outcome=0.9)
+    snap_confident = model.snapshot()
+    model.update(cell_index=0, outcome=0.1)
+    conflict_confident = compute_appraisal(
+        schema, 0, 0.1, snap_confident, model.snapshot(),
+    )
 
-    # Contradictory result when very confident = high conflict
-    appraisal_conflict = compute_appraisal(model, cell_index=0, outcome=0.1)
-
-    # Reset and give uncertain prediction
+    # Uncertain model: no observations
     model2 = BayesianLinearModel(schema)
-    appraisal_uncertain = compute_appraisal(model2, cell_index=0, outcome=0.1)
+    snap_uncertain = model2.snapshot()
+    model2.update(cell_index=0, outcome=0.1)
+    conflict_uncertain = compute_appraisal(
+        schema, 0, 0.1, snap_uncertain, model2.snapshot(),
+    )
 
-    assert appraisal_conflict["theory_conflict"] > appraisal_uncertain["theory_conflict"]
+    assert conflict_confident["theory_conflict"] > conflict_uncertain["theory_conflict"]
 
 
-def test_transfer_breadth_counts_affected_cells():
+def test_prediction_impact_breadth_counts_affected_cells():
     schema, model = make_setup()
-    appraisal = compute_appraisal(model, cell_index=0, outcome=0.9)
+    snap_before = model.snapshot()
+    model.update(cell_index=0, outcome=0.9)
+    snap_after = model.snapshot()
+    appraisal = compute_appraisal(
+        schema, 0, 0.9, snap_before, snap_after,
+    )
     # With shared features, updating cell 0 should affect other cells
-    assert appraisal["transfer_breadth"] >= 1
+    assert appraisal["prediction_impact_breadth"] >= 1
 
 
-def test_learntropy_combines_surprise_and_confidence():
+def test_learntropy_higher_when_confidently_wrong():
     schema, model = make_setup()
-    # High confidence, wrong prediction = high learntropy
     for _ in range(50):
         model.update(cell_index=0, outcome=0.9)
-    high_learntropy = compute_appraisal(model, cell_index=0, outcome=0.1)
+    snap_confident = model.snapshot()
+    model.update(cell_index=0, outcome=0.1)
+    high_lt = compute_appraisal(schema, 0, 0.1, snap_confident, model.snapshot())
 
-    # Low confidence, any prediction = lower learntropy
     model2 = BayesianLinearModel(schema)
-    low_learntropy = compute_appraisal(model2, cell_index=0, outcome=0.1)
+    snap_uncertain = model2.snapshot()
+    model2.update(cell_index=0, outcome=0.1)
+    low_lt = compute_appraisal(schema, 0, 0.1, snap_uncertain, model2.snapshot())
 
-    assert high_learntropy["learntropy"] > low_learntropy["learntropy"]
+    assert high_lt["learntropy"] > low_lt["learntropy"]
 ```
 
 **Step 2: Run test to verify it fails**
@@ -792,33 +871,42 @@ Expected: FAIL with ImportError.
 import numpy as np
 from numpy.typing import NDArray
 
-from autoresearcher2.generative_model.bayesian_linear import BayesianLinearModel
+from autoresearcher2.core.schema import InterventionSchema
 
 
 def compute_appraisal(
-    model: BayesianLinearModel,
+    schema: InterventionSchema,
     cell_index: int,
     outcome: float,
+    snapshot_before: dict,
+    snapshot_after: dict,
     prediction_change_threshold: float = 0.01,
 ) -> dict[str, float]:
     """Compute learntropy-inspired appraisal signals for an observation.
 
+    Appraisal does NOT update the model. The caller is responsible for:
+      1. Taking snapshot_before = model.snapshot()
+      2. Calling model.update(cell_index, outcome)
+      3. Taking snapshot_after = model.snapshot()
+      4. Passing both snapshots here
+
     Returns:
-        surprise: how far the outcome was from prediction, normalized by
-                  predictive variance. High = unexpected.
+        surprise: how far the outcome was from prediction (before update),
+                  normalized by predictive variance. High = unexpected.
         theory_conflict: surprise weighted by model confidence. High = the model
                          was confidently wrong (the learntropy sweet spot).
-        transfer_breadth: how many other cells had their prediction materially
-                          changed by this observation.
+        prediction_impact_breadth: how many other cells had their prediction
+                          materially changed by the update.
         learntropy: surprise × confidence. Maximum when the model was confident
                     but wrong — not when it was just uncertain.
     """
-    # Snapshot predictions before update
-    mean_before, var_before = model.predict(cell_index)
-    predictions_before = {}
-    for c in range(model.schema.n_cells):
-        m, _ = model.predict(c)
-        predictions_before[c] = m
+    mu_before, sigma_before = snapshot_before["mu_w"], snapshot_before["sigma_w"]
+    mu_after, sigma_after = snapshot_after["mu_w"], snapshot_after["sigma_w"]
+
+    # Predict from before-snapshot
+    x = schema.feature_vector(cell_index, include_interactions=True)
+    mean_before = float(x @ mu_before)
+    var_before = float(x @ sigma_before @ x) + snapshot_before["noise_variance"]
 
     # Compute surprise (standardized prediction error)
     prediction_error = abs(outcome - mean_before)
@@ -828,34 +916,29 @@ def compute_appraisal(
     surprise_norm = float(1 - np.exp(-0.5 * surprise**2))
 
     # Confidence = inverse of epistemic variance (how sure was the model?)
-    epistemic_var = model.epistemic_variance(cell_index)
+    epistemic_var = float(x @ sigma_before @ x)
     confidence = float(1.0 / (1.0 + epistemic_var))
 
     # Theory conflict = surprise weighted by confidence
-    # High confidence + high surprise = model was confidently wrong
     theory_conflict = float(surprise_norm * confidence)
 
-    # Perform the actual update
-    model.update(cell_index, outcome)
-
-    # Transfer breadth: count cells whose prediction changed materially
-    transfer_count = 0
-    for c in range(model.schema.n_cells):
-        m_after, _ = model.predict(c)
-        if abs(m_after - predictions_before[c]) > prediction_change_threshold:
-            transfer_count += 1
-    transfer_breadth = float(transfer_count)
+    # Prediction impact breadth: count cells whose prediction changed materially
+    impact_count = 0
+    for c in range(schema.n_cells):
+        xc = schema.feature_vector(c, include_interactions=True)
+        pred_before = float(xc @ mu_before)
+        pred_after = float(xc @ mu_after)
+        if abs(pred_after - pred_before) > prediction_change_threshold:
+            impact_count += 1
+    prediction_impact_breadth = float(impact_count)
 
     # Learntropy: surprise × confidence
-    # Maximum when model was confident but wrong
-    # Low when model was uncertain (noisy, can't tell what happened)
-    # Low when outcome was expected (nothing to learn)
     learntropy = float(surprise_norm * confidence)
 
     return {
         "surprise": surprise_norm,
         "theory_conflict": theory_conflict,
-        "transfer_breadth": transfer_breadth,
+        "prediction_impact_breadth": prediction_impact_breadth,
         "learntropy": learntropy,
     }
 ```
@@ -872,7 +955,7 @@ Expected: all 6 tests PASS.
 
 ```bash
 git add src/autoresearcher2/appraisal/signals.py tests/appraisal/test_signals.py
-git commit -m "feat: appraisal module with surprise, theory_conflict, transfer_breadth, learntropy"
+git commit -m "feat: appraisal module with surprise, theory_conflict, prediction_impact_breadth, learntropy"
 ```
 
 ---
@@ -1176,7 +1259,7 @@ git commit -m "feat: environment interface + synthetic environment with known fa
 
 ## Task 7: Research Loop (Outer Loop)
 
-Ties everything together: controller selects → environment runs → model updates → appraisal scores → memory stores.
+Ties everything together: controller selects → environment runs → model updates (with snapshots) → appraisal scores from snapshots → memory stores.
 
 **Files:**
 - Create: `src/autoresearcher2/core/loop.py`
@@ -1202,7 +1285,7 @@ def make_loop():
         }
     )
     model = BayesianLinearModel(schema, noise_variance=0.05)
-    controller = Controller(schema, model, preferred_outcome=1.0)
+    controller = Controller(schema, model, preferred_outcome=1.0, seed=42)
     memory = MemoryStore()
     env = SyntheticEnvironment(
         schema=schema,
@@ -1304,8 +1387,15 @@ class ResearchLoop:
             # Run
             outcome = self.env.run(cell)
 
-            # Appraise (also updates the model internally)
-            appraisal = compute_appraisal(self.model, cell, outcome)
+            # Update model (caller owns the update)
+            snapshot_before = self.model.snapshot()
+            self.model.update(cell, outcome)
+            snapshot_after = self.model.snapshot()
+
+            # Appraise (reads snapshots, does NOT update)
+            appraisal = compute_appraisal(
+                self.schema, cell, outcome, snapshot_before, snapshot_after
+            )
 
             # Store
             self.memory.add(
@@ -1646,7 +1736,7 @@ def run_evaluation(
     # autoresearcher2
     env = SyntheticEnvironment(schema=schema, **env_config, seed=seed)
     model = BayesianLinearModel(schema, noise_variance=env_config.get("noise_std", 0.05) ** 2)
-    controller = Controller(schema, model, preferred_outcome=1.0)
+    controller = Controller(schema, model, preferred_outcome=1.0, seed=seed)
     memory = MemoryStore()
     loop = ResearchLoop(schema, model, controller, memory, env)
     results = loop.run(n_experiments)
@@ -1934,7 +2024,7 @@ Run all tests, verify everything integrates, make sure we're green.
 uv run pytest -v --tb=short
 ```
 
-Expected: all tests PASS (approximately 39 tests across 9 files).
+Expected: all tests PASS (approximately 42 tests across 9 files).
 
 **Step 2: Run with coverage**
 
