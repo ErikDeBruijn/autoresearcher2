@@ -23,7 +23,9 @@ def compute_appraisal(
     mu_before, sigma_before = snapshot_before["mu_w"], snapshot_before["sigma_w"]
     mu_after, sigma_after = snapshot_after["mu_w"], snapshot_after["sigma_w"]
 
-    x = schema.feature_vector(cell_index, include_interactions=True)
+    # Infer include_interactions from snapshot dimensions
+    include_interactions = len(mu_before) > schema.n_main_effects
+    x = schema.feature_vector(cell_index, include_interactions=include_interactions)
     mean_before = float(x @ mu_before)
     var_before = float(x @ sigma_before @ x) + snapshot_before["noise_variance"]
 
@@ -39,7 +41,7 @@ def compute_appraisal(
 
     impact_count = 0
     for c in range(schema.n_cells):
-        xc = schema.feature_vector(c, include_interactions=True)
+        xc = schema.feature_vector(c, include_interactions=include_interactions)
         pred_before = float(xc @ mu_before)
         pred_after = float(xc @ mu_after)
         if abs(pred_after - pred_before) > prediction_change_threshold:
