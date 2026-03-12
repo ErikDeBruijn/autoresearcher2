@@ -11,9 +11,10 @@ class ActiveInferenceAgent:
     Selects actions by minimizing expected free energy G.
     """
 
-    def __init__(self, pomdp: ToyPOMDP, gamma: float = 1.0):
+    def __init__(self, pomdp: ToyPOMDP, gamma: float = 1.0, seed: int | None = None):
         self.pomdp = pomdp
         self.gamma = gamma
+        self.rng = np.random.default_rng(seed)
         self.beliefs = np.ones((pomdp.n_states, pomdp.n_observations))
 
     def _expected_A(self) -> np.ndarray:
@@ -51,7 +52,7 @@ class ActiveInferenceAgent:
         efe = self.compute_efe_all_actions()
         g_values = np.array([efe[a]["total"] for a in range(self.pomdp.n_states)])
         probs = softmax(-self.gamma * g_values)
-        return int(np.random.choice(self.pomdp.n_states, p=probs))
+        return int(self.rng.choice(self.pomdp.n_states, p=probs))
 
     def update(self, action: int, observation: int) -> None:
         self.beliefs[action, observation] += 1.0

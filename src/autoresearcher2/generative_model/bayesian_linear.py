@@ -61,6 +61,7 @@ class BayesianLinearModel:
         }
 
     def factor_importances(self) -> dict[str, float]:
+        """Heuristic effect magnitude: weight range per factor. Not a causal claim."""
         importances = {}
         offset = 0
         for name in self.schema.factor_names:
