@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.typing import NDArray
 
 from autoresearcher2.core.schema import InterventionSchema
 
@@ -21,7 +20,7 @@ def compute_appraisal(
       4. Passing both snapshots here
     """
     mu_before, sigma_before = snapshot_before["mu_w"], snapshot_before["sigma_w"]
-    mu_after, sigma_after = snapshot_after["mu_w"], snapshot_after["sigma_w"]
+    mu_after = snapshot_after["mu_w"]
 
     # Infer include_interactions from snapshot dimensions
     include_interactions = len(mu_before) > schema.n_main_effects
@@ -48,7 +47,10 @@ def compute_appraisal(
             impact_count += 1
     prediction_impact_breadth = float(impact_count)
 
-    learntropy = float(surprise_norm * confidence)
+    # learntropy diverges from theory_conflict by incorporating how broadly
+    # the update reshaped predictions — "confidently wrong AND it changed the map"
+    normalized_breadth = np.sqrt(prediction_impact_breadth / schema.n_cells)
+    learntropy = float(theory_conflict * normalized_breadth)
 
     return {
         "surprise": surprise_norm,

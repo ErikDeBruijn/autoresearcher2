@@ -41,13 +41,14 @@ class InterventionSchema:
         return total
 
     def cell_to_config(self, cell_index: int) -> dict[str, str]:
-        config = {}
+        parts = {}
         remaining = cell_index
         for name in reversed(self.factor_names):
             levels = self.factors[name]
-            config[name] = levels[remaining % len(levels)]
+            parts[name] = levels[remaining % len(levels)]
             remaining //= len(levels)
-        return config
+        # Return in factor declaration order
+        return {name: parts[name] for name in self.factor_names}
 
     def config_to_cell(self, config: dict[str, str]) -> int:
         index = 0

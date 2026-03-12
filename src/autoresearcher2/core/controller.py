@@ -43,15 +43,16 @@ class Controller:
                 best_cell = cell
         return best_cell
 
+    def score_cell(self, cell: int) -> dict[str, float]:
+        """Compute pragmatic + epistemic decomposition for a single cell."""
+        mean, _ = self.model.predict(cell)
+        epistemic = self.model.epistemic_variance(cell)
+        pragmatic = -(mean - self.preferred_outcome) ** 2
+        return {
+            "pragmatic": pragmatic,
+            "epistemic": epistemic,
+            "total": pragmatic + epistemic,
+        }
+
     def score_all_cells(self) -> dict[int, dict[str, float]]:
-        scores = {}
-        for cell in range(self.schema.n_cells):
-            mean, _ = self.model.predict(cell)
-            epistemic = self.model.epistemic_variance(cell)
-            pragmatic = -(mean - self.preferred_outcome) ** 2
-            scores[cell] = {
-                "pragmatic": pragmatic,
-                "epistemic": epistemic,
-                "total": pragmatic + epistemic,
-            }
-        return scores
+        return {cell: self.score_cell(cell) for cell in range(self.schema.n_cells)}

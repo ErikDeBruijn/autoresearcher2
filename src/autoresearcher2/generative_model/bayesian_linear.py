@@ -61,7 +61,11 @@ class BayesianLinearModel:
         }
 
     def factor_importances(self) -> dict[str, float]:
-        """Heuristic effect magnitude: weight range per factor. Not a causal claim."""
+        """Spread of main-effect level weights within a factor (max - min).
+
+        Heuristic only: shift-invariant within factor blocks, but ignores
+        posterior uncertainty (sigma_w) and interaction terms.
+        """
         importances = {}
         offset = 0
         for name in self.schema.factor_names:

@@ -114,3 +114,21 @@ def test_learntropy_higher_when_confidently_wrong():
     low_lt = compute_appraisal(schema, 0, 0.1, snap_uncertain, model2.snapshot())
 
     assert high_lt["learntropy"] > low_lt["learntropy"]
+
+
+def test_learntropy_differs_from_theory_conflict():
+    """learntropy = theory_conflict * sqrt(impact_breadth / n_cells),
+    so they should differ when impact_breadth < n_cells."""
+    schema, model = make_setup()
+    for _ in range(50):
+        model.update(cell_index=0, outcome=0.9)
+    snap_before = model.snapshot()
+    model.update(cell_index=0, outcome=0.1)
+    appraisal = compute_appraisal(schema, 0, 0.1, snap_before, model.snapshot())
+
+    # With shared features, impact_breadth > 0 but likely < n_cells
+    # so learntropy should be less than theory_conflict
+    assert appraisal["theory_conflict"] > 0
+    assert appraisal["learntropy"] >= 0
+    if appraisal["prediction_impact_breadth"] < schema.n_cells:
+        assert appraisal["learntropy"] < appraisal["theory_conflict"]

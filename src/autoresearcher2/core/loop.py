@@ -28,7 +28,7 @@ class ResearchLoop:
         for i in range(n_experiments):
             cell = self.controller.select_next()
             config = self.schema.cell_to_config(cell)
-            scores = self.controller.score_all_cells()[cell]
+            scores = self.controller.score_cell(cell)
 
             outcome = self.env.run(cell)
 
