@@ -233,8 +233,3 @@ It should become more worthy of autonomy.
 It should not merely produce stronger results.
 It should become a more truthful participant in the living world.
 
-## Amendments
-
-Changes to this Charter should be recorded here as dated amendments, preserving the history of how epistemic norms evolved. This matters especially for a system that aims to recursively improve its own judgment.
-
-**2026-03-12: Three levels of self-improvement.** Replaced the 5-layer hierarchy with a sharper 3-level model (object / research / meta-research). Added "Formalizing research ethos" subsection requiring that epistemic norms be partly formalized — confidence classes, explicit support for generalization claims, separate logging of unknowns, detectable epistemic regressions — so the system can learn to be a better scientist, not only a faster one.

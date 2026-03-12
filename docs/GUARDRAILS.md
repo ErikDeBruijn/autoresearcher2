@@ -37,7 +37,7 @@ This phase ends when:
 
 ## Next phases
 
-See CHARTER.md "Three levels of self-improvement" for the governing framework. Concrete expansion path:
+Expansion path (each phase requires evidence-quality validation of the previous one):
 
 0. Multi-runner controller (local + remote workers)
 1. Throughput-aware reasoning (expose metadata to analysis and LLM)
@@ -46,4 +46,3 @@ See CHARTER.md "Three levels of self-improvement" for the governing framework. C
 4. Heterogeneous workers / compute-aware generalization
 5. Multi-agent social research
 
-Each phase requires evidence-quality validation of the previous one.
