@@ -1,8 +1,8 @@
 # autoresearcher2
 
-An autonomous ML research agent that learns *what to try next* instead of searching blindly.
+A structured Bayesian research agent with learntropy-inspired appraisal. Active-inference-rooted, but approximate in production. Designed to accumulate transferable research intuition.
 
-It uses a generative model of the research space — inspired by active inference and learntropy — to explore efficiently, exploit what it learns, and know when to stop.
+It uses a generative model of the research space to explore efficiently, exploit what it learns, and know when to stop — guided by the principle that experiment selection should unify *epistemic value* (what would I learn?) with *pragmatic value* (what outcome do I prefer?).
 
 ## The Problem
 
@@ -261,9 +261,11 @@ appraisal = {
 - **Does NOT feed the controller directly**: the controller operates on EFE over the generative model. Appraisal is a *reporting* layer, not a decision layer. It prevents the "memory quietly becomes the generative model" failure.
 - **Feeds visualization**: appraisal scores over time show whether the agent is in the learntropy sweet spot — learning efficiently at the boundary of its knowledge — or stuck in obvious/incomprehensible territory.
 
-### LLM Verbalization (Optional)
+### LLM Verbalization (Reporting Channel, Not Control Signal)
 
-The LLM can render appraisal scores as natural language:
+LLM verbal reactions may contain useful epistemic appraisal — "Interesting, that changes everything" could reflect genuine surprise at a posterior shift. But surface wording alone is too style-contaminated to trust directly. LLMs are trained for social fluency; "Interesting!" can be cheap style, not genuine epistemic rupture.
+
+Therefore the system grounds appraisal in evidence and posterior change, then allows the LLM to express it richly in language:
 
 ```json
 {
@@ -275,7 +277,7 @@ The LLM can render appraisal scores as natural language:
 }
 ```
 
-The verbal output is a *rendering* of measured appraisal variables, not the variable itself. The agent doesn't trust "Interesting!" as a signal — it trusts the posterior change that "Interesting!" is a report of.
+The verbal output is a *rendering* of measured appraisal variables, not the variable itself. This keeps the biological and cognitive inspiration alive without collapsing into ungrounded vibes.
 
 ## Intervention Schema
 
@@ -381,16 +383,39 @@ A 27-cell synthetic POMDP (3 factors × 3 levels) with canonical active inferenc
 
 This exists **only to validate the theory** — it is not a proxy workload, not a component of the practical system, and not a surrogate predictor. It is a theoretical sandbox where we verify that canonical active inference produces the expected epistemic → pragmatic shift, proper calibration, and baseline-beating convergence. If these properties don't emerge in the toy environment, the applied system inherits no credibility from "active inference."
 
-## Theoretical Roots
+## Theoretical Roots and Deliberate Departures
+
+This project draws on three theoretical traditions. It takes them seriously — not as decoration, but as design constraints. Where the current system departs from canonical formulations, the departure is deliberate and documented.
 
 ### Active Inference (Karl Friston)
-Expected free energy decomposes into pragmatic value (preference-seeking) and epistemic value (uncertainty-reduction), or equivalently risk and ambiguity. The applied system uses the same generative-model structure — latent states, observation model, prior preferences, policy-conditioned belief updates — with approximations where exact inference is intractable. The approximations are explicit.
+
+**Contribution:** The core idea that experiment selection should unify epistemic value (uncertainty reduction) and pragmatic value (preference-seeking) under a single objective — expected free energy. An agent with a generative model of hidden causes can evaluate policies by asking: "will this action sequence move me toward preferred outcomes *and* teach me something about the world?"
+
+**Current status:** The applied system uses the same generative-model structure — latent states, observation model, prior preferences, policy-conditioned belief updates — with approximations where exact inference is intractable. The toy validation environment uses canonical active inference without approximation.
+
+**Deliberate departure:** The applied system's EFE-based policy evaluation over short horizons is an approximation of full active inference, not a repudiation of it. The long-term goal is to progressively replace heuristics with explicit generative-model components wherever tractability permits. The seam between canonical and approximate is part of the contribution, not an embarrassment.
 
 ### Learntropy (Piotr Wozniak)
-Not all surprise is equal. The brain rewards information at the *boundary* of current knowledge — structured novelty, not random noise. Learning has an intrinsic attractiveness landscape: results that are neither obvious nor incomprehensible drive the most model improvement. The appraisal module operationalizes this by measuring posterior change magnitude, theory conflict, knowledge reorganization, and transfer breadth. ([Pleasure of learning](https://supermemo.guru/wiki/Pleasure_of_learning))
+
+**Contribution:** The idea that some learning opportunities are intrinsically attractive — not because they are novel per se, but because they are *surprising, decodable, structurally meaningful, and growth-inducing*. ([Pleasure of learning](https://supermemo.guru/wiki/Pleasure_of_learning))
+
+**Why learntropy is not the same as novelty:** Random novelty is not enough. A completely unfamiliar, chaotic signal is novel but has zero learntropy — the system can't decode it, can't connect it to existing knowledge, can't use it to grow. Learntropy requires a zone where the signal is surprising *but decodable* and *structurally useful*. This is why the appraisal module needs both positive terms (surprise, transfer breadth) and negative terms (ambiguity, noise). The sweet spot is: confidently wrong → maximum learning. Hopelessly confused → no learning. Already knew that → no learning.
+
+**Current status:** The appraisal module operationalizes learntropy by measuring posterior change magnitude, theory conflict, knowledge reorganization, and transfer breadth. The system does not yet directly optimize learntropy as an objective — it uses it as a reporting and memory-weighting signal. Moving learntropy into the EFE computation itself is an open research direction.
 
 ### Compression Progress (Juergen Schmidhuber)
-Intrinsic reward = the first derivative of model improvement. The agent should focus where its model is improving fastest, not where uncertainty is highest per se. The appraisal module's `learntropy = surprise × (1 - ambiguity)` captures this: maximum signal when the model was *confidently wrong*, not when observations are just noisy.
+
+**Contribution:** Intrinsic reward = the first derivative of model improvement. The agent should focus where its model is improving fastest, not where uncertainty is highest per se. The appraisal module's `learntropy = surprise × (1 - ambiguity)` captures this: maximum signal when the model was *confidently wrong*, not when observations are just noisy.
+
+### What the practical system is today
+
+The practical controller is an approximation designed for tractability, not a repudiation of the theory:
+
+- Active inference contributes the generative-model structure and the EFE decomposition
+- Learntropy contributes the appraisal module and the insight that epistemic value has internal structure (not all uncertainty reduction is equally valuable)
+- The current system is not yet canonical active inference and does not yet directly optimize learntropy
+- The toy validation environment is the canonical reference; the applied system is the working approximation
+- The gap between them is where the research contribution lives
 
 ### Key Papers
 - Friston et al. 2019 — [Generalised free energy and active inference](https://link.springer.com/article/10.1007/s00422-019-00805-w)
@@ -403,16 +428,19 @@ Intrinsic reward = the first derivative of model improvement. The agent should f
 
 ## What This Is and Isn't
 
-This project has two modes:
+This is a serious attempt to bring active inference and learntropy closer to an applied self-improving researcher, while being honest about what is canonical, what is approximate, and what remains aspirational.
 
 **Canonical mode**: a toy active-inference environment in which policies minimize expected free energy under an explicit generative model. Used to validate theoretical claims.
 
-**Applied mode**: a larger-scale research controller that preserves the same generative-model structure — latent states, observation model, precision, policy evaluation — but uses approximations where exact active inference becomes intractable.
+**Applied mode**: a larger-scale research controller that preserves the same generative-model structure — latent states, observation model, precision, policy evaluation — but uses approximations where exact active inference becomes intractable. EFE-based policy evaluation is the current practical action-selection mechanism, chosen because it is tractable and uncertainty-aware — not the ultimate theoretical destination.
+
+**Aspirational**: progressively closing the gap between applied and canonical. Moving learntropy from a reporting signal into the EFE computation. Extending policy horizons. Replacing approximations with faithful inference wherever tractability permits.
 
 It is NOT:
+- Pure active inference (yet)
+- Just BO with memory
 - A replacement for domain expertise in designing the intervention schema
 - Going to discover fundamentally new architectures
-- Going to beat ASHA on the narrow task ASHA was designed for
 - Claiming biological fidelity (neuroscience terms are metaphors, not claims)
 
 ## Implementation Phases
