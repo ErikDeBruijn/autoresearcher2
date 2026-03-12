@@ -1,0 +1,710 @@
+{
+  "env_a_main_effects": {
+    "env_name": "env_a_main_effects",
+    "env_config": {
+      "description": "Main effects dominant, low noise",
+      "true_effects": {
+        "optimizer": {
+          "adam": 0.2,
+          "adamw": 0.25,
+          "sgd": -0.2
+        },
+        "lr": {
+          "1e-4": -0.1,
+          "3e-4": 0.15,
+          "1e-3": 0.0
+        },
+        "batch_size": {
+          "32": -0.05,
+          "64": 0.05,
+          "128": 0.0
+        }
+      },
+      "baseline": 0.5,
+      "noise_std": 0.03
+    },
+    "schema_config": {
+      "factors": {
+        "optimizer": [
+          "adam",
+          "adamw",
+          "sgd"
+        ],
+        "lr": [
+          "1e-4",
+          "3e-4",
+          "1e-3"
+        ],
+        "batch_size": [
+          "32",
+          "64",
+          "128"
+        ]
+      },
+      "n_cells": 27
+    },
+    "true_best": 0.949949333539563,
+    "best_cell": 13,
+    "best_config": {
+      "optimizer": "adamw",
+      "lr": "3e-4",
+      "batch_size": "64"
+    },
+    "n_seeds": 20,
+    "n_experiments": 50,
+    "agents": {
+      "autoresearcher2": {
+        "mean_best_outcome": 0.9813553993741635,
+        "std_best_outcome": 0.0232288254975012,
+        "mean_cumulative_regret": 6.484730605515398,
+        "std_cumulative_regret": 2.1417859187402706,
+        "mean_unique_cells": 12.9,
+        "factor_importances": {
+          "optimizer": {
+            "mean": 0.24025595368699726,
+            "std": 0.026378861455637514
+          },
+          "lr": {
+            "mean": 0.13821488158423562,
+            "std": 0.03981766485317635
+          },
+          "batch_size": {
+            "mean": 0.08187614043575024,
+            "std": 0.04909707119563342
+          }
+        },
+        "factor_rank_accuracy": 0.95,
+        "gt_top_factor": "optimizer",
+        "epistemic_decreased_pct": 1.0,
+        "top_learntropy_events_seed0": [
+          {
+            "experiment": 12,
+            "cell": 4,
+            "config": {
+              "optimizer": "adam",
+              "lr": "3e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.830249076760835,
+            "surprise": 0.7532752745325327,
+            "theory_conflict": 0.752597955503821,
+            "learntropy": 0.3547780785625889,
+            "prediction_impact_breadth": 6.0
+          },
+          {
+            "experiment": 19,
+            "cell": 13,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "3e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.9812754010832804,
+            "surprise": 0.6726612273795001,
+            "theory_conflict": 0.6725099140713752,
+            "learntropy": 0.12942459330726686,
+            "prediction_impact_breadth": 1.0
+          },
+          {
+            "experiment": 39,
+            "cell": 14,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "3e-4",
+              "batch_size": "128"
+            },
+            "outcome": 0.9448029343566229,
+            "surprise": 0.2766761865954147,
+            "theory_conflict": 0.2764274093272555,
+            "learntropy": 0.09214246977575183,
+            "prediction_impact_breadth": 3.0
+          },
+          {
+            "experiment": 14,
+            "cell": 13,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "3e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.9126226715824081,
+            "surprise": 0.2317074099375167,
+            "theory_conflict": 0.23149906839333273,
+            "learntropy": 0.0771663561311109,
+            "prediction_impact_breadth": 3.0
+          },
+          {
+            "experiment": 1,
+            "cell": 12,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "3e-4",
+              "batch_size": "32"
+            },
+            "outcome": 0.846036854101261,
+            "surprise": 0.004965495116188379,
+            "theory_conflict": 8.368808467444968e-05,
+            "learntropy": 7.890188290375646e-05,
+            "prediction_impact_breadth": 24.0
+          },
+          {
+            "experiment": 11,
+            "cell": 4,
+            "config": {
+              "optimizer": "adam",
+              "lr": "3e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.9012397793804173,
+            "surprise": 0.002544216862901738,
+            "theory_conflict": 7.741785945914137e-05,
+            "learntropy": 6.663068452984019e-05,
+            "prediction_impact_breadth": 20.0
+          },
+          {
+            "experiment": 13,
+            "cell": 13,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "3e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.9434362500820237,
+            "surprise": 0.0013887093553146546,
+            "theory_conflict": 5.421307462284314e-05,
+            "learntropy": 4.040804004198201e-05,
+            "prediction_impact_breadth": 15.0
+          },
+          {
+            "experiment": 16,
+            "cell": 11,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "1e-4",
+              "batch_size": "128"
+            },
+            "outcome": 0.6336722305142807,
+            "surprise": 0.0017522933905033122,
+            "theory_conflict": 4.2485825990101665e-05,
+            "learntropy": 3.564010578566562e-05,
+            "prediction_impact_breadth": 19.0
+          },
+          {
+            "experiment": 2,
+            "cell": 3,
+            "config": {
+              "optimizer": "adam",
+              "lr": "3e-4",
+              "batch_size": "32"
+            },
+            "outcome": 0.8192126795132983,
+            "surprise": 0.0014942263018938862,
+            "theory_conflict": 3.278850740832349e-05,
+            "learntropy": 3.0262422007494002e-05,
+            "prediction_impact_breadth": 23.0
+          },
+          {
+            "experiment": 0,
+            "cell": 22,
+            "config": {
+              "optimizer": "sgd",
+              "lr": "3e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.5037719066328017,
+            "surprise": 0.0021126180011014073,
+            "theory_conflict": 3.4633081985268975e-05,
+            "learntropy": 2.905267055243764e-05,
+            "prediction_impact_breadth": 19.0
+          }
+        ]
+      },
+      "random": {
+        "mean_best_outcome": 0.9698077400861044,
+        "std_best_outcome": 0.021401543803486935,
+        "mean_cumulative_regret": 17.481864290322104,
+        "std_cumulative_regret": 1.0253706983379811,
+        "mean_unique_cells": 23.05
+      },
+      "greedy": {
+        "mean_best_outcome": 0.9992276422430242,
+        "std_best_outcome": 0.0024410117499758834,
+        "mean_cumulative_regret": 9.431139858976106,
+        "std_cumulative_regret": 0.212772989824699,
+        "mean_unique_cells": 27.0
+      }
+    }
+  },
+  "env_b_interaction": {
+    "env_name": "env_b_interaction",
+    "env_config": {
+      "description": "Main effects + interaction (adamw + 3e-4 synergy)",
+      "true_effects": {
+        "optimizer": {
+          "adam": 0.15,
+          "adamw": 0.15,
+          "sgd": -0.2
+        },
+        "lr": {
+          "1e-4": -0.1,
+          "3e-4": 0.1,
+          "1e-3": 0.0
+        },
+        "batch_size": {
+          "32": -0.05,
+          "64": 0.05,
+          "128": 0.0
+        }
+      },
+      "baseline": 0.5,
+      "noise_std": 0.03
+    },
+    "schema_config": {
+      "factors": {
+        "optimizer": [
+          "adam",
+          "adamw",
+          "sgd"
+        ],
+        "lr": [
+          "1e-4",
+          "3e-4",
+          "1e-3"
+        ],
+        "batch_size": [
+          "32",
+          "64",
+          "128"
+        ]
+      },
+      "n_cells": 27
+    },
+    "true_best": 0.8005854757821826,
+    "best_cell": 13,
+    "best_config": {
+      "optimizer": "adamw",
+      "lr": "3e-4",
+      "batch_size": "64"
+    },
+    "n_seeds": 20,
+    "n_experiments": 50,
+    "agents": {
+      "autoresearcher2": {
+        "mean_best_outcome": 0.8581285199892609,
+        "std_best_outcome": 0.016147639838267988,
+        "mean_cumulative_regret": 5.401865153620927,
+        "std_cumulative_regret": 1.0265753037834688,
+        "mean_unique_cells": 18.15,
+        "factor_importances": {
+          "optimizer": {
+            "mean": 0.20814852719756516,
+            "std": 0.015275201759412447
+          },
+          "lr": {
+            "mean": 0.12189867575199287,
+            "std": 0.013997820987321137
+          },
+          "batch_size": {
+            "mean": 0.06404326355160492,
+            "std": 0.018761084791059306
+          }
+        },
+        "factor_rank_accuracy": 1.0,
+        "gt_top_factor": "optimizer",
+        "epistemic_decreased_pct": 1.0,
+        "top_learntropy_events_seed0": [
+          {
+            "experiment": 27,
+            "cell": 13,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "3e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.7723482387122474,
+            "surprise": 0.5651938186637342,
+            "theory_conflict": 0.5646856592300905,
+            "learntropy": 0.3073759400401919,
+            "prediction_impact_breadth": 8.0
+          },
+          {
+            "experiment": 26,
+            "cell": 4,
+            "config": {
+              "optimizer": "adam",
+              "lr": "3e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.7776950225193858,
+            "surprise": 0.6713507191886605,
+            "theory_conflict": 0.6707470715294873,
+            "learntropy": 0.22358235717649577,
+            "prediction_impact_breadth": 3.0
+          },
+          {
+            "experiment": 14,
+            "cell": 5,
+            "config": {
+              "optimizer": "adam",
+              "lr": "3e-4",
+              "batch_size": "128"
+            },
+            "outcome": 0.712622671582408,
+            "surprise": 0.7673494138599022,
+            "theory_conflict": 0.7671768000939184,
+            "learntropy": 0.1476432440167532,
+            "prediction_impact_breadth": 1.0
+          },
+          {
+            "experiment": 30,
+            "cell": 13,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "3e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.7697114544938379,
+            "surprise": 0.2837239548953999,
+            "theory_conflict": 0.2835963437805734,
+            "learntropy": 0.09453211459352447,
+            "prediction_impact_breadth": 3.0
+          },
+          {
+            "experiment": 6,
+            "cell": 5,
+            "config": {
+              "optimizer": "adam",
+              "lr": "3e-4",
+              "batch_size": "128"
+            },
+            "outcome": 0.7891200013539041,
+            "surprise": 0.1992352628801215,
+            "theory_conflict": 0.19905611530416983,
+            "learntropy": 0.03830836725156788,
+            "prediction_impact_breadth": 1.0
+          },
+          {
+            "experiment": 1,
+            "cell": 12,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "3e-4",
+              "batch_size": "32"
+            },
+            "outcome": 0.6960368541012609,
+            "surprise": 0.003293720697493341,
+            "theory_conflict": 5.5512123197374394e-05,
+            "learntropy": 5.233733166790198e-05,
+            "prediction_impact_breadth": 24.0
+          },
+          {
+            "experiment": 5,
+            "cell": 5,
+            "config": {
+              "optimizer": "adam",
+              "lr": "3e-4",
+              "batch_size": "128"
+            },
+            "outcome": 0.7608478516472845,
+            "surprise": 0.003281749523322053,
+            "theory_conflict": 5.853034399473613e-05,
+            "learntropy": 5.1618911453711536e-05,
+            "prediction_impact_breadth": 21.0
+          },
+          {
+            "experiment": 0,
+            "cell": 22,
+            "config": {
+              "optimizer": "sgd",
+              "lr": "3e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.4537719066328018,
+            "surprise": 0.0017144108380863221,
+            "theory_conflict": 2.810509570633315e-05,
+            "learntropy": 2.357653548558379e-05,
+            "prediction_impact_breadth": 19.0
+          },
+          {
+            "experiment": 22,
+            "cell": 16,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "1e-3",
+              "batch_size": "64"
+            },
+            "outcome": 0.6800441597954017,
+            "surprise": 0.0013010869065113173,
+            "theory_conflict": 3.10215564300796e-05,
+            "learntropy": 2.312210298183456e-05,
+            "prediction_impact_breadth": 15.0
+          },
+          {
+            "experiment": 21,
+            "cell": 4,
+            "config": {
+              "optimizer": "adam",
+              "lr": "3e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.8409939041164907,
+            "surprise": 0.0007315353549350867,
+            "theory_conflict": 3.020772113985985e-05,
+            "learntropy": 1.8383833643474344e-05,
+            "prediction_impact_breadth": 10.0
+          }
+        ]
+      },
+      "random": {
+        "mean_best_outcome": 0.829023455648435,
+        "std_best_outcome": 0.020454102928101642,
+        "mean_cumulative_regret": 13.387052786226295,
+        "std_cumulative_regret": 0.8982182875280157,
+        "mean_unique_cells": 23.05
+      },
+      "greedy": {
+        "mean_best_outcome": 0.8631884499542377,
+        "std_best_outcome": 0.01155021093563391,
+        "mean_cumulative_regret": 7.187724992315005,
+        "std_cumulative_regret": 0.21401331073582483,
+        "mean_unique_cells": 27.0
+      }
+    }
+  },
+  "env_c_high_noise": {
+    "env_name": "env_c_high_noise",
+    "env_config": {
+      "description": "Same structure, high noise \u2014 harder to learn",
+      "true_effects": {
+        "optimizer": {
+          "adam": 0.2,
+          "adamw": 0.25,
+          "sgd": -0.2
+        },
+        "lr": {
+          "1e-4": -0.1,
+          "3e-4": 0.15,
+          "1e-3": 0.0
+        },
+        "batch_size": {
+          "32": -0.05,
+          "64": 0.05,
+          "128": 0.0
+        }
+      },
+      "baseline": 0.5,
+      "noise_std": 0.15
+    },
+    "schema_config": {
+      "factors": {
+        "optimizer": [
+          "adam",
+          "adamw",
+          "sgd"
+        ],
+        "lr": [
+          "1e-4",
+          "3e-4",
+          "1e-3"
+        ],
+        "batch_size": [
+          "32",
+          "64",
+          "128"
+        ]
+      },
+      "n_cells": 27
+    },
+    "true_best": 0.910742823704294,
+    "best_cell": 13,
+    "best_config": {
+      "optimizer": "adamw",
+      "lr": "3e-4",
+      "batch_size": "64"
+    },
+    "n_seeds": 20,
+    "n_experiments": 50,
+    "agents": {
+      "autoresearcher2": {
+        "mean_best_outcome": 1.0,
+        "std_best_outcome": 0.0,
+        "mean_cumulative_regret": 7.578750421489055,
+        "std_cumulative_regret": 2.751037005261964,
+        "mean_unique_cells": 12.5,
+        "factor_importances": {
+          "optimizer": {
+            "mean": 0.23612821487898686,
+            "std": 0.04977969042376648
+          },
+          "lr": {
+            "mean": 0.14094319159665397,
+            "std": 0.04143458278403989
+          },
+          "batch_size": {
+            "mean": 0.09617147063049022,
+            "std": 0.0454376969969313
+          }
+        },
+        "factor_rank_accuracy": 0.95,
+        "gt_top_factor": "optimizer",
+        "epistemic_decreased_pct": 1.0,
+        "top_learntropy_events_seed0": [
+          {
+            "experiment": 12,
+            "cell": 16,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "1e-3",
+              "batch_size": "64"
+            },
+            "outcome": 0.4512453838041749,
+            "surprise": 0.6236443860106344,
+            "theory_conflict": 0.6167082473498279,
+            "learntropy": 0.39363546239308406,
+            "prediction_impact_breadth": 11.0
+          },
+          {
+            "experiment": 8,
+            "cell": 1,
+            "config": {
+              "optimizer": "adam",
+              "lr": "1e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.5444397146289511,
+            "surprise": 0.5561510461366262,
+            "theory_conflict": 0.5520116614649548,
+            "learntropy": 0.3359435988780678,
+            "prediction_impact_breadth": 10.0
+          },
+          {
+            "experiment": 39,
+            "cell": 5,
+            "config": {
+              "optimizer": "adam",
+              "lr": "3e-4",
+              "batch_size": "128"
+            },
+            "outcome": 1.0,
+            "surprise": 0.5539876109795387,
+            "theory_conflict": 0.547826531315214,
+            "learntropy": 0.27893961638411824,
+            "prediction_impact_breadth": 7.0
+          },
+          {
+            "experiment": 11,
+            "cell": 16,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "1e-3",
+              "batch_size": "64"
+            },
+            "outcome": 0.8061988969020866,
+            "surprise": 0.348119400279171,
+            "theory_conflict": 0.3404630204313302,
+            "learntropy": 0.22697534695422011,
+            "prediction_impact_breadth": 12.0
+          },
+          {
+            "experiment": 19,
+            "cell": 14,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "3e-4",
+              "batch_size": "128"
+            },
+            "outcome": 1.0,
+            "surprise": 0.41632307584353656,
+            "theory_conflict": 0.41322432359013705,
+            "learntropy": 0.21040352687208103,
+            "prediction_impact_breadth": 7.0
+          },
+          {
+            "experiment": 41,
+            "cell": 5,
+            "config": {
+              "optimizer": "adam",
+              "lr": "3e-4",
+              "batch_size": "128"
+            },
+            "outcome": 1.0,
+            "surprise": 0.33220848000120773,
+            "theory_conflict": 0.32973598852312425,
+            "learntropy": 0.14189577691058888,
+            "prediction_impact_breadth": 5.0
+          },
+          {
+            "experiment": 14,
+            "cell": 10,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "1e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.5131133579120403,
+            "surprise": 0.2316579445419591,
+            "theory_conflict": 0.22656483968108718,
+            "learntropy": 0.13080727117878008,
+            "prediction_impact_breadth": 9.0
+          },
+          {
+            "experiment": 21,
+            "cell": 14,
+            "config": {
+              "optimizer": "adamw",
+              "lr": "3e-4",
+              "batch_size": "128"
+            },
+            "outcome": 1.0,
+            "surprise": 0.27472208056273417,
+            "theory_conflict": 0.2734914714422682,
+            "learntropy": 0.11769199046951845,
+            "prediction_impact_breadth": 5.0
+          },
+          {
+            "experiment": 6,
+            "cell": 1,
+            "config": {
+              "optimizer": "adam",
+              "lr": "1e-4",
+              "batch_size": "64"
+            },
+            "outcome": 0.8456000067695206,
+            "surprise": 0.19376893227504965,
+            "theory_conflict": 0.1916136978208918,
+            "learntropy": 0.09756491938384795,
+            "prediction_impact_breadth": 7.0
+          },
+          {
+            "experiment": 42,
+            "cell": 5,
+            "config": {
+              "optimizer": "adam",
+              "lr": "3e-4",
+              "batch_size": "128"
+            },
+            "outcome": 1.0,
+            "surprise": 0.21517008924892123,
+            "theory_conflict": 0.21396671934622105,
+            "learntropy": 0.08235582867477456,
+            "prediction_impact_breadth": 4.0
+          }
+        ]
+      },
+      "random": {
+        "mean_best_outcome": 0.9978610053829874,
+        "std_best_outcome": 0.008125991152292985,
+        "mean_cumulative_regret": 15.852332751535759,
+        "std_cumulative_regret": 1.6357997942442284,
+        "mean_unique_cells": 23.05
+      },
+      "greedy": {
+        "mean_best_outcome": 1.0,
+        "std_best_outcome": 0.0,
+        "mean_cumulative_regret": 9.304092824392495,
+        "std_cumulative_regret": 1.2572034158734007,
+        "mean_unique_cells": 27.0
+      }
+    }
+  }
+}
