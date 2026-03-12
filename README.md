@@ -463,7 +463,7 @@ This is a serious attempt to bring active inference and learntropy closer to an 
 
 **What works today**: the architecture is coherent. On synthetic environments with known ground truth, the Bayesian model learns factor structure, the controller outperforms random and greedy baselines, and the appraisal module marks belief-changing events.
 
-**What's new**: `train.py` integration via SSH runner, LLM proposal generation via `claude -p`, two-step policy lookahead, and memory-grounded LLM context. Three experiment loops completed on RTX PRO 6000 Blackwell GPUs. The LLM v2 loop (lookahead + enhanced prompt with learntropy-ranked experiments and coverage gaps) reached val_bpb=1.034 by experiment 5 — the same quality that LLM v1 needed 15 experiments to achieve. Best overall: val_bpb=1.0331 (DEPTH=8, MATRIX_LR=0.04, WEIGHT_DECAY=0.2). A head-to-head comparison with Karpathy's autoresearch-style baseline remains the next milestone.
+**What's new**: `train.py` integration via SSH runner, LLM proposal generation via `claude -p`, two-step policy lookahead, memory-grounded LLM context, and an autoresearch-style baseline agent for fair comparison. Pilot runs on RTX PRO 6000 Blackwell confirmed the system works end-to-end. An evidence-quality comparison run with full instrumentation (tokens, throughput, decision tracking) is next.
 
 It is NOT:
 - Pure active inference (yet)
@@ -497,75 +497,58 @@ v1 validates the core architecture on synthetic environments. It proves the plum
 
 ### v1.5 — Real Substrate + LLM Integration (in progress)
 
-Building on v1, this phase connects the Bayesian engine to real GPU training:
+Building on v1, this phase connects the Bayesian engine to real GPU training.
 
 **v1.5 includes:**
 - `TrainPyEnvironment`: SSH-based runner that patches `train.py` knobs, runs real training, parses val_bpb
 - LLM proposal module: `claude -p` generates experiment suggestions based on history + factor importances
-- Dual-GPU parallel execution for 2× throughput
 - Two-step policy lookahead: simulates belief updates to value information gain
-- Memory-grounded LLM context: high-signal experiments (by learntropy) + coverage gaps
-- 88 tests passing (69 core + 16 LLM + 3 lookahead)
-- **Three experiment loops completed**: pure Bayesian, LLM v1, LLM v2 (lookahead + enhanced prompt)
+- Memory-grounded LLM context: high-signal experiments (by learntropy) + coverage gaps fed to LLM prompt
+- Autoresearch-style baseline agent (flat LLM, no Bayesian model) for fair comparison
+- 95 tests passing
+- Full instrumentation: val_bpb, tokens_M, num_steps, mfu, wall_time, decision source tracking
 
-**First real loop results** (15 experiments, pure Bayesian Thompson sampling):
+#### Pilot runs (debugging, not evidence)
 
-| Metric | Value |
-|---|---|
-| Best val_bpb | 1.053 (DEPTH=6, MATRIX_LR=0.02, WEIGHT_DECAY=0.2) |
-| Worst val_bpb | 1.081 |
-| Factor importances | DEPTH=0.302, MATRIX_LR=0.096, WEIGHT_DECAY=0.035 |
-| Unique cells visited | 5 / 27 |
-| Failures | 0 / 15 |
-| Total time | 83 min (~5.5 min per experiment) |
+Three pilot loops ran on RTX PRO 6000 Blackwell (~4.5h total GPU time). These proved the system works end-to-end: train.py executes, val_bpb feeds back, the Bayesian model updates, LLM suggestions enter the selection loop, and actual improvements are found.
 
-Full results: `artifacts/trainpy_loop/first_real_loop.json`
+**What the pilot proved:**
+- The full loop runs: controller → train.py → val_bpb → model update → appraisal → memory → LLM context
+- LLM suggestions are part of the selection and produce real experiments
+- The system finds actual config improvements (DEPTH=8 sweet spot)
 
-**Three-way comparison** (pure Bayesian vs LLM v1 vs LLM v2):
+**What the pilot did NOT prove:**
+- Fair performance comparison (duplicate-selection bug inflated some runs)
+- LLM value-add vs baseline (no clean ablation, no autoresearch-style control)
+- Learntropy/appraisal effect on selection quality (no ablation)
+- Token-normalized comparison (throughput metadata was not captured)
 
-| Metric | Pure Bayesian | LLM v1 | LLM v2 |
-|---|---|---|---|
-| Best val_bpb | 1.0530 | 1.0347 | **1.0331** |
-| Mean val_bpb | 1.0656 | 1.0514 | **1.0491** |
-| Experiments | 15 | 20 | 20 |
-| Unique cells | 5 / 27 | 12 / 27 | **13 / 27** |
-| Total time | 83 min | 108 min | 109 min |
+**Known issues fixed after the pilot:**
+- Duplicate experiment selection with 1 GPU (both cells picked from same model state before either ran)
+- Missing throughput instrumentation (tokens_M, tok/sec, mfu, num_steps now captured)
+- No unique trial/decision IDs in results
 
-**Convergence speed** (best val_bpb reached by experiment N):
-
-| Experiment | Pure Bayesian | LLM v1 | LLM v2 |
-|---|---|---|---|
-| 5 | 1.0530 | 1.0532 | **1.0339** |
-| 10 | 1.0530 | 1.0455 | **1.0339** |
-| 15 | 1.0530 | 1.0384 | **1.0336** |
-| 20 | — | 1.0347 | **1.0331** |
-
-The LLM v2 loop (two-step lookahead + memory-grounded prompt) found val_bpb=1.034 by experiment 5 — it took LLM v1 until experiment 15 to reach the same quality. The key improvements:
-
-1. **Two-step lookahead** values information gain: the controller picks experiments that improve future decisions, not just the immediate outcome
-2. **Coverage gap detection** in the LLM prompt: Claude sees which factor levels have never been tested and targets them
-3. **High-signal experiment context**: the LLM receives the top experiments ranked by learntropy, focusing its reasoning on the most informative results
-
-Best config found: **DEPTH=8, MATRIX_LR=0.04, WEIGHT_DECAY=0.2** (val_bpb=1.0331, LLM suggestion). All top-6 configs have DEPTH=8 — the LLM discovered this sweet spot when the pure Bayesian loop had only explored DEPTH=6 and DEPTH=10.
-
-**Source breakdown** (LLM v2):
-- LLM suggestions: 8 runs, mean val_bpb = 1.0446
-- Lookahead: 12 runs, mean val_bpb = 1.0521
-
-Full results: `artifacts/trainpy_llm_loop/results.json`, `artifacts/trainpy_llm_loop/results_v1.json`, `artifacts/comparison.json`
+Pilot artifacts preserved in `artifacts/pilot/` for reference. These are debugging runs, not evidence runs.
 
 **v1.5 does NOT yet include:**
-- Full head-to-head comparison with autoresearch (different substrate approach)
+- Evidence-quality comparison run with full instrumentation
+- Autoresearch-style baseline results on same hardware/budget
+- Ablation: +/- LLM, +/- appraisal signals, +/- coverage gaps
+- Token-normalized comparison across approaches
 - GP-UCB / ASHA baselines
 - Transfer across campaigns
 
-### Next: Head-to-Head Comparison with autoresearch
+### Next: Evidence-Quality Run
 
-Three loops are complete with real artifacts. Next steps:
-- Run autoresearch-style baseline (unstructured LLM edit loop) on the same hardware + budget
-- Head-to-head: autoresearcher2 vs autoresearch on compute-normalized val_bpb
-- Evaluate falsification criteria on real substrates
-- Schema extension: add more `train.py` knobs (n_heads, context_length, etc.)
+The first evidence run will use the same 3-factor schema with:
+- Full instrumentation per experiment: val_bpb, tokens_M, tok/sec, mfu, num_steps, wall_time_s, decision_id, trial_id, source
+- Duplicate-selection bug fixed (1 cell per round with 1 GPU)
+- Four approaches on same hardware/budget:
+  1. Pure Bayesian (Thompson sampling + lookahead, no LLM)
+  2. autoresearcher2 full (Bayesian + LLM with appraisal context)
+  3. Autoresearch-style baseline (flat LLM, no Bayesian model)
+  4. Random baseline
+- Token-normalized comparison (val_bpb per tokens trained)
 
 ## Implementation Phases (Full Roadmap)
 
