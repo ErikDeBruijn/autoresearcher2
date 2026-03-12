@@ -4,6 +4,23 @@ A structured Bayesian research agent with learntropy-inspired appraisal. Active-
 
 [![The Evolution of AI Research - from autoresearch to active inference researcher](https://img.youtube.com/vi/hGScpUahPUo/maxresdefault.jpg)](https://www.youtube.com/watch?v=hGScpUahPUo)
 
+## Why this matters
+
+The point of autoresearcher2 is not merely to search harder, optimize faster, or become more autonomous.
+
+The deeper goal is to explore whether an autonomous research system can become more capable without becoming less truthful, less corrigible, less humane, or less worthy of trust.
+
+That is why this repository includes two foundational documents:
+
+- [CONSTITUTION.md](./CONSTITUTION.md), which defines what must remain true as capability grows
+- [CHARTER.md](./CHARTER.md), which defines how research, judgment, and self-improvement should proceed
+
+The Constitution defines what must remain true.
+The Charter defines how truth-seeking should proceed under those values.
+
+Together they express a simple idea:
+recursive self-improvement should not only increase power, but deepen judgment, responsibility, and care.
+
 ## Current Status
 
 **v1 validates the core architecture on synthetic environments.** The controller, Bayesian model, appraisal module, and memory integrate correctly and outperform random and greedy baselines across 3 synthetic environments × 20 seeds. Factor structure is learned, epistemic uncertainty decreases, and learntropy marks belief-changing events. See `artifacts/v1_validation/results.json` for full results.
