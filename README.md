@@ -2,29 +2,39 @@
 
 A structured Bayesian research agent with learntropy-inspired appraisal. Active-inference-rooted, but approximate in production. Designed to accumulate transferable research intuition.
 
-It uses a generative model of the research space to explore efficiently, exploit what it learns, and know when to stop — guided by the principle that experiment selection should unify *epistemic value* (what would I learn?) with *pragmatic value* (what outcome do I prefer?).
+It takes the same research substrate as [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) — optimizing a GPT training pipeline for val_bpb — but instead of a flat agentic edit loop, it adds a structured latent model of factor effects and uncertainty, explicit epistemic/pragmatic reasoning via expected free energy, learntropy-inspired appraisal that distinguishes meaningful surprise from noise, and cumulative memory that persists across sessions and campaigns.
+
+## Research Object
+
+The first practical proving ground is deliberately chosen: **the same target family as autoresearch**. Specifically, optimizing a single-file GPT training pipeline (`train.py`) against validation bits-per-byte (val_bpb) on the [ClimbMix](https://huggingface.co/datasets/karpathy/climbmix-400b-shuffle) dataset, with ~5-minute experiments per trial.
+
+This is not a placeholder. The system operates on the same kind of code-edit interventions, the same evaluation metric, and the same compute budget per experiment. The difference is in *how* the agent selects experiments and accumulates knowledge.
+
+**Why match autoresearch's target:**
+- It gives a fair A/B comparison — same substrate, same metric, different agent architecture
+- It makes the first contribution legible: does structured cumulative inference beat a flat agentic loop on *the same problem*?
+- It avoids hiding behind a different, easier, or unrelated target
+- It reduces ambiguity about what is actually being researched
+
+Three distinct environments exist in this project. They should not be confused:
+
+| Environment | What it is | Purpose |
+|---|---|---|
+| **Toy validation** | Synthetic 27-cell POMDP | Validate that canonical active inference produces the expected epistemic→pragmatic shift. Theoretical sandbox only. |
+| **Synthetic environment** | Controlled factorial simulation with known ground-truth effects | Test plumbing — verify the controller, model, appraisal, and memory integrate correctly. No real training runs. |
+| **GPT training pipeline** | Real `train.py` edits, real val_bpb measurements, same substrate as autoresearch | The actual research object. Where the system must demonstrate it adds value over autoresearch-style experimentation. |
+
+The toy validates the theory. The synthetic validates the plumbing. The GPT pipeline is where it counts.
 
 ## The Problem
 
-Current autonomous research agents (including [Karpathy's autoresearch](https://github.com/karpathy/autoresearch)) run experiments in a loop: an LLM proposes code changes guided by instructions and previous results, trains for a few minutes, evaluates, repeats. The LLM brings world knowledge, but there's no explicit persistent world model of factor structure and uncertainty. Each session's knowledge lives in the context window and vanishes.
+[autoresearch](https://github.com/karpathy/autoresearch) is an effective agentic system: an LLM proposes code edits to `train.py`, trains for 5 minutes, measures val_bpb, keeps improvements, reverts failures, and repeats indefinitely. The LLM brings world knowledge, reads previous results, and can reason about what to try next. This is substantially stronger than random or grid search.
 
-Karpathy's system uses an LLM to propose code changes, guided by instructions and a log of previous results. This is smarter than random mutation — the LLM brings world knowledge and can read what worked before. But the LLM has no structured model of *why* things worked. It sees a flat results log, not factor effects or interaction structure. It can't say "positional encoding matters more than optimizer for this task" — only "this run scored well." Knowledge lives in the LLM's context window and vanishes between sessions.
+But it has no structured persistent model of *why* things work. It sees a flat results log, not factor effects, interaction structure, or uncertainty estimates. It can't say "positional encoding matters more than optimizer for this architecture size" — only "this edit improved val_bpb by 0.02." Knowledge lives in the LLM's context window and the results log; structural insight doesn't accumulate across sessions.
 
-autoresearcher2 discovers by *structured inference*. The agent maintains a generative model of the research space and notices when its model can't explain the results — "these residuals have systematic structure my schema doesn't capture." The LLM then proposes what the missing dimension might be (e.g., "add a dropout factor" or "split architecture into encoder and decoder type"). Discovery is grounded in an explicit world model rather than implicit pattern matching in a results log, and the structural insight transfers across campaigns.
+autoresearcher2 operates on the same substrate but adds structured inference. The agent maintains a generative model of the research space — factor effects, interactions, uncertainty — and notices when its model can't explain the results. The LLM proposes what the missing dimension might be. Discovery is grounded in an explicit world model rather than implicit pattern matching in a flat log, and structural insight transfers across campaigns.
 
-Bayesian optimization (BO) is better than random mutation but treats the search space as a black box. It doesn't build *structural* knowledge ("RoPE is generally better than learned positional encodings") that transfers across campaigns.
-
-## Three Distinct Layers
-
-This project uses multiple layers, each serving a different purpose. They should not be confused:
-
-| Layer | What it is | Purpose |
-|---|---|---|
-| **Toy validation environment** | Synthetic 27-cell POMDP | Test whether canonical active inference behaves as claimed. Theoretical sandbox only — not used in production. |
-| **Proxy workload** | Cheap real ML experiments (small/short NanoGPT-style runs, ~5 min each) | Gather practical evidence cheaply. Stand-in for expensive full-scale training. |
-| **Generative model** | Bayesian model over latent research-space structure | Infer hidden causes (factor effects, regimes, proxy fidelity), predict outcomes, evaluate policies. |
-
-The toy environment validates the theory. The proxy workload provides real data cheaply. The generative model learns the hidden structure of the research space and steers exploration.
+Bayesian optimization (BO) is better than unstructured search but treats the space as a black box. It doesn't build *structural* knowledge ("RoPE is generally better than learned positional encodings for this model size") that transfers to the next campaign.
 
 ## What This Does
 
@@ -39,20 +49,20 @@ autoresearcher2 adds four things:
 
 **Canonical mode** (toy environment): a small POMDP where policies minimize expected free energy under an explicit generative model. Used to validate theoretical claims.
 
-**Applied mode** (proxy workload): a larger-scale research controller that preserves the same design intention — balancing preference-seeking and information gain — but uses approximations where exact active inference becomes intractable.
+**Applied mode** (GPT pipeline): a research controller operating on the same substrate as autoresearch that preserves the same design intention — balancing preference-seeking and information gain — but uses approximations where exact active inference becomes intractable.
 
 The long-term ambition is not merely to borrow the language of active inference, but to progressively replace approximations with explicit generative-model components wherever tractability permits.
 
 ### The Two Loops
 
 **Outer loop** (learntropy-driven): "What should I investigate next?"
-- Controller evaluates candidate policies (2-3 step sequences) by expected free energy
-- Appraisal module scores results for epistemic salience — not just "was it good?" but "did it change what I believe?"
+- Controller evaluates candidate interventions by expected free energy
+- Appraisal module scores results for epistemic salience — not just "was val_bpb good?" but "did it change what I believe about the research space?"
 - Memory provides episodic context to the LLM for proposal generation
 
 **Inner loop** (val_bpb-driven): "What happened when I tried it?"
-- Run a proxy workload experiment, observe outcome
-- Update generative model (latent states, precisions, proxy fidelity)
+- Edit `train.py` with a specific intervention, train for 5 minutes, measure val_bpb
+- Update generative model (factor effects, interactions, precisions)
 - Appraisal module computes learntropy signals
 - Store result in memory
 
@@ -210,7 +220,7 @@ A one-step agent can't plan "run a cheap experiment to learn about transfer, the
 
 ### Where canonical, where approximate
 
-| Aspect | Canonical (toy env) | Applied (proxy workload) |
+| Aspect | Canonical (toy env) | Applied (GPT pipeline) |
 |---|---|---|
 | Latent states | Full discrete POMDP | Factored Gaussians + categorical regime |
 | Policy horizon | Full planning horizon | 2-3 steps |
@@ -285,23 +295,34 @@ The verbal output is a *rendering* of measured appraisal variables, not the vari
 
 ## Intervention Schema
 
-A fixed, engineered factorial grid:
+A fixed, engineered factorial grid aligned with the levers available in `train.py`. autoresearch edits anything in the file; autoresearcher2 maps edits to a structured factor space so it can reason about effects, interactions, and uncertainty:
 
 ```python
 schema = {
-    "optimizer":    ["adam", "adamw", "sgd", "lion"],
-    "lr_bucket":    ["1e-4", "3e-4", "1e-3", "3e-3", "1e-2"],
-    "context_len":  [256, 512, 1024],
-    "pos_encoding": ["rope", "learned", "alibi", "none"],
-    "n_heads":      [2, 4, 8, 16],
-    "n_layers":     [4, 6, 8, 12],
-    "hidden_dim":   [128, 256, 512],
+    # Architecture (matches train.py levers)
+    "depth":        [4, 6, 8, 12],          # DEPTH — number of transformer layers
+    "aspect_ratio": [32, 64, 128],           # ASPECT_RATIO — d_model / n_heads
+    "head_dim":     [64, 128],               # HEAD_DIM
+    "window_pattern": ["SSSL", "SSLL", "LLLL"],  # WINDOW_PATTERN — sliding vs full attention
+
+    # Optimizer
+    "optimizer":    ["muon_adamw", "adamw", "lion"],
+    "matrix_lr":    ["0.02", "0.04", "0.08"],  # MATRIX_LR for Muon
+    "weight_decay": ["0.1", "0.2", "0.4"],     # WEIGHT_DECAY
+
+    # Training
+    "batch_size":   ["2^18", "2^19", "2^20"],   # TOTAL_BATCH_SIZE
+    "warmdown":     ["0.3", "0.5", "0.7"],      # WARMDOWN_RATIO
+
+    # Activation / normalization
+    "activation":   ["relu_sq", "gelu", "swiglu"],
+    "softcap":      [15, 30, "none"],
 }
-# 11,520 cells. Most will never be visited — that's the point.
+# ~100K+ cells. Most will never be visited — that's the point.
 # The generative model generalizes across cells via latent factor structure.
 ```
 
-The LLM can suggest which cells to visit and propose schema extensions between phases, but does not define the search space.
+This schema is intentionally aligned with the same kinds of edits autoresearch makes to `train.py`, but organized into a factorial structure the generative model can reason about. The LLM can suggest which cells to visit and propose schema extensions between phases, but does not define the search space.
 
 ## Memory System
 
@@ -357,11 +378,15 @@ Transfer is a first-class subsystem. Proxy fidelity is a latent variable in the 
 
 ### Baselines
 
-- Random search
-- Greedy exploitation (always try predicted best)
-- GP-UCB (Bayesian optimization)
-- ASHA / Hyperband (multi-fidelity)
-- Karpathy-style autoresearch
+All baselines operate on the same substrate — `train.py` edits, val_bpb metric, same compute budget per experiment:
+
+- **Random search** — random schema cells
+- **Greedy exploitation** — always try predicted best
+- **GP-UCB** — Bayesian optimization (black-box, no factor structure)
+- **ASHA / Hyperband** — multi-fidelity scheduling
+- **autoresearch-style** — LLM agentic loop with results log (the direct comparison)
+
+The primary comparison is against autoresearch-style experimentation: same LLM, same substrate, same compute budget — but with vs. without a structured persistent model.
 
 ### Falsification Criteria (preregistered)
 
@@ -370,13 +395,12 @@ Transfer is a first-class subsystem. Proxy fidelity is a latent variable in the 
 | Posterior calibration improves | Brier score rolling average decreases over experiment blocks |
 | Exploration → exploitation shift | Predictive variance decreases while pragmatic score increases (emergent, not scheduled) |
 | Beats random search | ≥20% better compute-normalized best-found val_bpb |
+| Beats autoresearch-style | Better val_bpb at same experiment count, or same val_bpb with fewer experiments |
 | Beats GP-UCB | ≥10% better or equivalent with better calibration |
-| Beats ASHA/Hyperband | Comparable best-found with better sample efficiency in sparse regions |
-| Cumulative regret | Lower than GP-UCB baseline |
+| Cumulative regret | Lower than GP-UCB and autoresearch-style baselines |
+| Structural knowledge | Agent correctly identifies top-2 factor effects (validated against ground truth in synthetic; against ablation in real pipeline) |
 | Memory ablation matters | +memory outperforms -memory by ≥15% (ablation) |
 | Appraisal ablation matters | +appraisal outperforms -appraisal on proposal quality |
-| Detects diminishing returns | Agent stops when: low uncertainty in promising regions AND expected improvement below threshold AND best-so-far plateaued AND calibration healthy AND diversity exhausted |
-| Proxy fidelity is learned | Agent's proxy fidelity estimates correlate with actual proxy-to-real transfer accuracy |
 | Stable across seeds | Crossover point variance <30% across 5 random seeds |
 
 If these criteria are not met, the system does not work. No moving goalposts.
@@ -385,7 +409,7 @@ If these criteria are not met, the system does not work. No moving goalposts.
 
 A 27-cell synthetic POMDP (3 factors × 3 levels) with canonical active inference (expected free energy, policy-conditioned beliefs, explicit precision).
 
-This exists **only to validate the theory** — it is not a proxy workload, not a component of the practical system, and not a surrogate predictor. It is a theoretical sandbox where we verify that canonical active inference produces the expected epistemic → pragmatic shift, proper calibration, and baseline-beating convergence. If these properties don't emerge in the toy environment, the applied system inherits no credibility from "active inference."
+This exists **only to validate the theory** — it is not the GPT pipeline, not a component of the practical system, and not a surrogate predictor. It is a theoretical sandbox where we verify that canonical active inference produces the expected epistemic → pragmatic shift, proper calibration, and baseline-beating convergence. If these properties don't emerge in the toy environment, the applied system inherits no credibility from "active inference."
 
 ## Theoretical Roots and Deliberate Departures
 
@@ -418,8 +442,9 @@ The practical controller is an approximation designed for tractability, not a re
 - Active inference contributes the generative-model structure and the EFE decomposition
 - Learntropy contributes the appraisal module and the insight that epistemic value has internal structure (not all uncertainty reduction is equally valuable)
 - The current system is not yet canonical active inference and does not yet directly optimize learntropy
-- The toy validation environment is the canonical reference; the applied system is the working approximation
+- The toy validation environment is the canonical reference; the GPT pipeline system is the working approximation
 - The gap between them is where the research contribution lives
+- The first proving ground — same substrate as autoresearch — is intentionally chosen to make the comparison concrete
 
 ### Key Papers
 - Friston et al. 2019 — [Generalised free energy and active inference](https://link.springer.com/article/10.1007/s00422-019-00805-w)
@@ -432,34 +457,40 @@ The practical controller is an approximation designed for tractability, not a re
 
 ## What This Is and Isn't
 
-This is a serious attempt to bring active inference and learntropy closer to an applied self-improving researcher, while being honest about what is canonical, what is approximate, and what remains aspirational.
+This is a serious attempt to bring active inference and learntropy closer to an applied self-improving researcher, tested on the same substrate as autoresearch, while being honest about what is canonical, what is approximate, and what remains aspirational.
+
+**The core bet**: an agent that maintains a structured model of factor effects, uncertainty, and epistemic value — and uses learntropy-inspired appraisal to weight what's worth learning from — will outperform a flat agentic edit loop on the same GPT training pipeline.
 
 **Canonical mode**: a toy active-inference environment in which policies minimize expected free energy under an explicit generative model. Used to validate theoretical claims.
 
-**Applied mode**: a larger-scale research controller that preserves the same generative-model structure — latent states, observation model, precision, policy evaluation — but uses approximations where exact active inference becomes intractable. EFE-based policy evaluation is the current practical action-selection mechanism, chosen because it is tractable and uncertainty-aware — not the ultimate theoretical destination.
+**Applied mode**: a research controller operating on the GPT training pipeline that preserves the same generative-model structure — latent states, observation model, precision, policy evaluation — but uses approximations where exact active inference becomes intractable.
 
 **Aspirational**: progressively closing the gap between applied and canonical. Moving learntropy from a reporting signal into the EFE computation. Extending policy horizons. Replacing approximations with faithful inference wherever tractability permits.
 
 It is NOT:
 - Pure active inference (yet)
 - Just BO with memory
+- Claiming generality across domains in v1 — the first proving ground is deliberately narrow
 - A replacement for domain expertise in designing the intervention schema
-- Going to discover fundamentally new architectures *within* a fixed schema — but schema extension between phases is where novel structural insights can emerge (the agent identifies what dimensions are missing, the LLM proposes new ones)
+- Going to discover fundamentally new architectures *within* a fixed schema — but schema extension between phases is where novel structural insights can emerge
 - Claiming biological fidelity (neuroscience terms are metaphors, not claims)
 
 ## First Implementation Scope (v1)
 
-v1 is deliberately narrow. The goal is to answer one question: *is this meaningfully better than random / greedy / GP-UCB / Karpathy-style search?* If yes, continue. If no, the theory needs revision.
+v1 is deliberately narrow. The goal is to answer one question: *on the same GPT training substrate that autoresearch uses, does structured cumulative experiment selection with learntropy-inspired appraisal produce better results than a flat agentic loop?*
+
+v1 does not yet claim generality across domains. The first milestone is demonstrating structured cumulative inference on the exact kind of target that autoresearch already uses. Broader generalization comes later.
 
 ### v1 includes
-- Fixed intervention schema (no extension between phases)
-- Proxy workload only (small NanoGPT-style runs)
+- Fixed intervention schema aligned with `train.py` levers (no extension between phases)
+- GPT training pipeline as research object (same as autoresearch: edit `train.py`, measure val_bpb)
 - Simplified generative model: factor effects + limited interactions + outcome noise
-- One-step EFE-inspired action selection (pragmatic + epistemic terms)
-- Three grounded appraisal signals: surprise, theory conflict, transfer breadth
+- One-step Thompson-sampling action selection with EFE-style diagnostics
+- Three grounded appraisal signals: surprise, theory conflict, prediction impact breadth
 - Simple episodic memory: store, retrieve by similarity, dedup, campaign summaries
-- Baseline evaluation harness: random, greedy, GP-UCB, ASHA
+- Baseline evaluation harness: random, greedy, autoresearch-style
 - Toy validation environment (27-cell canonical active inference)
+- Synthetic environment for plumbing validation
 
 ### v1 excludes
 - Multi-step policy planning (architecture supports it, not implemented yet)
@@ -469,21 +500,24 @@ v1 is deliberately narrow. The goal is to answer one question: *is this meaningf
 - Neuroscience-inspired memory dynamics (activation decay, Hebbian linking)
 - Long-horizon planning
 - Transfer across campaigns (needs v1 results first)
+- GP-UCB / ASHA baselines (added in v2 after core is validated)
 - Strong claims about anything until baselines are beaten
 
 ### Why this scope
 
-Every excluded feature is in the full design and can be added incrementally. But building the full system before knowing whether the core works is how ambitious projects die. v1 tests the core thesis with the minimum viable generative model.
+Every excluded feature is in the full design and can be added incrementally. But building the full system before knowing whether the core works is how ambitious projects die. v1 tests the core thesis on the same substrate as autoresearch, with the minimum viable generative model.
 
 ## Implementation Phases (Full Roadmap)
 
-1. **Toy validation environment** — 27-cell synthetic POMDP with canonical active inference. Verify: calibration, crossover, baselines, stopping. Theoretical sandbox only.
-2. **Generative model + controller** — Latent factor structure, precision inference, EFE-based policy evaluation over proxy ML workload. Benchmark against BO, ASHA, random.
-3. **Appraisal module** — Learntropy signals: surprise, theory conflict, knowledge reorganization, transfer breadth. Validate that appraisal improves proposal quality.
-4. **Memory + LLM** — Episodic memory with appraisal-weighted activation/decay. LLM proposal generation from structured context. Memory ablation study.
-5. **Transfer + proxy fidelity** — Cross-campaign transfer with guards. Proxy fidelity as latent variable. Test on related task pairs.
-6. **Visualization + evaluation** — Dashboard, calibration plots, regret curves, appraisal trajectories, full report.
-7. **Scale validation** — Test whether knowledge from proxy workloads transfers to more expensive target runs.
+1. **Toy canonical validation** — 27-cell synthetic POMDP with canonical active inference. Verify: calibration, epistemic→pragmatic shift, baselines. Theoretical sandbox only.
+2. **Synthetic plumbing validation** — Controlled factorial environment with known ground-truth effects. Verify that controller, model, appraisal, and memory integrate correctly. No real training runs.
+3. **GPT pipeline integration** — Connect to the same substrate as autoresearch: `train.py` edits → val_bpb measurement → structured model update. Schema maps to real `train.py` levers.
+4. **Head-to-head comparison** — Run autoresearcher2 and autoresearch-style baseline on the same GPT pipeline, same compute budget. Measure val_bpb convergence, experiment efficiency, structural knowledge quality.
+5. **Appraisal + memory** — Learntropy signals feed memory weighting and LLM proposal context. Ablation studies: +/- appraisal, +/- memory.
+6. **Stronger baselines** — Add GP-UCB, ASHA/Hyperband for rigorous comparison beyond autoresearch-style.
+7. **Transfer + proxy fidelity** — Cross-campaign transfer with guards. Test whether structural knowledge from one `train.py` campaign improves the next.
+8. **Visualization + evaluation** — Dashboard, calibration plots, regret curves, appraisal trajectories, full report.
+9. **Scale validation** — Test whether knowledge from 5-minute proxy experiments transfers to longer, more expensive training runs.
 
 ## License
 

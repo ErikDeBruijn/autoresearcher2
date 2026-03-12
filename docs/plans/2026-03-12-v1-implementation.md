@@ -2,11 +2,11 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Build a synthetic v1 that validates the architecture and tests whether structured Bayesian experiment selection with learntropy-inspired appraisal outperforms random and greedy baselines on controlled factorial environments. This v1 does not yet answer the full comparison against GP-UCB or Karpathy-style search on real proxy workloads.
+**Goal:** Build a v1 that validates the architecture on synthetic environments and prepares the path to operating on the same substrate as [autoresearch](https://github.com/karpathy/autoresearch) — GPT training pipeline optimization via `train.py` edits, measured by val_bpb. This v1 validates the controller, model, appraisal, and memory on controlled factorial environments. The next phase connects to the real GPT pipeline for head-to-head comparison against autoresearch-style experimentation.
 
-**Architecture:** Three layers (Thompson-sampling controller, Bayesian linear outcome model, episodic memory) + appraisal module + toy validation environment. One-step action selection with EFE-style diagnostics over a fixed intervention schema. Synthetic environment with known factor effects for controlled testing.
+**Architecture:** Three layers (Thompson-sampling controller, Bayesian linear outcome model, episodic memory) + appraisal module + toy validation environment. One-step action selection with EFE-style diagnostics over a fixed intervention schema. Synthetic environment with known factor effects for controlled testing; schema designed to map to real `train.py` levers.
 
-**Tech Stack:** Python 3.11+, numpy, scipy (Bayesian inference), pytest, uv (package management). No ML frameworks in core — only in the proxy workload runner. Optional: matplotlib for visualization.
+**Tech Stack:** Python 3.11+, numpy, scipy (Bayesian inference), pytest, uv (package management). No ML frameworks in core — only in the GPT pipeline runner (future). Optional: matplotlib for visualization.
 
 ---
 
@@ -2053,10 +2053,11 @@ git push
 
 After v1 is working and baselines are beaten on the synthetic environment:
 
-1. **Wire to real proxy workload** — small NanoGPT-style training runs with the full 7-factor schema
-2. **Add GP-UCB and ASHA baselines** — requires `scikit-optimize` or `optuna` integration
-3. **Visualization** — matplotlib plots of EFE decomposition, factor importances, appraisal trajectories over time
-4. **Multi-step policy planning** — 2-step sequences, especially for proxy→expensive validation
-5. **Memory dynamics** — activation/decay, appraisal-weighted persistence
-6. **Transfer** — cross-campaign prior blending with negative-transfer guards
-7. **Regime variable** — if the simpler model's residuals show regime structure
+1. **Connect to GPT pipeline** — Wire to autoresearch's `train.py` substrate: edit → train 5 min → measure val_bpb → update model. Schema maps to real `train.py` levers (depth, optimizer, LR, attention pattern, etc.)
+2. **Head-to-head with autoresearch** — Run both systems on same pipeline, same compute budget. Compare val_bpb convergence, experiment efficiency, structural knowledge
+3. **Add GP-UCB and ASHA baselines** — requires `scikit-optimize` or `optuna` integration
+4. **Visualization** — matplotlib plots of EFE decomposition, factor importances, appraisal trajectories over time
+5. **Multi-step policy planning** — 2-step sequences, especially for proxy→expensive validation
+6. **Memory dynamics** — activation/decay, appraisal-weighted persistence
+7. **Transfer** — cross-campaign prior blending with negative-transfer guards
+8. **Regime variable** — if the simpler model's residuals show regime structure
