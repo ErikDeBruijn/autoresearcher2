@@ -440,7 +440,7 @@ It is NOT:
 - Pure active inference (yet)
 - Just BO with memory
 - A replacement for domain expertise in designing the intervention schema
-- Going to discover fundamentally new architectures
+- Going to discover fundamentally new architectures *within* a fixed schema — but schema extension between phases is where novel structural insights can emerge (the agent identifies what dimensions are missing, the LLM proposes new ones)
 - Claiming biological fidelity (neuroscience terms are metaphors, not claims)
 
 ## Implementation Phases
