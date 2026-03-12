@@ -2,10 +2,15 @@
 
 Patches knobs in train.py on a remote VM, runs training,
 parses val_bpb, returns transformed outcome (higher = better).
+
+Training runs via nohup on the VM so SSH disconnects don't kill
+experiments. The local side polls for completion with short SSH calls.
 """
 
 import re
 import subprocess
+import time
+import uuid
 
 from autoresearcher2.core.schema import InterventionSchema
 from autoresearcher2.research.environment import Environment
@@ -21,29 +26,34 @@ class TrainPyEnvironment(Environment):
         ssh_key: str = "~/.ssh/pve03_key",
         remote_dir: str = "~/github.com/karpathy/autoresearch",
         cuda_device: str = "1",
-        ssh_timeout: int = 900,
+        poll_interval: int = 15,
+        max_wait: int = 600,
     ):
         self.schema = schema
         self.ssh_host = ssh_host
         self.ssh_key = ssh_key
         self.remote_dir = remote_dir
         self.cuda_device = cuda_device
-        self.ssh_timeout = ssh_timeout
+        self.poll_interval = poll_interval
+        self.max_wait = max_wait
 
-    def _ssh(self, cmd: str, timeout: int | None = None) -> tuple[int, str]:
+    def _ssh(self, cmd: str, timeout: int = 30) -> tuple[int, str]:
         result = subprocess.run(
             ["ssh", "-i", self.ssh_key,
              "-o", "ConnectTimeout=10",
-             "-o", "ServerAliveInterval=30",
-             "-o", "ServerAliveCountMax=3",
+             "-o", "ServerAliveInterval=15",
+             "-o", "ServerAliveCountMax=2",
              self.ssh_host, cmd],
             capture_output=True, text=True,
-            timeout=timeout or self.ssh_timeout,
+            timeout=timeout,
         )
         return result.returncode, result.stdout + result.stderr
 
     def run(self, cell_index: int) -> float:
         config = self.schema.cell_to_config(cell_index)
+        job_id = uuid.uuid4().hex[:8]
+        out_file = f"/tmp/train_{job_id}.out"
+        done_file = f"/tmp/train_{job_id}.done"
 
         # Reset train.py
         self._ssh(f"cd {self.remote_dir} && git checkout train.py")
@@ -55,17 +65,40 @@ class TrainPyEnvironment(Environment):
                 f"{self.remote_dir}/train.py"
             )
 
-        # Run training
-        rc, out = self._ssh(
+        # Launch training via nohup — SSH disconnects won't kill it
+        self._ssh(
+            f"nohup bash -c '"
             f"cd {self.remote_dir} && "
-            f"CUDA_VISIBLE_DEVICES={self.cuda_device} uv run train.py 2>&1",
+            f"CUDA_VISIBLE_DEVICES={self.cuda_device} uv run train.py "
+            f"> {out_file} 2>&1; echo $? > {done_file}"
+            f"' &>/dev/null &"
         )
 
-        # Reset train.py after run
+        # Poll for completion
+        start = time.time()
+        while time.time() - start < self.max_wait:
+            time.sleep(self.poll_interval)
+            try:
+                rc, check = self._ssh(f"cat {done_file} 2>/dev/null")
+                if rc == 0 and check.strip():
+                    break
+            except (subprocess.TimeoutExpired, Exception):
+                continue  # SSH hiccup, retry next poll
+        else:
+            # Timeout — kill any remaining train process
+            self._ssh(f"pkill -f 'train.py' 2>/dev/null; rm -f {out_file} {done_file}")
+            raise RuntimeError(f"train.py timed out after {self.max_wait}s")
+
+        # Read results
+        train_rc = int(check.strip())
+        _, out = self._ssh(f"cat {out_file}", timeout=30)
+
+        # Cleanup remote files and reset train.py
+        self._ssh(f"rm -f {out_file} {done_file}")
         self._ssh(f"cd {self.remote_dir} && git checkout train.py")
 
-        if rc != 0:
-            raise RuntimeError(f"train.py failed (exit {rc}): {out[-300:]}")
+        if train_rc != 0:
+            raise RuntimeError(f"train.py failed (exit {train_rc}): {out[-300:]}")
 
         # Parse val_bpb
         match = re.search(r"val_bpb:\s+([\d.]+)", out)
