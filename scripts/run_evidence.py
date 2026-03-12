@@ -60,42 +60,60 @@ def log(msg: str):
     print(f"[{ts}] {msg}", flush=True)
 
 
-def run_experiment(env: TrainPyEnvironment, cell: int, config: dict) -> dict:
-    """Run one train.py experiment with full instrumentation."""
-    start = time.time()
-    try:
-        outcome = env.run(cell)
-        val_bpb = 2.0 - outcome
-        wall_time = time.time() - start
-        metadata = getattr(env, "last_run_metadata", {})
-        tokens_M = metadata.get("total_tokens_M")
-        tok_per_sec = round(tokens_M * 1e6 / wall_time, 1) if tokens_M and wall_time > 0 else None
-        return {
-            "cell": cell,
-            "config": config,
-            "outcome": outcome,
-            "val_bpb": val_bpb,
-            "wall_time_s": round(wall_time, 1),
-            "tokens_M": tokens_M,
-            "tok_per_sec": tok_per_sec,
-            "num_steps": metadata.get("num_steps"),
-            "mfu": metadata.get("steady_state_mfu"),
-            "error": None,
-        }
-    except Exception as e:
-        wall_time = time.time() - start
-        return {
-            "cell": cell,
-            "config": config,
-            "outcome": None,
-            "val_bpb": None,
-            "wall_time_s": round(wall_time, 1),
-            "tokens_M": None,
-            "tok_per_sec": None,
-            "num_steps": None,
-            "mfu": None,
-            "error": str(e),
-        }
+def run_experiment(env: TrainPyEnvironment, cell: int, config: dict, max_retries: int = 1) -> dict:
+    """Run one train.py experiment with full instrumentation and retry on failure."""
+    attempts = []
+    for attempt in range(1 + max_retries):
+        start = time.time()
+        try:
+            outcome = env.run(cell)
+            val_bpb = 2.0 - outcome
+            wall_time = time.time() - start
+            metadata = getattr(env, "last_run_metadata", {})
+            tokens_M = metadata.get("total_tokens_M")
+            tok_per_sec = round(tokens_M * 1e6 / wall_time, 1) if tokens_M and wall_time > 0 else None
+            result = {
+                "cell": cell,
+                "config": config,
+                "outcome": outcome,
+                "val_bpb": val_bpb,
+                "wall_time_s": round(wall_time, 1),
+                "tokens_M": tokens_M,
+                "tok_per_sec": tok_per_sec,
+                "num_steps": metadata.get("num_steps"),
+                "mfu": metadata.get("steady_state_mfu"),
+                "error": None,
+            }
+            if attempts:
+                result["retries"] = len(attempts)
+                result["retry_errors"] = attempts
+                log(f"    ↳ succeeded on retry (failure was intermittent)")
+            return result
+        except Exception as e:
+            wall_time = time.time() - start
+            error_msg = str(e)
+            attempts.append({"attempt": attempt, "error": error_msg, "wall_time_s": round(wall_time, 1)})
+            if attempt < max_retries:
+                log(f"    ↳ attempt {attempt+1} failed: {error_msg[:100]}... retrying")
+                time.sleep(5)
+
+    # All attempts failed
+    failure_type = "reproducible" if len(set(a["error"] for a in attempts)) == 1 else "intermittent_different_errors"
+    return {
+        "cell": cell,
+        "config": config,
+        "outcome": None,
+        "val_bpb": None,
+        "wall_time_s": sum(a["wall_time_s"] for a in attempts),
+        "tokens_M": None,
+        "tok_per_sec": None,
+        "num_steps": None,
+        "mfu": None,
+        "error": attempts[-1]["error"],
+        "retries": len(attempts) - 1,
+        "retry_errors": attempts,
+        "failure_type": failure_type,
+    }
 
 
 # ---------------------------------------------------------------------------
