@@ -222,11 +222,17 @@ def run_full(env: TrainPyEnvironment, save_cb=None) -> list[dict]:
                     "val_bpb": r["val_bpb"],
                     "outcome": r["outcome"],
                     "cell_index": r["cell"],
+                    "tokens_M": r.get("tokens_M"),
+                    "tok_per_sec": r.get("tok_per_sec"),
                     "appraisal": r.get("appraisal", {}),
                 }
                 for r in results if r["error"] is None
             ]
-            suggestions = propose_experiments(SCHEMA, history, model.factor_importances())
+            prior = _load_prior_results()
+            suggestions = propose_experiments(
+                SCHEMA, history, model.factor_importances(),
+                prior_results=prior,
+            )
             if suggestions:
                 for s in suggestions:
                     log(f"    LLM: cell {s['cell']} {s['config']} — {s['reasoning']}")
@@ -372,6 +378,71 @@ def main():
 
     _save_results(all_results)
     log(f"\nResults: artifacts/evidence/{RUN_ID}.json")
+
+    # Generate run report
+    run_dir = _setup_run_dir(all_results)
+    if run_dir:
+        log(f"Run directory: {run_dir}")
+        try:
+            from scripts.generate_run_paper import generate_latex, load_approaches
+            import subprocess as _sp
+            approaches = load_approaches(run_dir)
+            latex = generate_latex(approaches, run_dir, use_llm=True)
+            tex_path = run_dir / "report.tex"
+            tex_path.write_text(latex)
+            _sp.run(["tectonic", str(tex_path)], capture_output=True, timeout=60, cwd=str(run_dir))
+            log(f"Report: {run_dir / 'report.pdf'}")
+        except Exception as e:
+            log(f"Report generation failed: {e}")
+
+
+def _setup_run_dir(all_results: dict) -> Path | None:
+    """Create a timestamped run directory with data and figures."""
+    today = time.strftime("%Y-%m-%d")
+    run_name = f"{today}_evidence-{RUN_ID[:8]}"
+    run_dir = Path("artifacts/runs") / run_name
+    try:
+        (run_dir / "data").mkdir(parents=True, exist_ok=True)
+        (run_dir / "figures").mkdir(exist_ok=True)
+        # Copy the JSON data
+        import shutil
+        src = Path("artifacts/evidence") / f"{RUN_ID}.json"
+        if src.exists():
+            shutil.copy2(src, run_dir / "data" / src.name)
+        # Generate dashboard
+        try:
+            import subprocess as _sp
+            _sp.run(
+                ["uv", "run", "python", "scripts/visualize_evidence.py"],
+                capture_output=True, timeout=30,
+            )
+            dashboard = Path("artifacts/evidence_dashboard.png")
+            if dashboard.exists():
+                shutil.copy2(dashboard, run_dir / "figures" / "evidence_dashboard.png")
+        except Exception:
+            pass
+        return run_dir
+    except Exception as e:
+        log(f"Failed to setup run dir: {e}")
+        return None
+
+
+def _load_prior_results() -> list[dict]:
+    """Load results from all prior evidence runs to provide cross-approach context."""
+    prior = []
+    evidence_dir = Path("artifacts/evidence")
+    if not evidence_dir.exists():
+        return prior
+    for f in sorted(evidence_dir.glob("*.json")):
+        try:
+            data = json.load(open(f))
+            for name, info in data.get("approaches", {}).items():
+                results = info.get("results", [])
+                if results:
+                    prior.append({"approach": name, "results": results})
+        except (json.JSONDecodeError, KeyError):
+            continue
+    return prior
 
 
 def _save_results(all_results: dict):
