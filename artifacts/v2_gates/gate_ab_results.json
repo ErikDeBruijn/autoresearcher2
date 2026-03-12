@@ -1,0 +1,28 @@
+{
+  "gate_a": {
+    "gate": "A",
+    "name": "structure_matters",
+    "passes": "True",
+    "ar2_regret": 6.484730605515398,
+    "tabular_regret": 15.924682905869167,
+    "random_regret": 17.481864290322104
+  },
+  "gate_b": {
+    "gate": "B",
+    "name": "interaction_environment",
+    "passes": "True",
+    "ar2_regret": 8.469365153620924,
+    "tabular_regret": 17.508570017716053,
+    "greedy_regret": 10.182724992315002,
+    "random_regret": 18.85455278622629,
+    "true_best": 0.9005854757821826,
+    "best_config": {
+      "optimizer": "adamw",
+      "lr": "3e-4",
+      "batch_size": "64"
+    },
+    "beats_random": "True",
+    "beats_tabular": "True",
+    "competitive_greedy": "True"
+  }
+}

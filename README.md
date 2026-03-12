@@ -2,29 +2,25 @@
 
 A structured Bayesian research agent with learntropy-inspired appraisal. Active-inference-rooted, but approximate in production. Designed to accumulate transferable research intuition.
 
-It takes the same research substrate as [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) — optimizing a GPT training pipeline for val_bpb — but instead of a flat agentic edit loop, it adds a structured latent model of factor effects and uncertainty, explicit epistemic/pragmatic reasoning via expected free energy, learntropy-inspired appraisal that distinguishes meaningful surprise from noise, and cumulative memory that persists across sessions and campaigns.
+[![The Evolution of AI Research - from autoresearch to active inference researcher](https://img.youtube.com/vi/hGScpUahPUo/maxresdefault.jpg)](https://www.youtube.com/watch?v=hGScpUahPUo)
 
-## Research Object
+## Current Status
 
-The first practical proving ground is deliberately chosen: **the same target family as autoresearch**. Specifically, optimizing a single-file GPT training pipeline (`train.py`) against validation bits-per-byte (val_bpb) on the [ClimbMix](https://huggingface.co/datasets/karpathy/climbmix-400b-shuffle) dataset, with ~5-minute experiments per trial.
+**v1 validates the core architecture on synthetic environments.** The controller, Bayesian model, appraisal module, and memory integrate correctly and outperform random and greedy baselines across 3 synthetic environments × 20 seeds. Factor structure is learned, epistemic uncertainty decreases, and learntropy marks belief-changing events. See `artifacts/v1_validation/results.json` for full results.
 
-This is not a placeholder. The system operates on the same kind of code-edit interventions, the same evaluation metric, and the same compute budget per experiment. The difference is in *how* the agent selects experiments and accumulates knowledge.
+The intended first practical proving ground is the same target family as [Karpathy's autoresearch](https://github.com/karpathy/autoresearch): optimizing a single-file GPT training pipeline (`train.py`) against validation bits-per-byte (val_bpb) on the [ClimbMix](https://huggingface.co/datasets/karpathy/climbmix-400b-shuffle) dataset, with ~5-minute experiments per trial. **This repository does not yet integrate with `train.py` — that is the next implementation phase.**
 
-**Why match autoresearch's target:**
-- It gives a fair A/B comparison — same substrate, same metric, different agent architecture
-- It makes the first contribution legible: does structured cumulative inference beat a flat agentic loop on *the same problem*?
-- It avoids hiding behind a different, easier, or unrelated target
-- It reduces ambiguity about what is actually being researched
+## Environments
 
-Three distinct environments exist in this project. They should not be confused:
+Three distinct environments exist (or are planned) in this project:
 
-| Environment | What it is | Purpose |
+| Environment | What it is | Status |
 |---|---|---|
-| **Toy validation** | Synthetic 27-cell POMDP | Validate that canonical active inference produces the expected epistemic→pragmatic shift. Theoretical sandbox only. |
-| **Synthetic environment** | Controlled factorial simulation with known ground-truth effects | Test plumbing — verify the controller, model, appraisal, and memory integrate correctly. No real training runs. |
-| **GPT training pipeline** | Real `train.py` edits, real val_bpb measurements, same substrate as autoresearch | The actual research object. Where the system must demonstrate it adds value over autoresearch-style experimentation. |
+| **Toy validation** | Synthetic 27-cell POMDP | Implemented, validated |
+| **Synthetic environment** | Controlled factorial simulation with known ground-truth effects | Implemented, validated — v1 exit criteria pass |
+| **GPT training pipeline** | Real `train.py` edits, real val_bpb measurements | **Implemented** — SSH-based runner, tested on 2× RTX PRO 6000 |
 
-The toy validates the theory. The synthetic validates the plumbing. The GPT pipeline is where it counts.
+The toy validates the theory. The synthetic validates the plumbing. The GPT pipeline is where it counts — and initial integration is working.
 
 ## The Problem
 
@@ -47,21 +43,21 @@ autoresearcher2 adds four things:
 
 ### Two Modes
 
-**Canonical mode** (toy environment): a small POMDP where policies minimize expected free energy under an explicit generative model. Used to validate theoretical claims.
+**Canonical mode** (toy environment): a small POMDP where policies minimize expected free energy under an explicit generative model. Used to validate theoretical claims. **Implemented.**
 
-**Applied mode** (GPT pipeline): a research controller operating on the same substrate as autoresearch that preserves the same design intention — balancing preference-seeking and information gain — but uses approximations where exact active inference becomes intractable.
+**Applied mode** (GPT pipeline): a research controller operating on the same substrate as autoresearch that preserves the same design intention — balancing preference-seeking and information gain — but uses approximations where exact active inference becomes intractable. **Not yet implemented — currently validated on synthetic environments only.**
 
 The long-term ambition is not merely to borrow the language of active inference, but to progressively replace approximations with explicit generative-model components wherever tractability permits.
 
-### The Two Loops
+### The Two Loops (Design Intent)
 
 **Outer loop** (learntropy-driven): "What should I investigate next?"
 - Controller evaluates candidate interventions by expected free energy
-- Appraisal module scores results for epistemic salience — not just "was val_bpb good?" but "did it change what I believe about the research space?"
+- Appraisal module scores results for epistemic salience — not just "was the outcome good?" but "did it change what I believe about the research space?"
 - Memory provides episodic context to the LLM for proposal generation
 
-**Inner loop** (val_bpb-driven): "What happened when I tried it?"
-- Edit `train.py` with a specific intervention, train for 5 minutes, measure val_bpb
+**Inner loop** (execution): "What happened when I tried it?"
+- Run the selected intervention (currently: synthetic environment; planned: `train.py` edit + val_bpb measurement)
 - Update generative model (factor effects, interactions, precisions)
 - Appraisal module computes learntropy signals
 - Store result in memory
@@ -295,34 +291,30 @@ The verbal output is a *rendering* of measured appraisal variables, not the vari
 
 ## Intervention Schema
 
-A fixed, engineered factorial grid aligned with the levers available in `train.py`. autoresearch edits anything in the file; autoresearcher2 maps edits to a structured factor space so it can reason about effects, interactions, and uncertainty:
+The schema is a fixed, engineered factorial grid. Each cell maps to a specific combination of factor levels. The generative model reasons about factor effects and interactions across cells.
+
+**v1 synthetic validation** uses a small schema (3 factors × 3 levels = 27 cells) to validate the architecture:
 
 ```python
-schema = {
-    # Architecture (matches train.py levers)
-    "depth":        [4, 6, 8, 12],          # DEPTH — number of transformer layers
-    "aspect_ratio": [32, 64, 128],           # ASPECT_RATIO — d_model / n_heads
-    "head_dim":     [64, 128],               # HEAD_DIM
-    "window_pattern": ["SSSL", "SSLL", "LLLL"],  # WINDOW_PATTERN — sliding vs full attention
-
-    # Optimizer
-    "optimizer":    ["muon_adamw", "adamw", "lion"],
-    "matrix_lr":    ["0.02", "0.04", "0.08"],  # MATRIX_LR for Muon
-    "weight_decay": ["0.1", "0.2", "0.4"],     # WEIGHT_DECAY
-
-    # Training
-    "batch_size":   ["2^18", "2^19", "2^20"],   # TOTAL_BATCH_SIZE
-    "warmdown":     ["0.3", "0.5", "0.7"],      # WARMDOWN_RATIO
-
-    # Activation / normalization
-    "activation":   ["relu_sq", "gelu", "swiglu"],
-    "softcap":      [15, 30, "none"],
-}
-# ~100K+ cells. Most will never be visited — that's the point.
-# The generative model generalizes across cells via latent factor structure.
+schema = InterventionSchema(factors={
+    "optimizer": ["adam", "adamw", "sgd"],
+    "lr": ["1e-4", "3e-4", "1e-3"],
+    "batch_size": ["32", "64", "128"],
+})
 ```
 
-This schema is intentionally aligned with the same kinds of edits autoresearch makes to `train.py`, but organized into a factorial structure the generative model can reason about. The LLM can suggest which cells to visit and propose schema extensions between phases, but does not define the search space.
+**Current `train.py` schema** (implemented, running on real hardware):
+
+```python
+schema = InterventionSchema(factors={
+    "DEPTH": ["6", "8", "10"],
+    "MATRIX_LR": ["0.02", "0.04", "0.08"],
+    "WEIGHT_DECAY": ["0.1", "0.2", "0.4"],
+})
+# 27 cells, ~5 min per experiment, val_bpb ~1.0-1.1
+```
+
+The key idea: autoresearch edits anything in the file; autoresearcher2 maps edits to a structured factor space so it can reason about effects, interactions, and uncertainty. The first real run confirmed this works — the Bayesian model receives real val_bpb measurements and updates factor posteriors accordingly.
 
 ## Memory System
 
@@ -376,34 +368,42 @@ Transfer is a first-class subsystem. Proxy fidelity is a latent variable in the 
 
 ## Evaluation
 
+### v1 Synthetic Results (proven)
+
+v1 has been validated on 3 synthetic environments × 20 seeds × 50 experiments each. All exit criteria pass:
+
+| Metric | env_a (main effects) | env_b (interaction) | env_c (high noise) |
+|---|---|---|---|
+| Beats random (regret) | 6.5 vs 17.5 | 5.4 vs 13.4 | 7.6 vs 15.9 |
+| Competitive w/ greedy | 6.5 vs 9.4 | 5.4 vs 7.2 | 7.6 vs 9.3 |
+| Factor rank accuracy | 95% | 100% | 95% |
+| Epistemic decrease | 100% | 100% | 100% |
+
+Full results: `artifacts/v1_validation/results.json`. Runner: `scripts/run_v1_synthetic_validation.py`.
+
 ### Baselines
 
-All baselines operate on the same substrate — `train.py` edits, val_bpb metric, same compute budget per experiment:
-
+**Implemented (v1):**
 - **Random search** — random schema cells
 - **Greedy exploitation** — always try predicted best
+
+**Planned (not yet implemented):**
 - **GP-UCB** — Bayesian optimization (black-box, no factor structure)
 - **ASHA / Hyperband** — multi-fidelity scheduling
 - **autoresearch-style** — LLM agentic loop with results log (the direct comparison)
 
-The primary comparison is against autoresearch-style experimentation: same LLM, same substrate, same compute budget — but with vs. without a structured persistent model.
+### Falsification Criteria
 
-### Falsification Criteria (preregistered)
+These apply to the **future `train.py` integration**, not to synthetic validation:
 
 | Criterion | Condition |
 |---|---|
-| Posterior calibration improves | Brier score rolling average decreases over experiment blocks |
-| Exploration → exploitation shift | Predictive variance decreases while pragmatic score increases (emergent, not scheduled) |
 | Beats random search | ≥20% better compute-normalized best-found val_bpb |
 | Beats autoresearch-style | Better val_bpb at same experiment count, or same val_bpb with fewer experiments |
-| Beats GP-UCB | ≥10% better or equivalent with better calibration |
-| Cumulative regret | Lower than GP-UCB and autoresearch-style baselines |
-| Structural knowledge | Agent correctly identifies top-2 factor effects (validated against ground truth in synthetic; against ablation in real pipeline) |
-| Memory ablation matters | +memory outperforms -memory by ≥15% (ablation) |
-| Appraisal ablation matters | +appraisal outperforms -appraisal on proposal quality |
+| Structural knowledge | Agent correctly identifies top-2 factor effects |
 | Stable across seeds | Crossover point variance <30% across 5 random seeds |
 
-If these criteria are not met, the system does not work. No moving goalposts.
+These criteria cannot be evaluated until `train.py` integration exists. No claiming victory on synthetic alone.
 
 ## Toy Validation Environment
 
@@ -457,55 +457,98 @@ The practical controller is an approximation designed for tractability, not a re
 
 ## What This Is and Isn't
 
-This is a serious attempt to bring active inference and learntropy closer to an applied self-improving researcher, tested on the same substrate as autoresearch, while being honest about what is canonical, what is approximate, and what remains aspirational.
+This is a serious attempt to bring active inference and learntropy closer to an applied self-improving researcher. Currently validated on synthetic environments; the real test — same substrate as autoresearch — hasn't happened yet.
 
-**The core bet**: an agent that maintains a structured model of factor effects, uncertainty, and epistemic value — and uses learntropy-inspired appraisal to weight what's worth learning from — will outperform a flat agentic edit loop on the same GPT training pipeline.
+**The core bet**: an agent that maintains a structured model of factor effects, uncertainty, and epistemic value — and uses learntropy-inspired appraisal to weight what's worth learning from — will outperform a flat agentic edit loop on the same GPT training pipeline. **This bet is not yet tested on real substrates.**
 
-**Canonical mode**: a toy active-inference environment in which policies minimize expected free energy under an explicit generative model. Used to validate theoretical claims.
+**What works today**: the architecture is coherent. On synthetic environments with known ground truth, the Bayesian model learns factor structure, the controller outperforms random and greedy baselines, and the appraisal module marks belief-changing events.
 
-**Applied mode**: a research controller operating on the GPT training pipeline that preserves the same generative-model structure — latent states, observation model, precision, policy evaluation — but uses approximations where exact active inference becomes intractable.
-
-**Aspirational**: progressively closing the gap between applied and canonical. Moving learntropy from a reporting signal into the EFE computation. Extending policy horizons. Replacing approximations with faithful inference wherever tractability permits.
+**What's new**: `train.py` integration via SSH runner, LLM proposal generation via `claude -p`, two-step policy lookahead, memory-grounded LLM context, and an autoresearch-style baseline agent for fair comparison. Pilot runs on RTX PRO 6000 Blackwell confirmed the system works end-to-end. An evidence-quality comparison run with full instrumentation (tokens, throughput, decision tracking) is next.
 
 It is NOT:
 - Pure active inference (yet)
 - Just BO with memory
-- Claiming generality across domains in v1 — the first proving ground is deliberately narrow
-- A replacement for domain expertise in designing the intervention schema
-- Going to discover fundamentally new architectures *within* a fixed schema — but schema extension between phases is where novel structural insights can emerge
+- Claiming generality across domains — the first proving ground is deliberately narrow
+- Going to discover fundamentally new architectures *within* a fixed schema
 - Claiming biological fidelity (neuroscience terms are metaphors, not claims)
+- **Claiming to work on real substrates until a real run proves it**
 
-## First Implementation Scope (v1)
+## Implementation Status
 
-v1 is deliberately narrow. The goal is to answer one question: *on the same GPT training substrate that autoresearch uses, does structured cumulative experiment selection with learntropy-inspired appraisal produce better results than a flat agentic loop?*
+### v1 — Synthetic Validation (complete)
 
-v1 does not yet claim generality across domains. The first milestone is demonstrating structured cumulative inference on the exact kind of target that autoresearch already uses. Broader generalization comes later.
+v1 validates the core architecture on synthetic environments. It proves the plumbing works.
 
-### v1 includes
-- Fixed intervention schema aligned with `train.py` levers (no extension between phases)
-- GPT training pipeline as research object (same as autoresearch: edit `train.py`, measure val_bpb)
-- Simplified generative model: factor effects + limited interactions + outcome noise
-- One-step Thompson-sampling action selection with EFE-style diagnostics
-- Three grounded appraisal signals: surprise, theory conflict, prediction impact breadth
-- Simple episodic memory: store, retrieve by similarity, dedup, campaign summaries
-- Baseline evaluation harness: random, greedy, autoresearch-style
+**v1 includes:**
+- Bayesian linear model with conjugate updates over one-hot factor features
+- Thompson-sampling controller with EFE-style diagnostics
+- Learntropy-inspired appraisal (surprise, theory_conflict, prediction_impact_breadth, learntropy)
+- Simple episodic memory with appraisal-weighted retrieval
+- Baseline evaluation harness: random, greedy
 - Toy validation environment (27-cell canonical active inference)
-- Synthetic environment for plumbing validation
+- 3 synthetic environments with known ground truth, validated across 20 seeds
+- All exit criteria passing
 
-### v1 excludes
-- Multi-step policy planning (architecture supports it, not implemented yet)
-- Latent regime variable (profound-sounding, project-eating)
-- Per-factor proxy fidelity (proxy fidelity as single scalar is enough for v1)
-- Autonomous schema growth
-- Neuroscience-inspired memory dynamics (activation decay, Hebbian linking)
-- Long-horizon planning
-- Transfer across campaigns (needs v1 results first)
-- GP-UCB / ASHA baselines (added in v2 after core is validated)
-- Strong claims about anything until baselines are beaten
+**v1 does NOT include:**
+- GP-UCB / ASHA baselines
+- Transfer across campaigns
+- Multi-step policy planning
+- Memory dynamics (activation decay, Hebbian linking)
 
-### Why this scope
+### v1.5 — Real Substrate + LLM Integration (in progress)
 
-Every excluded feature is in the full design and can be added incrementally. But building the full system before knowing whether the core works is how ambitious projects die. v1 tests the core thesis on the same substrate as autoresearch, with the minimum viable generative model.
+Building on v1, this phase connects the Bayesian engine to real GPU training.
+
+**v1.5 includes:**
+- `TrainPyEnvironment`: SSH-based runner that patches `train.py` knobs, runs real training, parses val_bpb
+- LLM proposal module: `claude -p` generates experiment suggestions based on history + factor importances
+- Two-step policy lookahead: simulates belief updates to value information gain
+- Memory-grounded LLM context: high-signal experiments (by learntropy) + coverage gaps fed to LLM prompt
+- Autoresearch-style baseline agent (flat LLM, no Bayesian model) for fair comparison
+- 95 tests passing
+- Full instrumentation: val_bpb, tokens_M, num_steps, mfu, wall_time, decision source tracking
+
+#### Pilot runs (debugging, not evidence)
+
+Three pilot loops ran on RTX PRO 6000 Blackwell (~4.5h total GPU time). These proved the system works end-to-end: train.py executes, val_bpb feeds back, the Bayesian model updates, LLM suggestions enter the selection loop, and actual improvements are found.
+
+**What the pilot proved:**
+- The full loop runs: controller → train.py → val_bpb → model update → appraisal → memory → LLM context
+- LLM suggestions are part of the selection and produce real experiments
+- The system finds actual config improvements (DEPTH=8 sweet spot)
+
+**What the pilot did NOT prove:**
+- Fair performance comparison (duplicate-selection bug inflated some runs)
+- LLM value-add vs baseline (no clean ablation, no autoresearch-style control)
+- Learntropy/appraisal effect on selection quality (no ablation)
+- Token-normalized comparison (throughput metadata was not captured)
+
+**Known issues fixed after the pilot:**
+- Duplicate experiment selection with 1 GPU (both cells picked from same model state before either ran)
+- Missing throughput instrumentation (tokens_M, tok/sec, mfu, num_steps now captured)
+- No unique trial/decision IDs in results
+
+Pilot artifacts preserved in `artifacts/pilot/` for reference. These are debugging runs, not evidence runs.
+
+**v1.5 does NOT yet include:**
+- Evidence-quality comparison run with full instrumentation
+- Autoresearch-style baseline results on same hardware/budget
+- Ablation: +/- LLM, +/- appraisal signals, +/- coverage gaps
+- Token-normalized comparison across approaches
+- GP-UCB / ASHA baselines
+- Transfer across campaigns
+
+### Next: Evidence-Quality Run
+
+The first evidence run will use the same 3-factor schema with:
+- Full instrumentation per experiment: val_bpb, tokens_M, tok/sec, mfu, num_steps, wall_time_s, decision_id, trial_id, source
+- Duplicate-selection bug fixed (1 cell per round with 1 GPU)
+- Four approaches on same hardware/budget:
+  1. Pure Bayesian (Thompson sampling + lookahead, no LLM)
+  2. autoresearcher2 full (Bayesian + LLM with appraisal context)
+  3. Autoresearch-style baseline (flat LLM, no Bayesian model)
+  4. Random baseline
+- Token-normalized comparison (val_bpb per tokens trained)
 
 ## Implementation Phases (Full Roadmap)
 

@@ -1,0 +1,151 @@
+{
+  "Pure Bayesian (Thompson)": {
+    "n_experiments": 15,
+    "n_unique_cells": 5,
+    "best_val_bpb": 1.053016,
+    "worst_val_bpb": 1.081472,
+    "mean_val_bpb": 1.0655662666666668,
+    "best_at_experiment": 3,
+    "best_config": {
+      "DEPTH": "6",
+      "MATRIX_LR": "0.02",
+      "WEIGHT_DECAY": "0.2"
+    },
+    "best_so_far": [
+      1.062299,
+      1.062299,
+      1.053016,
+      1.053016,
+      1.053016,
+      1.053016,
+      1.053016,
+      1.053016,
+      1.053016,
+      1.053016,
+      1.053016,
+      1.053016,
+      1.053016,
+      1.053016,
+      1.053016
+    ],
+    "by_label": {
+      "unknown": {
+        "count": 15,
+        "mean": 1.0655662666666668,
+        "best": 1.053016
+      }
+    },
+    "total_time_s": 4977.3,
+    "factor_importances": {
+      "DEPTH": 0.30208462709501305,
+      "MATRIX_LR": 0.09569143227301424,
+      "WEIGHT_DECAY": 0.03475281400963581
+    }
+  },
+  "LLM v1 (Thompson + claude)": {
+    "n_experiments": 20,
+    "n_unique_cells": 12,
+    "best_val_bpb": 1.034697,
+    "worst_val_bpb": 1.077352,
+    "mean_val_bpb": 1.05141315,
+    "best_at_experiment": 19,
+    "best_config": {
+      "DEPTH": "8",
+      "MATRIX_LR": "0.04",
+      "WEIGHT_DECAY": "0.2"
+    },
+    "best_so_far": [
+      1.062783,
+      1.053239,
+      1.053239,
+      1.053239,
+      1.053239,
+      1.053239,
+      1.053239,
+      1.045453,
+      1.045453,
+      1.045453,
+      1.045453,
+      1.045453,
+      1.042535,
+      1.038403,
+      1.038403,
+      1.037178,
+      1.037178,
+      1.037178,
+      1.034697,
+      1.034697
+    ],
+    "by_label": {
+      "thompson_sampling": {
+        "count": 12,
+        "mean": 1.0551679999999999,
+        "best": 1.037178
+      },
+      "llm_suggestion": {
+        "count": 8,
+        "mean": 1.045780875,
+        "best": 1.034697
+      }
+    },
+    "total_time_s": 6501.6,
+    "factor_importances": {
+      "DEPTH": 0.026560174209720344,
+      "MATRIX_LR": 0.04019479836359352,
+      "WEIGHT_DECAY": 0.07018519828199743
+    }
+  },
+  "LLM v2 (Lookahead + enhanced)": {
+    "n_experiments": 20,
+    "n_unique_cells": 13,
+    "best_val_bpb": 1.033146,
+    "worst_val_bpb": 1.077683,
+    "mean_val_bpb": 1.0490935000000001,
+    "best_at_experiment": 19,
+    "best_config": {
+      "DEPTH": "8",
+      "MATRIX_LR": "0.04",
+      "WEIGHT_DECAY": "0.2"
+    },
+    "best_so_far": [
+      1.061542,
+      1.060396,
+      1.049166,
+      1.049166,
+      1.033929,
+      1.033929,
+      1.033929,
+      1.033929,
+      1.033929,
+      1.033929,
+      1.033929,
+      1.033929,
+      1.0336,
+      1.0336,
+      1.0336,
+      1.0336,
+      1.0336,
+      1.0336,
+      1.033146,
+      1.033146
+    ],
+    "by_label": {
+      "lookahead": {
+        "count": 12,
+        "mean": 1.0521083333333332,
+        "best": 1.033929
+      },
+      "llm_suggestion": {
+        "count": 8,
+        "mean": 1.04457125,
+        "best": 1.033146
+      }
+    },
+    "total_time_s": 6542.8,
+    "factor_importances": {
+      "DEPTH": 0.013531256566864158,
+      "MATRIX_LR": 0.0040075255386113895,
+      "WEIGHT_DECAY": 0.0024142148685939446
+    }
+  }
+}
