@@ -80,8 +80,18 @@ def _build_prompt(
         importance_lines.append(f"  {name}: {imp:.3f}")
     importance_desc = "\n".join(importance_lines) if importance_lines else "  (not yet computed)"
 
+    # High-signal experiments (belief-changing results the model learned most from)
+    high_signal_desc = _format_high_signal_experiments(history)
+
+    # Coverage gaps (factor levels never or rarely tested)
+    coverage_desc = _format_coverage_gaps(schema, history)
+
     return textwrap.dedent(f"""\
-        You are an experiment advisor for an automated research system.
+        You are an experiment advisor for an automated Bayesian research system.
+        The system maintains a structured model of factor effects and updates beliefs
+        after each experiment. Your role: suggest experiments that the Bayesian model
+        would not choose on its own — especially exploring untested regions and
+        following up on surprising results.
 
         SCHEMA (factors and their levels):
         {schema_desc}
@@ -94,21 +104,94 @@ def _build_prompt(
         FACTOR IMPORTANCES (higher = more influential on outcome):
         {importance_desc}
 
+        {high_signal_desc}
+
+        {coverage_desc}
+
         TASK: Suggest exactly 3 experiment configurations to run next.
-        Pick configs that will be most informative - either exploiting promising
-        regions or exploring uncertain ones. Avoid configs already run.
+
+        Guidelines:
+        - At least 1 suggestion should explore an UNTRIED factor level or region
+        - At least 1 should exploit or refine the best-performing region
+        - If high-signal experiments exist, consider follow-ups that test whether
+          the surprising finding generalizes
+        - Avoid exact configs already run (see results table)
 
         Respond with ONLY a JSON array of 3 objects, each with:
         - "config": dict mapping factor names to level values
         - "reasoning": one sentence explaining why
 
-        Example:
-        [
-          {{"config": {{"lr": "1e-3", "batch_size": "64"}}, "reasoning": "Best outcome region, worth confirming."}},
-          ...
-        ]
-
         JSON array:""")
+
+
+def _format_high_signal_experiments(history: list[dict]) -> str:
+    """Extract experiments where the model learned the most."""
+    scored = []
+    for rec in history:
+        appraisal = rec.get("appraisal", {})
+        learntropy = appraisal.get("learntropy", 0)
+        theory_conflict = appraisal.get("theory_conflict", 0)
+        score = max(learntropy, theory_conflict)
+        if score > 0.001:
+            scored.append((score, rec))
+
+    if not scored:
+        return "HIGH-SIGNAL EXPERIMENTS: None yet (model has not been surprised)."
+
+    scored.sort(key=lambda x: -x[0])
+    lines = ["HIGH-SIGNAL EXPERIMENTS (results that changed the model's beliefs):"]
+    for score, rec in scored[:3]:
+        config = rec.get("config", {})
+        config_str = ", ".join(f"{k}={v}" for k, v in config.items())
+        appraisal = rec.get("appraisal", {})
+        outcome = rec.get("outcome", "?")
+        if isinstance(outcome, float):
+            outcome = f"{outcome:.4f}"
+        surprise = appraisal.get("surprise", 0)
+        learntropy = appraisal.get("learntropy", 0)
+        breadth = appraisal.get("prediction_impact_breadth", 0)
+        lines.append(
+            f"  {config_str} → outcome={outcome} "
+            f"(surprise={surprise:.3f}, learntropy={learntropy:.3f}, "
+            f"predictions changed: {int(breadth)} cells)"
+        )
+
+    return "\n".join(lines)
+
+
+def _format_coverage_gaps(schema: InterventionSchema, history: list[dict]) -> str:
+    """Identify factor levels that have never or rarely been tested."""
+    # Count how often each factor level appears
+    level_counts: dict[str, dict[str, int]] = {}
+    for name in schema.factor_names:
+        level_counts[name] = {level: 0 for level in schema.factors[name]}
+
+    for rec in history:
+        config = rec.get("config", {})
+        for name, value in config.items():
+            if name in level_counts and value in level_counts[name]:
+                level_counts[name][value] += 1
+
+    # Find untried and underexplored levels
+    untried = []
+    underexplored = []
+    n_experiments = len(history)
+    for name, counts in level_counts.items():
+        n_levels = len(counts)
+        expected = n_experiments / n_levels if n_levels > 0 else 0
+        for level, count in counts.items():
+            if count == 0:
+                untried.append(f"  {name}={level}: NEVER TESTED")
+            elif expected > 0 and count < expected * 0.3:
+                underexplored.append(f"  {name}={level}: only {count}× (expected ~{expected:.0f})")
+
+    if not untried and not underexplored:
+        return "COVERAGE: All factor levels have been tested."
+
+    lines = ["COVERAGE GAPS (factor levels with insufficient data):"]
+    lines.extend(untried)
+    lines.extend(underexplored)
+    return "\n".join(lines)
 
 
 def _call_claude(prompt: str, ssh_host: str, ssh_key: str) -> str:

@@ -11,6 +11,8 @@ from autoresearcher2.core.schema import InterventionSchema
 from autoresearcher2.llm.proposal import (
     _build_prompt,
     _extract_json_array,
+    _format_coverage_gaps,
+    _format_high_signal_experiments,
     _parse_response,
     _valid_config,
 )
@@ -111,3 +113,76 @@ def test_parse_response_garbage_returns_empty():
     schema = make_schema()
     result = _parse_response("this is not json at all", schema)
     assert result == []
+
+
+def test_high_signal_experiments_with_learntropy():
+    history = [
+        {
+            "config": {"DEPTH": "8", "MATRIX_LR": "0.04"},
+            "outcome": 0.96,
+            "appraisal": {"surprise": 0.5, "learntropy": 0.3, "prediction_impact_breadth": 7},
+        },
+        {
+            "config": {"DEPTH": "6", "MATRIX_LR": "0.02"},
+            "outcome": 0.94,
+            "appraisal": {"surprise": 0.01, "learntropy": 0.0, "prediction_impact_breadth": 0},
+        },
+    ]
+    result = _format_high_signal_experiments(history)
+    assert "DEPTH=8" in result
+    assert "predictions changed: 7 cells" in result
+    # Low-signal experiment should not appear
+    assert "DEPTH=6" not in result
+
+
+def test_high_signal_experiments_empty():
+    history = [
+        {
+            "config": {"DEPTH": "8", "MATRIX_LR": "0.04"},
+            "outcome": 0.96,
+            "appraisal": {"surprise": 0.0, "learntropy": 0.0},
+        },
+    ]
+    result = _format_high_signal_experiments(history)
+    assert "None yet" in result
+
+
+def test_coverage_gaps_untried_level():
+    schema = make_schema()
+    history = [
+        {"config": {"DEPTH": "6", "MATRIX_LR": "0.02"}},
+        {"config": {"DEPTH": "6", "MATRIX_LR": "0.04"}},
+        {"config": {"DEPTH": "10", "MATRIX_LR": "0.02"}},
+    ]
+    result = _format_coverage_gaps(schema, history)
+    assert "DEPTH=8: NEVER TESTED" in result
+    assert "MATRIX_LR=0.08: NEVER TESTED" in result
+
+
+def test_coverage_gaps_all_tested():
+    schema = make_schema()
+    history = [
+        {"config": {"DEPTH": "6", "MATRIX_LR": "0.02"}},
+        {"config": {"DEPTH": "8", "MATRIX_LR": "0.04"}},
+        {"config": {"DEPTH": "10", "MATRIX_LR": "0.08"}},
+    ]
+    result = _format_coverage_gaps(schema, history)
+    assert "All factor levels have been tested" in result
+
+
+def test_prompt_includes_high_signal_and_coverage():
+    schema = make_schema()
+    history = [
+        {
+            "config": {"DEPTH": "6", "MATRIX_LR": "0.02"},
+            "outcome": 0.94,
+            "cell_index": 0,
+            "appraisal": {"surprise": 0.5, "learntropy": 0.3, "theory_conflict": 0.4,
+                          "prediction_impact_breadth": 5},
+        },
+    ]
+    prompt = _build_prompt(schema, history, {"DEPTH": 0.15, "MATRIX_LR": 0.08})
+    assert "HIGH-SIGNAL" in prompt
+    assert "COVERAGE GAPS" in prompt
+    assert "DEPTH=8: NEVER TESTED" in prompt
+    assert "DEPTH=10: NEVER TESTED" in prompt
