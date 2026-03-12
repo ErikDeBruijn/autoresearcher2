@@ -2,6 +2,8 @@
 
 A structured Bayesian research agent with learntropy-inspired appraisal. Active-inference-rooted, but approximate in production. Designed to accumulate transferable research intuition.
 
+[![The Evolution of AI Research - from autoresearch to active inference researcher](https://img.youtube.com/vi/hGScpUahPUo/maxresdefault.jpg)](https://www.youtube.com/watch?v=hGScpUahPUo)
+
 It takes the same research substrate as [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) — optimizing a GPT training pipeline for val_bpb — but instead of a flat agentic edit loop, it adds a structured latent model of factor effects and uncertainty, explicit epistemic/pragmatic reasoning via expected free energy, learntropy-inspired appraisal that distinguishes meaningful surprise from noise, and cumulative memory that persists across sessions and campaigns.
 
 ## Research Object
