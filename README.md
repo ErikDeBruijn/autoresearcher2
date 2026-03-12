@@ -6,7 +6,7 @@ It uses a generative model of the research space to explore efficiently, exploit
 
 ## The Problem
 
-Current autonomous research agents (including [Karpathy's autoresearch](https://github.com/karpathy/autoresearch)) run experiments in a semi-random loop: mutate code, train, evaluate, repeat. Each session starts from scratch. There's no cumulative learning, no principled exploration, and no way to know when the search space is sufficiently explored.
+Current autonomous research agents (including [Karpathy's autoresearch](https://github.com/karpathy/autoresearch)) run experiments in a loop: an LLM proposes code changes guided by instructions and previous results, trains for a few minutes, evaluates, repeats. The LLM brings world knowledge, but there's no explicit persistent world model of factor structure and uncertainty. Each session's knowledge lives in the context window and vanishes.
 
 Karpathy's system uses an LLM to propose code changes, guided by instructions and a log of previous results. This is smarter than random mutation — the LLM brings world knowledge and can read what worked before. But the LLM has no structured model of *why* things worked. It sees a flat results log, not factor effects or interaction structure. It can't say "positional encoding matters more than optimizer for this task" — only "this run scored well." Knowledge lives in the LLM's context window and vanishes between sessions.
 
@@ -178,7 +178,7 @@ Precisions are inferred, not assumed:
 
 ### Why This Matters
 
-The agent doesn't just learn "RoPE is good." It infers *why* — because it maintains beliefs about the latent regime. It can then predict what happens in unseen combinations, know when to distrust proxy results, and detect when the regime has shifted.
+The design aims to let the agent attribute surprising outcomes to specific latent causes — not just "RoPE is good" but "positional encoding matters more than optimizer in this regime." Whether this is achievable depends on the expressiveness and identifiability of the latent model, which is why we validate on the toy environment first.
 
 ## Policy Evaluation (Expected Free Energy)
 
@@ -226,7 +226,7 @@ After each experiment, the appraisal module computes *epistemic salience* — ho
 
 ### Why This Exists
 
-Standard BO and even basic active inference only ask "was the outcome good?" and "was I uncertain?" Learntropy ([Wozniak](https://supermemo.guru/wiki/Pleasure_of_learning)) suggests a richer signal: learning has an intrinsic attractiveness structure. Results that arrive at the *boundary* of current knowledge — neither obvious nor incomprehensible — drive the most learning.
+Standard BO asks "was the outcome good?" and "where am I uncertain?" Learntropy ([Wozniak](https://supermemo.guru/wiki/Pleasure_of_learning)) suggests a richer signal: learning has an intrinsic attractiveness structure. Results that arrive at the *boundary* of current knowledge — neither obvious nor incomprehensible — drive the most learning.
 
 The appraisal module makes this measurable.
 
@@ -447,7 +447,35 @@ It is NOT:
 - Going to discover fundamentally new architectures *within* a fixed schema — but schema extension between phases is where novel structural insights can emerge (the agent identifies what dimensions are missing, the LLM proposes new ones)
 - Claiming biological fidelity (neuroscience terms are metaphors, not claims)
 
-## Implementation Phases
+## First Implementation Scope (v1)
+
+v1 is deliberately narrow. The goal is to answer one question: *is this meaningfully better than random / greedy / GP-UCB / Karpathy-style search?* If yes, continue. If no, the theory needs revision.
+
+### v1 includes
+- Fixed intervention schema (no extension between phases)
+- Proxy workload only (small NanoGPT-style runs)
+- Simplified generative model: factor effects + limited interactions + outcome noise
+- One-step EFE-inspired action selection (pragmatic + epistemic terms)
+- Three grounded appraisal signals: surprise, theory conflict, transfer breadth
+- Simple episodic memory: store, retrieve by similarity, dedup, campaign summaries
+- Baseline evaluation harness: random, greedy, GP-UCB, ASHA
+- Toy validation environment (27-cell canonical active inference)
+
+### v1 excludes
+- Multi-step policy planning (architecture supports it, not implemented yet)
+- Latent regime variable (profound-sounding, project-eating)
+- Per-factor proxy fidelity (proxy fidelity as single scalar is enough for v1)
+- Autonomous schema growth
+- Neuroscience-inspired memory dynamics (activation decay, Hebbian linking)
+- Long-horizon planning
+- Transfer across campaigns (needs v1 results first)
+- Strong claims about anything until baselines are beaten
+
+### Why this scope
+
+Every excluded feature is in the full design and can be added incrementally. But building the full system before knowing whether the core works is how ambitious projects die. v1 tests the core thesis with the minimum viable generative model.
+
+## Implementation Phases (Full Roadmap)
 
 1. **Toy validation environment** — 27-cell synthetic POMDP with canonical active inference. Verify: calibration, crossover, baselines, stopping. Theoretical sandbox only.
 2. **Generative model + controller** — Latent factor structure, precision inference, EFE-based policy evaluation over proxy ML workload. Benchmark against BO, ASHA, random.
