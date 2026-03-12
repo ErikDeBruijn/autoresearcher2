@@ -74,6 +74,7 @@ def main():
         "Pure Bayesian (Thompson)": base / "trainpy_loop" / "first_real_loop.json",
         "LLM v1 (Thompson + claude)": base / "trainpy_llm_loop" / "results_v1.json",
         "LLM v2 (Lookahead + enhanced)": base / "trainpy_llm_loop" / "results.json",
+        "Autoresearch baseline": base / "autoresearch_baseline" / "results.json",
     }
 
     results = {}
