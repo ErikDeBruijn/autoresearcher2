@@ -74,7 +74,7 @@ def main():
         print(f"\n--- Experiment {i+1}/{N_EXPERIMENTS} ---")
 
         # Select
-        cell = controller.select_next()
+        cell = controller.select_next_lookahead()
         config = SCHEMA.cell_to_config(cell)
         scores = controller.score_cell(cell)
         print(f"  Selected: cell {cell} = {config}")

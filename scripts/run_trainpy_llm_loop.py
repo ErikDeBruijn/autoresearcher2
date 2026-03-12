@@ -44,7 +44,7 @@ N_EXPERIMENTS = 20
 LLM_EVERY = 3  # ask Claude for suggestions every N experiments
 
 # GPU devices for parallel runs (adjust based on availability)
-GPU_DEVICES = ["0"]  # Use only GPU 0; GPU 1 may be in use by other experiments
+GPU_DEVICES = ["1"]
 
 # ---------------------------------------------------------------------------
 # Helpers
