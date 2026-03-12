@@ -1,0 +1,70 @@
+== Evidence Run Narrative ==
+Run: 2026-03-12_evidence-v1.5
+Goal: Head-to-head comparison of four experiment-selection approaches on real train.py.
+
+--- 10:49 — Run started ---
+Four approaches will run sequentially on the same hardware (GPU 1, dllm-experiment.home),
+same schema (DEPTH × MATRIX_LR × WEIGHT_DECAY, 27 cells), same budget (20 experiments each),
+same seed (42). Each experiment trains a GPT model for ~5 minutes and measures val_bpb.
+
+Approaches:
+  1. random     — uniform random cell selection (control)
+  2. bayesian   — Thompson sampling + two-step lookahead, no LLM
+  3. autoresearch — LLM-only with flat results log (Karpathy-style)
+  4. full       — Bayesian model + LLM with appraisal context (autoresearcher2)
+
+--- 12:27 — Silent fallback bug discovered ---
+Critical instrumentation flaw found: when the LLM fails in the autoresearch approach,
+the code falls back to random selection but labels it as "llm_flat" in the data.
+This would make the comparison meaningless — we couldn't tell if the LLM actually drove
+the experiment selection or if random chance happened to look like LLM performance.
+
+Fix committed (ce7d19a): each decision now carries a truthful source label.
+New labels distinguish llm_flat, llm_fallback_error, llm_fallback_empty, and random_init.
+
+Decision: let random + bayesian finish (they don't use LLM, so their data is clean).
+Kill the process before autoresearch starts. Rerun autoresearch + full with fixed code.
+
+--- 12:38 — Random complete ---
+20/20 experiments. Best val_bpb = 1.033551 (DEPTH=8, MATRIX_LR=0.04, WEIGHT_DECAY=0.4).
+Mean = 1.054828. Runtime: 109 minutes.
+
+Early patterns: DEPTH=8 cells consistently outperform DEPTH=10. WEIGHT_DECAY=0.4 dominates.
+Throughput varies 3x across depths: ~1M tok/s (DEPTH=6) vs ~300K tok/s (DEPTH=10).
+Reproducibility is strong: cell 11 was sampled twice, Δval_bpb = 0.000006.
+
+--- 14:27 — Bayesian complete, process killed ---
+20/20 experiments. Best val_bpb = 1.033778 (DEPTH=8, MATRIX_LR=0.04, WEIGHT_DECAY=0.2).
+Mean = 1.051689. Runtime: 108.5 minutes.
+
+The Bayesian model's convergence is clearly visible in the surprise trajectory:
+  - Experiments 1-5: surprise 0.07 → 0.04 (rapid learning, exploring DEPTH=10 first)
+  - Experiments 5-10: surprise 0.04 → 0.004 (switching to DEPTH=8, refining)
+  - Experiments 10-20: surprise < 0.001 (model converged, filling coverage gaps)
+
+The model effectively ranked all 27 cells from ~15 experiments. Epistemic score dropped
+from 6.0 to 0.034 — almost no uncertainty remaining.
+
+Watcher script detected the autoresearch start marker and killed PID 45609 at 14:27:11.
+Data verified: random + bayesian both 20/20, zero errors, zero fallbacks.
+
+--- 14:31 — Autoresearch restarted with fixed code ---
+New process (PID 67756), new run_id (65018a7c). Fixed source labeling confirmed working:
+first experiment correctly labeled random_init, subsequent ones llm_flat.
+
+--- 15:37 — Autoresearch halfway, LLM performing well ---
+11/20 experiments saved. Best val_bpb = 1.033266 (DEPTH=8, MATRIX_LR=0.04, WEIGHT_DECAY=0.2).
+This is already better than both random (1.033551) and bayesian (1.033778) after their full 20.
+
+Source labels: 1× random_init, 10× llm_flat. Zero fallbacks. The fixed instrumentation
+confirms every selection was genuinely made by the LLM.
+
+LLM behavior:
+  - Experiments 2-3: started with DEPTH=10 (poor choice), learned quickly from bad results
+  - From experiment 4 onward: almost exclusively DEPTH=8 — found the sweet spot fast
+  - Experiment 8 (best): DEPTH=8, MATRIX_LR=0.04, WEIGHT_DECAY=0.2 — notably a different
+    WEIGHT_DECAY than random/bayesian's best (0.4). May be finding a subtler optimum.
+  - Mean val_bpb (1.045) already lower than random (1.055) and bayesian (1.052),
+    suggesting the LLM wastes fewer experiments on poor regions of the space.
+
+No decisions taken — run proceeding autonomously. Full approach starts after autoresearch.
