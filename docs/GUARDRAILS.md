@@ -1,60 +1,49 @@
-# Guardrails
+# Guardrails — Current Phase
 
-## Warning
+For normative principles, see CONSTITUTION.md and CHARTER.md.
+This document contains only the operational constraints for the current evaluation phase.
 
-This project is ambitious enough to become unstable or unmeasurable if multiple new ideas are introduced at once.
+## Current phase: Evidence-quality evaluation (v1.5)
 
-New capabilities are welcome, but only after the previous layer has evidence-quality validation. Pilot and debugging runs are useful for observability, bug-finding, and qualitative signal checks, but they do not count as definitive evidence. The project loses value as soon as it becomes harder to understand why something works.
+**Objective:** Produce a clean head-to-head comparison of four approaches on real train.py.
 
-Avoid:
-- multiple independent changes in the same evaluation phase
-- README/design claims that exceed current evidence
-- conclusions drawn from pilot/debug runs
-- capability expansion without a clear measurement strategy
-- "impressive but unstable" architectural drift
+**What is stable (do not change):**
+- 3-factor schema: DEPTH × MATRIX_LR × WEIGHT_DECAY (27 cells)
+- Outcome metric: val_bpb (lower is better)
+- Hardware: GPU 1 on dllm-experiment.home
+- Seed: 42
 
-## Guardrails
+**What is being measured:**
+- random baseline vs Bayesian-only vs flat LLM vs Bayesian+LLM
+- Per experiment: val_bpb, tokens_M, tok/sec, mfu, num_steps, wall_time_s, decision_id, trial_id, source
 
-- Fix obvious bugs and missing instrumentation immediately.
-- Treat instrumentation as part of reliability, not as scope creep.
-- Only add a new capability after the previous layer has evidence-quality validation.
-- Keep schema, objective, and agent architecture stable during an evaluation phase.
-- Prefer changing only one main axis at a time:
-  - controller logic
-  - schema
-  - workload
-  - instrumentation
-  - parallelism model
-  - agent architecture
-- Parallel execution comes before multi-agent social search.
-- Throughput should first be observed and analyzed before it is optimized.
-- Heterogeneous workers are allowed only after stable multi-worker execution under one controller.
-- If a bug or instrumentation gap invalidates a run, relabel that run as pilot/debugging rather than using it as evidence.
-- Every important claim should be backed by runnable behavior, logs, or artifacts.
+**What is not allowed in this phase:**
+- New schema knobs
+- Throughput optimization
+- Multi-worker scheduling
+- Multi-agent architecture
+- Schema or objective changes
 
-## Long-term expansion path
+**What is allowed:**
+- Bug fixes and instrumentation improvements
+- Observing and recording throughput (but not optimizing for it)
 
-1. Throughput-aware reasoning
-   Expose runtime metadata (`tokens_M`, `tok/sec`, `mfu`, `num_steps`, `runtime`) to analysis and LLM reflection.
-2. Throughput-affecting knobs
-   Add knobs such as batch size or compiler-related settings only as a new explicit phase.
+## Phase transition rule
+
+This phase ends when:
+1. All four approaches have completed 20 experiments each
+2. Results are committed with full instrumentation
+3. An evaluation document exists with honest conclusions about what the LLM adds, whether structured signals help, and which claims are justified
+
+## Next phases
+
+See CHARTER.md "Three levels of self-improvement" for the governing framework. Concrete expansion path:
+
+0. Multi-runner controller (local + remote workers)
+1. Throughput-aware reasoning (expose metadata to analysis and LLM)
+2. Throughput-affecting knobs (new explicit phase)
 3. Multi-worker execution under one controller
-   One controller, one shared world model, multiple workers, explicit batch diversity, no accidental duplicates.
 4. Heterogeneous workers / compute-aware generalization
-   Learn what depends on model/dataset vs compute environment by comparing runs across different worker types.
 5. Multi-agent social research
-   Explorer / exploiter / critic / synthesizer architectures only after the single-controller multi-worker path is stable and measured.
 
-## Why This Matters
-
-autoresearcher2 should become more capable without becoming harder to reason about.
-
-The project wins if it can say, with evidence:
-- what worked
-- why it worked
-- what generalizes
-- what remains uncertain
-
-It loses if it becomes an impressive but unstable pile of interacting ideas.
-
-Stay ambitious. Advance in layers. Do not let exciting directions erase interpretability.
+Each phase requires evidence-quality validation of the previous one.
