@@ -19,268 +19,128 @@
   "n_experiments": 20,
   "llm_every": 3,
   "gpu_devices": [
-    "0"
+    "1"
   ],
   "results": [
     {
-      "cell": 21,
+      "cell": 26,
       "config": {
         "DEPTH": "10",
-        "MATRIX_LR": "0.04",
-        "WEIGHT_DECAY": "0.1"
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.4"
       },
-      "outcome": 0.937217,
-      "val_bpb": 1.062783,
-      "wall_time_s": 334.5,
-      "label": "thompson_sampling",
+      "outcome": 0.938458,
+      "val_bpb": 1.061542,
+      "wall_time_s": 333.8,
+      "label": "lookahead",
       "error": null,
       "appraisal": {
-        "surprise": 0.07052654249756396,
-        "theory_conflict": 0.010075220356794852,
+        "surprise": 0.07070667051573187,
+        "theory_conflict": 0.010100952930818839,
         "prediction_impact_breadth": 19.0,
-        "learntropy": 0.00845180506585229
+        "learntropy": 0.008473391362905008
       },
       "experiment": 0
     },
     {
-      "cell": 1,
+      "cell": 26,
       "config": {
-        "DEPTH": "6",
-        "MATRIX_LR": "0.02",
-        "WEIGHT_DECAY": "0.2"
+        "DEPTH": "10",
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.4"
       },
-      "outcome": 0.946761,
-      "val_bpb": 1.053239,
-      "wall_time_s": 317.8,
-      "label": "thompson_sampling",
+      "outcome": 0.9396040000000001,
+      "val_bpb": 1.060396,
+      "wall_time_s": 334.5,
+      "label": "lookahead",
       "error": null,
       "appraisal": {
-        "surprise": 0.0719170559115958,
-        "theory_conflict": 0.010273865130227973,
-        "prediction_impact_breadth": 19.0,
-        "learntropy": 0.00861844230483584
+        "surprise": 0.0001858030894945628,
+        "theory_conflict": 0.00018487946187487145,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
       },
       "experiment": 1
     },
     {
-      "cell": 21,
+      "cell": 2,
       "config": {
-        "DEPTH": "10",
-        "MATRIX_LR": "0.04",
-        "WEIGHT_DECAY": "0.1"
+        "DEPTH": "6",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.4"
       },
-      "outcome": 0.936194,
-      "val_bpb": 1.063806,
-      "wall_time_s": 335.1,
-      "label": "thompson_sampling",
+      "outcome": 0.950834,
+      "val_bpb": 1.049166,
+      "wall_time_s": 317.7,
+      "label": "lookahead",
       "error": null,
       "appraisal": {
-        "surprise": 2.944836397844597e-06,
-        "theory_conflict": 2.930197608791517e-06,
-        "prediction_impact_breadth": 0.0,
-        "learntropy": 0.0
+        "surprise": 0.05260962643968925,
+        "theory_conflict": 0.007698891514700683,
+        "prediction_impact_breadth": 24.0,
+        "learntropy": 0.007258584530219232
       },
       "experiment": 2
     },
     {
-      "cell": 1,
+      "cell": 2,
       "config": {
         "DEPTH": "6",
         "MATRIX_LR": "0.02",
-        "WEIGHT_DECAY": "0.2"
+        "WEIGHT_DECAY": "0.4"
       },
-      "outcome": 0.946701,
-      "val_bpb": 1.053299,
-      "wall_time_s": 317.8,
-      "label": "thompson_sampling",
+      "outcome": 0.950788,
+      "val_bpb": 1.049212,
+      "wall_time_s": 317.7,
+      "label": "lookahead",
       "error": null,
       "appraisal": {
-        "surprise": 2.6532508808574384e-05,
-        "theory_conflict": 2.6400615641340385e-05,
+        "surprise": 2.0126377579199328e-05,
+        "theory_conflict": 2.002633167344517e-05,
         "prediction_impact_breadth": 0.0,
         "learntropy": 0.0
       },
       "experiment": 3
     },
     {
-      "cell": 25,
+      "cell": 14,
       "config": {
-        "DEPTH": "10",
-        "MATRIX_LR": "0.08",
-        "WEIGHT_DECAY": "0.2"
+        "DEPTH": "8",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.4"
       },
-      "outcome": 0.935648,
-      "val_bpb": 1.064352,
-      "wall_time_s": 334.3,
-      "label": "thompson_sampling",
+      "outcome": 0.9660709999999999,
+      "val_bpb": 1.033929,
+      "wall_time_s": 324.5,
+      "label": "lookahead",
       "error": null,
       "appraisal": {
-        "surprise": 0.03351734894365277,
-        "theory_conflict": 0.005027497645636919,
+        "surprise": 0.0414865731170897,
+        "theory_conflict": 0.006178757446746909,
         "prediction_impact_breadth": 25.0,
-        "learntropy": 0.004837711865097807
+        "learntropy": 0.005945512125227888
       },
       "experiment": 4
     },
     {
-      "cell": 1,
+      "cell": 14,
       "config": {
-        "DEPTH": "6",
-        "MATRIX_LR": "0.02",
-        "WEIGHT_DECAY": "0.2"
+        "DEPTH": "8",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.4"
       },
-      "outcome": 0.9465250000000001,
-      "val_bpb": 1.053475,
-      "wall_time_s": 317.9,
-      "label": "thompson_sampling",
+      "outcome": 0.9659519999999999,
+      "val_bpb": 1.034048,
+      "wall_time_s": 324.6,
+      "label": "lookahead",
       "error": null,
       "appraisal": {
-        "surprise": 1.3566324338354363e-06,
-        "theory_conflict": 1.3532507573789191e-06,
+        "surprise": 1.1991694303659095e-05,
+        "theory_conflict": 1.193208602981858e-05,
         "prediction_impact_breadth": 0.0,
         "learntropy": 0.0
       },
       "experiment": 5
-    },
-    {
-      "cell": 0,
-      "config": {
-        "DEPTH": "6",
-        "MATRIX_LR": "0.02",
-        "WEIGHT_DECAY": "0.1"
-      },
-      "outcome": 0.944526,
-      "val_bpb": 1.055474,
-      "wall_time_s": 317.9,
-      "label": "llm_suggestion",
-      "error": null,
-      "appraisal": {
-        "surprise": 0.017543120769477616,
-        "theory_conflict": 0.0033380449682991714,
-        "prediction_impact_breadth": 24.0,
-        "learntropy": 0.003147138977319971
-      },
-      "experiment": 6
-    },
-    {
-      "cell": 9,
-      "config": {
-        "DEPTH": "8",
-        "MATRIX_LR": "0.02",
-        "WEIGHT_DECAY": "0.1"
-      },
-      "outcome": 0.954547,
-      "val_bpb": 1.045453,
-      "wall_time_s": 324.6,
-      "label": "llm_suggestion",
-      "error": null,
-      "appraisal": {
-        "surprise": 0.024507318701568637,
-        "theory_conflict": 0.004528645313999466,
-        "prediction_impact_breadth": 22.0,
-        "learntropy": 0.004087876494656259
-      },
-      "experiment": 7
-    },
-    {
-      "cell": 5,
-      "config": {
-        "DEPTH": "6",
-        "MATRIX_LR": "0.04",
-        "WEIGHT_DECAY": "0.4"
-      },
-      "outcome": 0.946399,
-      "val_bpb": 1.053601,
-      "wall_time_s": 318.3,
-      "label": "llm_suggestion",
-      "error": null,
-      "appraisal": {
-        "surprise": 0.04259419777015405,
-        "theory_conflict": 0.006485438909706135,
-        "prediction_impact_breadth": 22.0,
-        "learntropy": 0.005854217197041445
-      },
-      "experiment": 8
-    },
-    {
-      "cell": 0,
-      "config": {
-        "DEPTH": "6",
-        "MATRIX_LR": "0.02",
-        "WEIGHT_DECAY": "0.1"
-      },
-      "outcome": 0.944007,
-      "val_bpb": 1.055993,
-      "wall_time_s": 317.8,
-      "label": "thompson_sampling",
-      "error": null,
-      "appraisal": {
-        "surprise": 9.286974728350827e-06,
-        "theory_conflict": 9.24084063477907e-06,
-        "prediction_impact_breadth": 0.0,
-        "learntropy": 0.0
-      },
-      "experiment": 9
-    },
-    {
-      "cell": 9,
-      "config": {
-        "DEPTH": "8",
-        "MATRIX_LR": "0.02",
-        "WEIGHT_DECAY": "0.1"
-      },
-      "outcome": 0.9545380000000001,
-      "val_bpb": 1.045462,
-      "wall_time_s": 324.5,
-      "label": "thompson_sampling",
-      "error": null,
-      "appraisal": {
-        "surprise": 1.762122385928766e-05,
-        "theory_conflict": 1.753365589924957e-05,
-        "prediction_impact_breadth": 0.0,
-        "learntropy": 0.0
-      },
-      "experiment": 10
-    },
-    {
-      "cell": 20,
-      "config": {
-        "DEPTH": "10",
-        "MATRIX_LR": "0.02",
-        "WEIGHT_DECAY": "0.4"
-      },
-      "outcome": 0.9226479999999999,
-      "val_bpb": 1.077352,
-      "wall_time_s": 334.6,
-      "label": "thompson_sampling",
-      "error": null,
-      "appraisal": {
-        "surprise": 0.011604207974897252,
-        "theory_conflict": 0.0018134679011752686,
-        "prediction_impact_breadth": 20.0,
-        "learntropy": 0.001560784662251896
-      },
-      "experiment": 11
-    },
-    {
-      "cell": 10,
-      "config": {
-        "DEPTH": "8",
-        "MATRIX_LR": "0.02",
-        "WEIGHT_DECAY": "0.2"
-      },
-      "outcome": 0.957465,
-      "val_bpb": 1.042535,
-      "wall_time_s": 324.7,
-      "label": "llm_suggestion",
-      "error": null,
-      "appraisal": {
-        "surprise": 0.005919741647173682,
-        "theory_conflict": 0.0016147033324181738,
-        "prediction_impact_breadth": 17.0,
-        "learntropy": 0.0012812542535326692
-      },
-      "experiment": 12
     },
     {
       "cell": 12,
@@ -289,18 +149,58 @@
         "MATRIX_LR": "0.04",
         "WEIGHT_DECAY": "0.1"
       },
-      "outcome": 0.961597,
-      "val_bpb": 1.038403,
-      "wall_time_s": 324.7,
+      "outcome": 0.9643029999999999,
+      "val_bpb": 1.035697,
+      "wall_time_s": 324.3,
       "label": "llm_suggestion",
       "error": null,
       "appraisal": {
-        "surprise": 0.010643785633339786,
-        "theory_conflict": 0.0026330736555408587,
-        "prediction_impact_breadth": 14.0,
-        "learntropy": 0.0018960297334854668
+        "surprise": 0.03968151066679493,
+        "theory_conflict": 0.00731359777080651,
+        "prediction_impact_breadth": 24.0,
+        "learntropy": 0.0068953261048108
       },
-      "experiment": 13
+      "experiment": 6
+    },
+    {
+      "cell": 13,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "outcome": 0.9631270000000001,
+      "val_bpb": 1.036873,
+      "wall_time_s": 324.8,
+      "label": "llm_suggestion",
+      "error": null,
+      "appraisal": {
+        "surprise": 0.020444029303355316,
+        "theory_conflict": 0.004116013176291195,
+        "prediction_impact_breadth": 21.0,
+        "learntropy": 0.0036299824191771864
+      },
+      "experiment": 7
+    },
+    {
+      "cell": 8,
+      "config": {
+        "DEPTH": "6",
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "outcome": 0.9393339999999999,
+      "val_bpb": 1.060666,
+      "wall_time_s": 317.9,
+      "label": "llm_suggestion",
+      "error": null,
+      "appraisal": {
+        "surprise": 0.00237174133422291,
+        "theory_conflict": 0.0005361106948941627,
+        "prediction_impact_breadth": 18.0,
+        "learntropy": 0.00043773254937987116
+      },
+      "experiment": 8
     },
     {
       "cell": 6,
@@ -309,74 +209,174 @@
         "MATRIX_LR": "0.08",
         "WEIGHT_DECAY": "0.1"
       },
-      "outcome": 0.9472100000000001,
-      "val_bpb": 1.05279,
-      "wall_time_s": 317.9,
+      "outcome": 0.948825,
+      "val_bpb": 1.051175,
+      "wall_time_s": 317.7,
+      "label": "lookahead",
+      "error": null,
+      "appraisal": {
+        "surprise": 0.030586907040198064,
+        "theory_conflict": 0.006092961455317794,
+        "prediction_impact_breadth": 21.0,
+        "learntropy": 0.00537348691955769
+      },
+      "experiment": 9
+    },
+    {
+      "cell": 19,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "outcome": 0.922836,
+      "val_bpb": 1.077164,
+      "wall_time_s": 334.1,
+      "label": "lookahead",
+      "error": null,
+      "appraisal": {
+        "surprise": 0.029335486856207904,
+        "theory_conflict": 0.004753177030581049,
+        "prediction_impact_breadth": 16.0,
+        "learntropy": 0.0036589973841492196
+      },
+      "experiment": 10
+    },
+    {
+      "cell": 19,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "outcome": 0.922317,
+      "val_bpb": 1.077683,
+      "wall_time_s": 334.4,
+      "label": "lookahead",
+      "error": null,
+      "appraisal": {
+        "surprise": 1.4906321621488416e-08,
+        "theory_conflict": 1.4832232089917922e-08,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "experiment": 11
+    },
+    {
+      "cell": 14,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "outcome": 0.9663999999999999,
+      "val_bpb": 1.0336,
+      "wall_time_s": 324.4,
       "label": "llm_suggestion",
       "error": null,
       "appraisal": {
-        "surprise": 0.014638272700822408,
-        "theory_conflict": 0.0029555679854429634,
-        "prediction_impact_breadth": 17.0,
-        "learntropy": 0.0023452196926370553
+        "surprise": 1.7991852047649637e-05,
+        "theory_conflict": 1.794701619642867e-05,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "experiment": 12
+    },
+    {
+      "cell": 9,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "outcome": 0.95672,
+      "val_bpb": 1.04328,
+      "wall_time_s": 324.5,
+      "label": "llm_suggestion",
+      "error": null,
+      "appraisal": {
+        "surprise": 0.009267561917807643,
+        "theory_conflict": 0.001855140247179222,
+        "prediction_impact_breadth": 15.0,
+        "learntropy": 0.0013827399001628343
+      },
+      "experiment": 13
+    },
+    {
+      "cell": 21,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "outcome": 0.938895,
+      "val_bpb": 1.061105,
+      "wall_time_s": 334.7,
+      "label": "llm_suggestion",
+      "error": null,
+      "appraisal": {
+        "surprise": 0.012627593200884912,
+        "theory_conflict": 0.0026123330814029765,
+        "prediction_impact_breadth": 16.0,
+        "learntropy": 0.0020109749436812976
       },
       "experiment": 14
     },
     {
-      "cell": 12,
+      "cell": 4,
       "config": {
-        "DEPTH": "8",
+        "DEPTH": "6",
         "MATRIX_LR": "0.04",
-        "WEIGHT_DECAY": "0.1"
+        "WEIGHT_DECAY": "0.2"
       },
-      "outcome": 0.9628220000000001,
-      "val_bpb": 1.037178,
-      "wall_time_s": 324.9,
-      "label": "thompson_sampling",
+      "outcome": 0.949978,
+      "val_bpb": 1.050022,
+      "wall_time_s": 317.6,
+      "label": "lookahead",
       "error": null,
       "appraisal": {
-        "surprise": 0.00012468348358829484,
-        "theory_conflict": 0.00012406419844590436,
-        "prediction_impact_breadth": 0.0,
-        "learntropy": 0.0
+        "surprise": 0.008406965092556562,
+        "theory_conflict": 0.0017269926445547623,
+        "prediction_impact_breadth": 17.0,
+        "learntropy": 0.0013703549297453086
       },
       "experiment": 15
     },
     {
-      "cell": 10,
+      "cell": 16,
       "config": {
         "DEPTH": "8",
-        "MATRIX_LR": "0.02",
+        "MATRIX_LR": "0.08",
         "WEIGHT_DECAY": "0.2"
       },
-      "outcome": 0.9582520000000001,
-      "val_bpb": 1.041748,
-      "wall_time_s": 324.6,
-      "label": "thompson_sampling",
+      "outcome": 0.959198,
+      "val_bpb": 1.040802,
+      "wall_time_s": 324.2,
+      "label": "lookahead",
       "error": null,
       "appraisal": {
-        "surprise": 6.504257716177797e-05,
-        "theory_conflict": 6.471959125548712e-05,
-        "prediction_impact_breadth": 0.0,
-        "learntropy": 0.0
+        "surprise": 0.01227862419910386,
+        "theory_conflict": 0.002577004214263294,
+        "prediction_impact_breadth": 14.0,
+        "learntropy": 0.0018556551212605221
       },
       "experiment": 16
     },
     {
-      "cell": 1,
+      "cell": 16,
       "config": {
-        "DEPTH": "6",
-        "MATRIX_LR": "0.02",
+        "DEPTH": "8",
+        "MATRIX_LR": "0.08",
         "WEIGHT_DECAY": "0.2"
       },
-      "outcome": 0.946671,
-      "val_bpb": 1.053329,
-      "wall_time_s": 317.9,
-      "label": "thompson_sampling",
+      "outcome": 0.9598390000000001,
+      "val_bpb": 1.040161,
+      "wall_time_s": 324.3,
+      "label": "lookahead",
       "error": null,
       "appraisal": {
-        "surprise": 6.685950945106711e-07,
-        "theory_conflict": 6.674833441184338e-07,
+        "surprise": 5.472031729614191e-05,
+        "theory_conflict": 5.4448436208765436e-05,
         "prediction_impact_breadth": 0.0,
         "learntropy": 0.0
       },
@@ -389,44 +389,44 @@
         "MATRIX_LR": "0.04",
         "WEIGHT_DECAY": "0.2"
       },
-      "outcome": 0.965303,
-      "val_bpb": 1.034697,
-      "wall_time_s": 324.6,
+      "outcome": 0.9668540000000001,
+      "val_bpb": 1.033146,
+      "wall_time_s": 324.9,
       "label": "llm_suggestion",
       "error": null,
       "appraisal": {
-        "surprise": 0.008204818301146388,
-        "theory_conflict": 0.0024068734655275396,
-        "prediction_impact_breadth": 12.0,
-        "learntropy": 0.001604582310351693
+        "surprise": 0.0006962382956584579,
+        "theory_conflict": 0.000692782909615119,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
       },
       "experiment": 18
     },
     {
-      "cell": 15,
+      "cell": 3,
       "config": {
-        "DEPTH": "8",
-        "MATRIX_LR": "0.08",
+        "DEPTH": "6",
+        "MATRIX_LR": "0.04",
         "WEIGHT_DECAY": "0.1"
       },
-      "outcome": 0.9567060000000001,
-      "val_bpb": 1.043294,
-      "wall_time_s": 324.6,
+      "outcome": 0.947797,
+      "val_bpb": 1.052203,
+      "wall_time_s": 317.9,
       "label": "llm_suggestion",
       "error": null,
       "appraisal": {
-        "surprise": 0.003992951251469257,
-        "theory_conflict": 0.0011974339192025501,
-        "prediction_impact_breadth": 11.0,
-        "learntropy": 0.0007643037959942895
+        "surprise": 4.533820480823181e-06,
+        "theory_conflict": 1.6307984830198668e-06,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
       },
       "experiment": 19
     }
   ],
   "factor_importances": {
-    "DEPTH": 0.026560174209720344,
-    "MATRIX_LR": 0.04019479836359352,
-    "WEIGHT_DECAY": 0.07018519828199743
+    "DEPTH": 0.013531256566864158,
+    "MATRIX_LR": 0.0040075255386113895,
+    "WEIGHT_DECAY": 0.0024142148685939446
   },
-  "total_time_s": 6501.6
+  "total_time_s": 6542.8
 }
