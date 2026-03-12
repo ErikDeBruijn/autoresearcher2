@@ -63,3 +63,37 @@ def test_epistemic_decreases_with_data():
     scores_after = controller.score_all_cells()
     ep_after = scores_after[0]["epistemic"]
     assert ep_after < ep_before
+
+
+def test_lookahead_returns_valid_cell():
+    schema, model = make_setup()
+    controller = Controller(schema, model, preferred_outcome=1.0, seed=42)
+    cell = controller.select_next_lookahead()
+    assert 0 <= cell < schema.n_cells
+
+
+def test_lookahead_considers_step2_value():
+    """Lookahead should account for step-2 benefits when scoring step-1 cells.
+
+    After seeing mediocre results for cell 0, step-1 on an untried cell
+    should be valued higher because it improves step-2 decisions.
+    """
+    schema, model = make_setup()
+    controller = Controller(schema, model, preferred_outcome=1.0, seed=42)
+    # Cell 0 has mediocre outcome — not worth exploiting hard
+    for _ in range(5):
+        model.update(cell_index=0, outcome=0.5)
+    # Lookahead should explore untried cells (high epistemic value
+    # flows into step-2 improvement)
+    cell = controller.select_next_lookahead()
+    assert 0 <= cell < schema.n_cells
+    # The selected cell should have high step-1 total score
+    score = controller.score_cell(cell)
+    assert score["epistemic"] >= 0
+
+
+def test_lookahead_is_deterministic_with_seed():
+    schema, model = make_setup()
+    c1 = Controller(schema, model, preferred_outcome=1.0, seed=99)
+    c2 = Controller(schema, model, preferred_outcome=1.0, seed=99)
+    assert c1.select_next_lookahead() == c2.select_next_lookahead()

@@ -187,9 +187,9 @@ def main():
                 cells_to_run.append(s["cell"])
                 labels.append(f"llm_suggestion")
             else:
-                cell = controller.select_next()
+                cell = controller.select_next_lookahead()
                 cells_to_run.append(cell)
-                labels.append("thompson_sampling")
+                labels.append("lookahead")
 
         # Run experiments (parallel if 2 GPUs, sequential otherwise)
         round_results = []
@@ -274,20 +274,21 @@ def main():
         # Show all runs ordered by val_bpb
         log("  All runs (sorted by val_bpb):")
         for r in sorted(successful, key=lambda r: r["val_bpb"]):
-            src = "LLM" if r["label"] == "llm_suggestion" else "TS"
+            src = "LLM" if r["label"] == "llm_suggestion" else "LA"
             log(f"    [{src}] {r['config']} → {r['val_bpb']:.6f}")
 
     if failed:
         log(f"\n  Failed runs: {len(failed)}")
 
     llm_runs = [r for r in successful if r["label"] == "llm_suggestion"]
-    ts_runs = [r for r in successful if r["label"] == "thompson_sampling"]
+    la_runs = [r for r in successful if r["label"] == "lookahead"]
 
-    if llm_runs and ts_runs:
+    if llm_runs:
         llm_mean = sum(r["val_bpb"] for r in llm_runs) / len(llm_runs)
-        ts_mean = sum(r["val_bpb"] for r in ts_runs) / len(ts_runs)
         log(f"\n  LLM suggestions mean val_bpb: {llm_mean:.6f} ({len(llm_runs)} runs)")
-        log(f"  Thompson sampling mean val_bpb: {ts_mean:.6f} ({len(ts_runs)} runs)")
+    if la_runs:
+        la_mean = sum(r["val_bpb"] for r in la_runs) / len(la_runs)
+        log(f"  Lookahead mean val_bpb: {la_mean:.6f} ({len(la_runs)} runs)")
 
     log(f"\n  Factor importances: {model.factor_importances()}")
     log(f"  Unique cells visited: {len(set(r['cell'] for r in all_results))}")
