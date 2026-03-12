@@ -68,13 +68,16 @@ def run_experiment(env: TrainPyEnvironment, cell: int, config: dict) -> dict:
         val_bpb = 2.0 - outcome
         wall_time = time.time() - start
         metadata = getattr(env, "last_run_metadata", {})
+        tokens_M = metadata.get("total_tokens_M")
+        tok_per_sec = round(tokens_M * 1e6 / wall_time, 1) if tokens_M and wall_time > 0 else None
         return {
             "cell": cell,
             "config": config,
             "outcome": outcome,
             "val_bpb": val_bpb,
             "wall_time_s": round(wall_time, 1),
-            "tokens_M": metadata.get("total_tokens_M"),
+            "tokens_M": tokens_M,
+            "tok_per_sec": tok_per_sec,
             "num_steps": metadata.get("num_steps"),
             "mfu": metadata.get("steady_state_mfu"),
             "error": None,
@@ -88,6 +91,7 @@ def run_experiment(env: TrainPyEnvironment, cell: int, config: dict) -> dict:
             "val_bpb": None,
             "wall_time_s": round(wall_time, 1),
             "tokens_M": None,
+            "tok_per_sec": None,
             "num_steps": None,
             "mfu": None,
             "error": str(e),
@@ -329,8 +333,8 @@ def main():
 
     # Final comparison
     log("\nCOMPARISON:")
-    log(f"{'Approach':<20} {'Best':>10} {'Mean':>10} {'Unique':>8} {'Tok/exp':>10}")
-    log("-" * 60)
+    log(f"{'Approach':<20} {'Best':>10} {'Mean':>10} {'Unique':>8} {'Tok/exp':>10} {'Tok/s':>10}")
+    log("-" * 70)
     for name, data in all_results.items():
         successful = [r for r in data["results"] if r["error"] is None]
         if successful:
@@ -339,7 +343,9 @@ def main():
             unique = len(set(r["cell"] for r in successful))
             tokens = [r["tokens_M"] for r in successful if r["tokens_M"]]
             mean_tok = f"{sum(tokens)/len(tokens):.1f}M" if tokens else "?"
-            log(f"{name:<20} {best:>10.6f} {mean:>10.6f} {unique:>8} {mean_tok:>10}")
+            tps = [r["tok_per_sec"] for r in successful if r.get("tok_per_sec")]
+            mean_tps = f"{sum(tps)/len(tps):.0f}" if tps else "?"
+            log(f"{name:<20} {best:>10.6f} {mean:>10.6f} {unique:>8} {mean_tok:>10} {mean_tps:>10}")
 
     _save_results(all_results)
     log(f"\nResults: artifacts/evidence/{RUN_ID}.json")
