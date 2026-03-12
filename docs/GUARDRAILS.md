@@ -57,9 +57,15 @@ Each phase requires evidence-quality validation of the previous one.
 - This is the G-factor test — fluid intelligence vs crystallized
 
 **v2.2 — Cross-domain generalization**
-- Apply the agent to a non-ML verifiable problem (compiler flags, material properties)
+- Apply the agent to non-ML verifiable problems
+- Concrete test: Atari games via Arcade Learning Environment (reinforcement learning)
+  - Multiple games (Breakout, Space Invaders, etc.) to test cross-game transfer
+  - Agent must set up its own training + evaluation pipeline
+  - Known benchmark with published scores for comparison
+- Also: compiler optimization, material properties, or other domains
 - Minimal harness changes — same governance, same meta-loop, different environment
 - Evidence test: does the research methodology generalize beyond ML?
+  If the same agent optimizes both LLM training and Atari scores → fluid intelligence
 
 ### Infrastructure track (secondary — scaling what works)
 
