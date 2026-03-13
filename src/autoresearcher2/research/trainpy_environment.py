@@ -28,6 +28,7 @@ class TrainPyEnvironment(Environment):
         cuda_device: str = "1",
         poll_interval: int = 15,
         max_wait: int = 600,
+        dataset: str = "climbmix",
     ):
         self.schema = schema
         self.ssh_host = ssh_host
@@ -36,6 +37,7 @@ class TrainPyEnvironment(Environment):
         self.cuda_device = cuda_device
         self.poll_interval = poll_interval
         self.max_wait = max_wait
+        self.dataset = dataset
 
     def _ssh(self, cmd: str, timeout: int = 30) -> tuple[int, str]:
         result = subprocess.run(
@@ -65,10 +67,26 @@ class TrainPyEnvironment(Environment):
                 f"{self.remote_dir}/train.py"
             )
 
+        # Prepare dataset if not climbmix (default)
+        dataset_env = ""
+        if self.dataset != "climbmix":
+            # Run prepare.py with dataset flag first (idempotent)
+            prep_rc, prep_out = self._ssh(
+                f"cd {self.remote_dir} && "
+                f"uv run prepare.py --dataset {self.dataset} --num-shards 8",
+                timeout=300,
+            )
+            if prep_rc != 0:
+                raise RuntimeError(
+                    f"prepare.py --dataset {self.dataset} failed: {prep_out[-300:]}"
+                )
+            dataset_env = f"AUTORESEARCH_DATASET={self.dataset} "
+
         # Launch training via nohup — SSH disconnects won't kill it
         self._ssh(
             f"nohup bash -c '"
             f"cd {self.remote_dir} && "
+            f"{dataset_env}"
             f"CUDA_VISIBLE_DEVICES={self.cuda_device} uv run train.py "
             f"> {out_file} 2>&1; echo $? > {done_file}"
             f"' &>/dev/null &"

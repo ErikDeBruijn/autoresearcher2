@@ -68,3 +68,42 @@ LLM behavior:
     suggesting the LLM wastes fewer experiments on poor regions of the space.
 
 No decisions taken — run proceeding autonomously. Full approach starts after autoresearch.
+
+--- 16:21 — Autoresearch complete ---
+20/20 experiments (19 successful, 1 with LLM fallback at experiment 20).
+Best val_bpb = 1.032934 (DEPTH=8, MATRIX_LR=0.04, WEIGHT_DECAY=0.2, experiment 17).
+Mean val_bpb = 1.047409.
+
+Source integrity: 1× random_init, 16× llm_flat, 3× llm_fallback_empty.
+The 3 fallbacks occurred in the last 5 experiments when the LLM ran out of novel suggestions
+in the small 27-cell space. All fallbacks are honestly labeled.
+
+Key observation: autoresearch found the best val_bpb of any approach so far (1.032934 vs
+random's 1.033551 and bayesian's 1.033778). It also had the lowest mean, suggesting the
+LLM wastes fewer experiments on poor regions.
+
+--- 16:41 — Full approach started (first attempt) ---
+Started with original code (no enriched prompt). Killed at experiment 1 to restart
+with improved LLM prompt that includes:
+  - Token counts per experiment (exposing the throughput confound)
+  - Prior approach results (random, bayesian, autoresearch)
+  - Epistemic governance context from CONSTITUTION and CHARTER
+  - Explicit explanation of the token budget confound
+
+GPU memory issue: previous train.py process (PID 3708643) still held 38GB GPU memory.
+Killed remote process, verified GPU clear.
+
+--- 16:46 — Full approach restarted with enriched prompt ---
+New process (PID 39828), new run_id (d240b43f). First 2 experiments failed (GPU OOM
+from stale process), then recovered. The enriched prompt is working: LLM reasoning
+now references prior approach results and the token budget confound.
+
+--- 17:32 — Full approach halfway ---
+11/20 experiments (8 successful after 2 initial OOM failures).
+Best val_bpb = 1.033423. Sources: mix of lookahead and llm_augmented.
+
+The LLM's reasoning quality has visibly improved with the enriched context:
+  - References "prior approaches consistently found DEPTH=8/MATRIX_LR=0.04"
+  - Considers "the token budget confound favoring DEPTH=6"
+  - Proposes testing untested corners "across all approaches"
+  - Shows genuine cross-approach learning instead of isolated exploration

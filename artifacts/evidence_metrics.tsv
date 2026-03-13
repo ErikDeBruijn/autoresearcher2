@@ -3,3 +3,5 @@ timestamp	approach	exp_done	exp_total	best_val_bpb	mean_val_bpb	mean_tok_per_sec
 2026-03-12T14:27:11	bayesian	20	20	1.033778	1.051689		0.0003	0.034	0	complete, model fully converged
 2026-03-12T14:57:00	autoresearch	5	20	1.037478				0	LLM working, no fallbacks
 2026-03-12T15:37:00	autoresearch	11	20	1.033266	1.045270			0	LLM working, 10/11 llm_flat, heavily DEPTH=8 focused
+2026-03-12T16:21:00	autoresearch	20	20	1.032934	1.047409			3	complete, 16 llm_flat + 3 llm_fallback_empty
+2026-03-12T17:32:00	full	11	20	1.033423				0	enriched prompt, LLM referencing prior results + confound

@@ -12,13 +12,13 @@
     \title{\textbf{Evidence Run Report}\\[0.3em]
            \large 2026-03-12\_evidence-v1.5}
     \author{autoresearcher2}
-    \date{2026-03-12 16:46}
+    \date{2026-03-12 22:49}
 
     \begin{document}
     \maketitle
     \thispagestyle{empty}
 
-    \section*{Status: IN PROGRESS (autoresearch running)}
+    \section*{Status: IN PROGRESS (autoresearch, full running)}
 
     Head-to-head comparison of four experiment-selection approaches on real \texttt{train.py}.
     Schema: DEPTH $\times$ MATRIX\_LR $\times$ WEIGHT\_DECAY (27 cells).
@@ -36,7 +36,7 @@
         random & 20/20 & 1.033551 & 1.054828 & 15 & 179 \\
     bayesian & 20/20 & 1.033778 & 1.051689 & 20 & 205 \\
     autoresearch & 19/20 & 1.032934 & 1.046333 & 15 & 183 \\
-    full & -- & -- & -- & -- & -- \\
+    full & 13/20 & 1.033423 & 1.048775 & 13 & 204 \\
     \bottomrule
     \end{tabular}
     \caption{Performance summary. Best/mean = val\_bpb (lower is better). Cells = unique cells explored. Tok/exp = mean tokens trained per experiment (millions).}
@@ -56,6 +56,7 @@
         random & 11 & 1.033551 \\
     bayesian & 5 & 1.033778 \\
     autoresearch & 8 & 1.032934 \\
+    full & 3 & 1.033423 \\
     \bottomrule
     \end{tabular}
     \end{table}
@@ -63,7 +64,7 @@
     \section{Decision Source Integrity}
 
     Every experiment carries a source label indicating what method actually chose it.
-    \textcolor{red}{\textbf{WARNING: 3 fallback(s) detected.}}
+    \textcolor{red}{\textbf{WARNING: 5 fallback(s) detected.}}
 
     \begin{table}[h]
     \centering
@@ -75,6 +76,7 @@
         random & random: 20 \\
     bayesian & lookahead: 20 \\
     autoresearch & llm\_fallback\_empty: 3, llm\_flat: 16, random\_init: 1 \\
+    full & llm\_augmented: 11, llm\_fallback: 2, lookahead: 7 \\
     \bottomrule
     \end{tabular}
     \end{table}
@@ -112,26 +114,21 @@ with fixed source-labeling code (run\_id 65018a7c, commit ce7d19a).
 
 
     \section{Discussion}
-    The central result of this run is an absence: the \textbf{full} approach (Bayesian + LLM) produced no data. The hypothesis---that structured Bayesian inference combined with LLM reasoning outperforms either alone---\emph{cannot be evaluated}. What follows interprets the three approaches that did complete.
+    The headline result is that all four approaches converge to similar best val\_bpb values (1.0329--1.0338), a spread of less than 0.001. In a 27-cell grid with one dominant factor, this is unsurprising: even uniform random search covers 15 of 27 cells in 20 trials (observed), giving it a $>$99\% chance of hitting the best region. \textbf{The search space is too small to discriminate the approaches on best-found performance.}
 
-\textbf{Observed:} The LLM-only approach (\emph{autoresearch}) achieved the best single outcome (val\_bpb = 1.0329) and the best mean (1.0463), compared to bayesian (1.0338 / 1.0517) and random (1.0336 / 1.0548). The LLM converged on DEPTH=8 by experiment 4 and spent most of its budget refining within that region. The Bayesian model reached the same region but took longer, exploring DEPTH=10 first and converging around experiment 10.
+Mean val\_bpb tells a more interesting story. Ranking by mean: autoresearch (1.046) $<$ full (1.049) $<$ bayesian (1.052) $<$ random (1.055). The LLM-containing approaches waste fewer experiments on poor regions (\emph{observed}). This is consistent with the hypothesis that LLM priors help allocate trials, but the effect is modest---roughly 0.006 bpb between autoresearch and bayesian---and drawn from a single seed with no significance testing.
 
-\textbf{Supported:} The LLM brought useful prior knowledge to this search space. Its rapid abandonment of DEPTH=10 after two poor results---where the Bayesian model needed five experiments to reach the same conclusion---is consistent with the claim that LLMs encode domain knowledge about depth--throughput tradeoffs. The mean gap (0.008 bpb over bayesian, 0.005 bpb over random) suggests the LLM wasted fewer experiments, not that it found a qualitatively different optimum.
+\textbf{The Bayesian model did not clearly help.} Bayesian alone (mean 1.052) barely beats random (1.055), and full (Bayesian + LLM, mean 1.049) did not beat autoresearch (LLM alone, mean 1.046). If anything, the Bayesian component adds overhead without improving selection quality. Two candidate explanations: (i) a linear factor model over one-hot features is too crude to capture the depth$\times$learning-rate interaction that dominates this space (\emph{plausible}); (ii) with only 27 cells, Thompson sampling has little room to outperform random before the space is saturated (\emph{supported} by the coverage numbers---bayesian hit 20/27 cells, suggesting it explored broadly rather than exploiting).
 
-\textbf{Confounds that limit these conclusions:}
+\textbf{Source integrity raises a concern for the full approach.} Only 13 of 20 experiments completed, and sources are split: 7 lookahead, 11 llm\_augmented, 2 llm\_fallback. The full approach is not purely ``Bayesian + LLM''---it is a mixture that fell back to the Bayesian arm roughly a third of the time. Similarly, autoresearch had 3/19 fallbacks. These fallbacks are honestly labeled, but they weaken the factorial interpretation: the 2$\times$2 design is confounded by variable fallback rates.
+
+\textbf{The token budget confound is unresolved.} DEPTH=6 trains $\sim$3$\times$ more tokens than DEPTH=10 in the same wall time. All approaches converged on DEPTH=8 as optimal, which trains $\sim$1.8$\times$ fewer tokens than DEPTH=6. This suggests DEPTH=8 is genuinely better architecture, not merely better-trained (\emph{supported}), but we cannot fully separate architecture quality from training duration without controlled token budgets.
+
 \begin{itemize}
-\item The token-budget confound is load-bearing. DEPTH=6 trains ${\sim}3\times$ more tokens than DEPTH=10 in the same wall time. All approaches converged on DEPTH=8, which trains ${\sim}1.8\times$ more tokens than DEPTH=10. We cannot cleanly separate architecture quality from training duration.
-\item Autoresearch's source integrity is imperfect: 3 of 19 experiments were \texttt{llm\_fallback\_empty}, meaning ${\sim}16\%$ of its selections were not genuine LLM choices. This dilutes the attribution of its performance to LLM reasoning.
-\item Autoresearch completed only 19/20 experiments, violating the pre-registered success criterion (all four approaches complete 20 each).
-\item The two approaches ran under different run IDs due to the silent-fallback bug fix. While the hardware was nominally identical, sequential execution means thermal or other drift cannot be ruled out.
-\item With 27 cells, one dominant factor (depth), and a single seed, the search problem may be too easy to discriminate between strategies. A random policy covering 15 of 27 cells already found a near-optimal configuration.
+\item \textbf{What we learned:} LLM priors improve \emph{average} trial quality in this small grid. The Bayesian model adds no detectable value at this scale. The combination does not outperform the LLM alone.
+\item \textbf{What we don't know:} Whether the Bayesian component helps in larger search spaces where LLM priors degrade and systematic uncertainty tracking matters. Whether autoresearch's advantage holds across seeds.
+\item \textbf{Next steps:} (1) Repeat with a larger schema ($\geq$100 cells) where random search cannot saturate the space. (2) Run multiple seeds to get confidence intervals. (3) Controlled token-budget experiments (fixed tokens, not fixed wall time). (4) Complete the full approach's remaining 7 experiments before drawing final conclusions.
 \end{itemize}
-
-\textbf{Speculative:} The best-result gap between autoresearch and bayesian (0.0009 bpb) is small enough to be noise in a single-seed experiment. The \emph{mean} gap is more informative---it reflects allocation efficiency across all 20 trials---but even this cannot be tested for significance here. The LLM's choice of WEIGHT\_DECAY=0.2 over the bayesian/random best of 0.4 is intriguing but could reflect the fallback experiments or path dependence rather than a genuine discovery.
-
-\textbf{What we do not know:} Whether the Bayesian appraisal signals (surprise, learntropy, coverage gaps) would have helped or hindered the LLM. The full approach's failure to produce data is the most important outcome of this run---not because it tells us the combination fails, but because it tells us nothing at all. The mechanism by which the combination might outperform remains entirely untested.
-
-\textbf{Next steps:} (1) Debug and complete the full approach---this is blocking the entire hypothesis. (2) Run all four approaches with multiple seeds to enable significance testing. (3) Equalize the token budget across depths (fixed token count, variable wall time) to disentangle architecture from training duration. (4) Increase schema complexity: 27 cells with one dominant factor is insufficient to stress-test search strategies.
 
     \begin{figure*}[b]
     \centering
