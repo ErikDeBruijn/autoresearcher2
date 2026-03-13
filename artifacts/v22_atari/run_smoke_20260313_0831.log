@@ -1,0 +1,34 @@
+[08:31:53] ============================================================
+[08:31:53] v2.2 CROSS-DOMAIN ATARI — run_id=c1dd540d
+[08:31:53] ============================================================
+[08:31:53] Schema: 27 cells, 3 factors
+[08:31:53] Budget: 5 experiments
+[08:31:53] GPU: 0, Timesteps: 500000
+[08:31:53]   [1/5] cell 26 {'game': 'Pong', 'learning_rate': '1e-3', 'network_size': 'large'} (prag=-0.490 epist=6.000)
+[08:43:30]     → reward=-21.0 outcome=0.0000 surprise=0.0000
+[08:43:30]   [2/5] cell 13 {'game': 'SpaceInvaders', 'learning_rate': '5e-4', 'network_size': 'medium'} (prag=-0.490 epist=6.000)
+[08:49:47]     → reward=6.55 outcome=0.0000 surprise=0.0000
+[08:49:47]   [3/5] cell 6 {'game': 'Breakout', 'learning_rate': '1e-3', 'network_size': 'small'} (prag=-0.490 epist=5.834)
+[08:55:40]     → reward=3.7 outcome=0.0707 surprise=0.0004
+[08:55:40]   [4/5] cell 18 {'game': 'Pong', 'learning_rate': '1e-4', 'network_size': 'small'} (prag=-0.476 epist=5.715)
+[08:59:44]     → reward=-21.0 outcome=0.0000 surprise=0.0000
+[08:59:44]   [5/5] cell 5 {'game': 'Breakout', 'learning_rate': '5e-4', 'network_size': 'large'} (prag=-0.475 epist=5.534)
+[09:04:19]     → reward=1.65 outcome=0.0000 surprise=0.0000
+[09:04:19] 
+============================================================
+[09:04:19] DONE — 32.4 min total
+[09:04:19]   5/5 experiments succeeded
+[09:04:19]   Best: cell 6 {'game': 'Breakout', 'learning_rate': '1e-3', 'network_size': 'small'}
+[09:04:19]     reward=3.7 outcome=0.0707
+[09:04:19] 
+  Factor importances:
+[09:04:19]     network_size: 0.0142
+[09:04:19]     game: 0.0141
+[09:04:19]     learning_rate: 0.0130
+[09:04:19] 
+  Best per game:
+[09:04:19]     Breakout: reward=3.7 lr=1e-3 net=small
+[09:04:19]     SpaceInvaders: reward=6.5 lr=5e-4 net=medium
+[09:04:19]     Pong: reward=-21.0 lr=1e-3 net=large
+[09:04:19] 
+Results: artifacts/v22_atari/c1dd540d.json

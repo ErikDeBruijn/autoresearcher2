@@ -1,0 +1,40 @@
+[08:29:17] Starting v2.0 research steps run 40ed83b7
+[08:29:17] Schema: 27 cells, iterations: 10
+LLM returned no steps, falling back to Thompson sampling
+[08:34:53]   iter=0 experiment [OK] val_bpb=1.0365
+[08:43:31]   iter=1 experiment [OK] val_bpb=1.0495
+[08:49:48]   iter=1 experiment [OK] val_bpb=1.0607
+[08:49:48]   iter=1 hypothesis [OK] 'DEPTH=6 will achieve a better outcome than DEPTH=1'
+[08:55:40]   iter=2 experiment [OK] val_bpb=1.0540
+[09:01:22]   iter=2 experiment [OK] val_bpb=1.0578
+[09:01:22]   iter=2 hypothesis [OK] 'Higher WEIGHT_DECAY improves outcome at DEPTH=8 (e'
+[09:01:41]   iter=3 analysis [OK] 'What are the main effects of each factor on outcom'
+[09:07:22]   iter=3 experiment [OK] val_bpb=1.0333
+[09:07:22]   iter=3 hypothesis [OK] 'DEPTH=8 yields higher outcomes than DEPTH=6 and DE'
+[09:13:18]   iter=4 experiment [OK] val_bpb=1.0335
+[09:18:58]   iter=4 experiment [OK] val_bpb=1.0400
+[09:18:58]   iter=4 hypothesis [FAIL] 'DEPTH=8 yields systematically higher outcomes than'
+[09:24:53]   iter=5 experiment [OK] val_bpb=1.0416
+[09:24:53]   iter=5 hypothesis [OK] 'DEPTH=8 is the optimal depth level, outperforming '
+[09:30:33]   iter=5 experiment [OK] val_bpb=1.0460
+[09:30:54]   iter=6 analysis [OK] 'What is the effect of each factor level on outcome'
+[09:36:34]   iter=6 experiment [OK] val_bpb=1.0347
+[09:36:35]   iter=6 hypothesis [FAIL] 'DEPTH=8 produces significantly higher outcomes tha'
+[09:42:30]   iter=7 experiment [OK] val_bpb=1.0428
+[09:47:55]   iter=7 experiment [OK] val_bpb=1.0537
+[09:47:55]   iter=7 hypothesis [FAIL] 'DEPTH=8 yields significantly higher outcome than D'
+[09:53:49]   iter=8 experiment [OK] val_bpb=1.0414
+[09:53:50]   iter=8 hypothesis [OK] 'DEPTH=8 is robustly superior to DEPTH=6 and DEPTH='
+[09:59:44]   iter=9 experiment [OK] val_bpb=1.0522
+[09:59:44]   iter=9 analysis [OK] 'Is DEPTH=8 robustly superior, or could higher WEIG'
+[10:05:25]   iter=9 experiment [OK] val_bpb=1.0726
+[10:05:25] 
+=== v2.0 Run Complete ===
+[10:05:25] Iterations: 10
+[10:05:25] Experiments completed: 16
+[10:05:25] Total steps executed: 27
+[10:05:25] Wall time: 96.1 min
+[10:05:25] Best val_bpb: 1.033320
+[10:05:25] Mean val_bpb: 1.046884
+[10:05:25] Step breakdown: {'experiment': 16, 'hypothesis': 8, 'analysis': 3}
+[10:05:25] Saved to artifacts/v2-steps/40ed83b7.json
