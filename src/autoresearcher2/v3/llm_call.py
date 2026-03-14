@@ -72,15 +72,28 @@ def parse_json_response(raw: str) -> dict:
     # Try direct parse first
     try:
         data = json.loads(raw)
-        # If it's the wrapper format, extract the inner content
-        if isinstance(data, dict) and "result" in data and len(data) == 1:
+        # If it's the claude --output-format json wrapper, extract the inner content
+        if isinstance(data, dict) and "result" in data:
             inner = data["result"]
             if isinstance(inner, str):
+                # Try to parse the inner content as JSON
+                inner = inner.strip()
+                # Strip markdown code fences if present
+                if inner.startswith("```json"):
+                    inner = inner[7:]
+                if inner.startswith("```"):
+                    inner = inner[3:]
+                if inner.endswith("```"):
+                    inner = inner[:-3]
+                inner = inner.strip()
                 try:
                     return json.loads(inner)
                 except json.JSONDecodeError:
+                    logger.warning("Could not parse inner result as JSON: %s", inner[:200])
                     return data
-            return inner
+            if isinstance(inner, dict):
+                return inner
+        # If no result key, return as-is (direct JSON response)
         return data
     except json.JSONDecodeError:
         pass
