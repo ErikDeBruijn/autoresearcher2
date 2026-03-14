@@ -143,4 +143,12 @@ def _apply_rankings(
     ]
     accepted.sort(key=lambda p: (p.critic.get("rank") or 999))
 
+    if not accepted:
+        # Fallback: if no proposals were explicitly accepted (e.g. empty rankings,
+        # IDs didn't match), accept the first n_select by position
+        logger.info("No proposals explicitly accepted, falling back to first %d", n_select)
+        for i, p in enumerate(proposals[:n_select]):
+            p.set_critic_decision("accept", rank=i + 1, rationale="fallback: no explicit ranking")
+        return proposals[:n_select]
+
     return accepted[:n_select]
