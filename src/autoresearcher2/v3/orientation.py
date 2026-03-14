@@ -85,8 +85,10 @@ def orient(world_model: WorldModel, observation: Observation, llm_call_fn) -> di
         llm_call_fn: Function that takes a prompt string and returns parsed JSON dict
 
     Returns:
-        The delta that was applied
+        The delta that was applied (includes 'learntropy' score)
     """
+    from autoresearcher2.v3.learntropy import compute_learntropy
+
     prompt = build_orientation_prompt(world_model, observation)
 
     try:
@@ -99,8 +101,16 @@ def orient(world_model: WorldModel, observation: Observation, llm_call_fn) -> di
     delta = _extract_delta(response)
 
     if delta:
+        wm_before_dict = world_model.to_dict()
+        from autoresearcher2.v3.world_model import WorldModel as WM
+        wm_snapshot = WM.from_dict(wm_before_dict)
+
         world_model.apply_delta(delta)
-        logger.info("World model updated to v%d", world_model.version)
+
+        # Compute learntropy retrospectively
+        learntropy_score = compute_learntropy(wm_snapshot, world_model, delta)
+        delta["learntropy"] = learntropy_score
+        logger.info("World model updated to v%d (learntropy=%.3f)", world_model.version, learntropy_score)
 
     return delta
 
