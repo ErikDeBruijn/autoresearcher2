@@ -285,6 +285,14 @@ class Store:
         )
         self.conn.commit()
 
+    def mark_reviewed(self, proposal_id: str):
+        """Move a done proposal to reviewed after orientation has processed it."""
+        self.conn.execute(
+            "UPDATE queue SET stage = 'reviewed' WHERE id = ? AND stage = 'done'",
+            (proposal_id,),
+        )
+        self.conn.commit()
+
     def _row_to_proposal(self, row) -> Proposal:
         p = Proposal(
             intent=row["intent"],

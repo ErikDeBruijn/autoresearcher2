@@ -52,6 +52,9 @@ class Planner:
                         # Store supports delta traceability; Workspace ignores extra kwargs
                         self._save_world_model(wm, trigger_obs_id=p.observation_id, delta=delta)
                         summary["oriented"] += 1
+                    # Mark as reviewed if the backend supports it (Store)
+                    if hasattr(self.workspace, 'mark_reviewed'):
+                        self.workspace.mark_reviewed(p.id)
                     self._processed_observations.add(p.observation_id)
 
         # Phase 2: Generate — if queue is low, produce proposals
