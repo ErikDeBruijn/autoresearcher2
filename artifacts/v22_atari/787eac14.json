@@ -1,0 +1,548 @@
+{
+  "run_id": "787eac14",
+  "version": "v2.2",
+  "schema": {
+    "game": [
+      "Breakout",
+      "SpaceInvaders",
+      "Pong"
+    ],
+    "learning_rate": [
+      "1e-4",
+      "5e-4",
+      "1e-3"
+    ],
+    "network_size": [
+      "small",
+      "medium",
+      "large"
+    ]
+  },
+  "n_experiments": 20,
+  "seed": 42,
+  "gpu_device": "0",
+  "total_timesteps": 1000000,
+  "results": [
+    {
+      "experiment": 0,
+      "cell": 26,
+      "config": {
+        "game": "Pong",
+        "learning_rate": "1e-3",
+        "network_size": "large"
+      },
+      "outcome": 0.0,
+      "raw_reward": -21.0,
+      "wall_time_s": 485.8,
+      "training_time_s": 444.4,
+      "fps": 2250.3,
+      "scores": {
+        "pragmatic": -0.48999999999999994,
+        "epistemic": 6.0,
+        "total": 5.51
+      },
+      "appraisal": {
+        "surprise": 0.0,
+        "theory_conflict": 0.0,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "error": null
+    },
+    {
+      "experiment": 1,
+      "cell": 13,
+      "config": {
+        "game": "SpaceInvaders",
+        "learning_rate": "5e-4",
+        "network_size": "medium"
+      },
+      "outcome": 0.0,
+      "raw_reward": 8.35,
+      "wall_time_s": 516.3,
+      "training_time_s": 482.2,
+      "fps": 2073.9,
+      "scores": {
+        "pragmatic": -0.48999999999999994,
+        "epistemic": 6.0,
+        "total": 5.51
+      },
+      "appraisal": {
+        "surprise": 0.0,
+        "theory_conflict": 0.0,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "error": null
+    },
+    {
+      "experiment": 2,
+      "cell": 6,
+      "config": {
+        "game": "Breakout",
+        "learning_rate": "1e-3",
+        "network_size": "small"
+      },
+      "outcome": 0.09187279151943462,
+      "raw_reward": 4.3,
+      "wall_time_s": 517.3,
+      "training_time_s": 494.5,
+      "fps": 2022.1,
+      "scores": {
+        "pragmatic": -0.48999999999999994,
+        "epistemic": 5.833610648918478,
+        "total": 5.343610648918478
+      },
+      "appraisal": {
+        "surprise": 0.0007219477068463043,
+        "theory_conflict": 0.00010564659649735289,
+        "prediction_impact_breadth": 16.0,
+        "learntropy": 8.132678790228596e-05
+      },
+      "error": null
+    },
+    {
+      "experiment": 3,
+      "cell": 2,
+      "config": {
+        "game": "Breakout",
+        "learning_rate": "1e-4",
+        "network_size": "large"
+      },
+      "outcome": 0.07950530035335689,
+      "raw_reward": 3.95,
+      "wall_time_s": 517.4,
+      "training_time_s": 508.2,
+      "fps": 1967.8,
+      "scores": {
+        "pragmatic": -0.47182341985160764,
+        "epistemic": 5.7146932952924505,
+        "total": 5.242869875440843
+      },
+      "appraisal": {
+        "surprise": 0.00038500083602521773,
+        "theory_conflict": 5.733706948240433e-05,
+        "prediction_impact_breadth": 8.0,
+        "learntropy": 3.121034746186573e-05
+      },
+      "error": null
+    },
+    {
+      "experiment": 4,
+      "cell": 9,
+      "config": {
+        "game": "SpaceInvaders",
+        "learning_rate": "1e-4",
+        "network_size": "small"
+      },
+      "outcome": 0.0,
+      "raw_reward": 8.6,
+      "wall_time_s": 517.5,
+      "training_time_s": 479.8,
+      "fps": 2084.2,
+      "scores": {
+        "pragmatic": -0.45472623649779514,
+        "epistemic": 5.5340848565581044,
+        "total": 5.079358620060309
+      },
+      "appraisal": {
+        "surprise": 5.9408187295550974e-05,
+        "theory_conflict": 9.092044042850835e-06,
+        "prediction_impact_breadth": 6.0,
+        "learntropy": 4.286030665031052e-06
+      },
+      "error": null
+    },
+    {
+      "experiment": 5,
+      "cell": 21,
+      "config": {
+        "game": "Pong",
+        "learning_rate": "5e-4",
+        "network_size": "small"
+      },
+      "outcome": 0.0,
+      "raw_reward": -21.0,
+      "wall_time_s": 486.7,
+      "training_time_s": 441.3,
+      "fps": 2266.1,
+      "scores": {
+        "pragmatic": -0.48108068975358165,
+        "epistemic": 5.436991349834592,
+        "total": 4.9559106600810106
+      },
+      "appraisal": {
+        "surprise": 3.760095621530013e-06,
+        "theory_conflict": 5.841386786431885e-07,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "error": null
+    },
+    {
+      "experiment": 6,
+      "cell": 19,
+      "config": {
+        "game": "Pong",
+        "learning_rate": "1e-4",
+        "network_size": "medium"
+      },
+      "outcome": 0.3696883852691218,
+      "raw_reward": -7.65,
+      "wall_time_s": 638.4,
+      "training_time_s": 439.8,
+      "fps": 2273.5,
+      "scores": {
+        "pragmatic": -0.4855530391885982,
+        "epistemic": 5.362592560269733,
+        "total": 4.877039521081135
+      },
+      "appraisal": {
+        "surprise": 0.012423202608256134,
+        "theory_conflict": 0.0019525378201695615,
+        "prediction_impact_breadth": 19.0,
+        "learntropy": 0.0016379263634316269
+      },
+      "error": null
+    },
+    {
+      "experiment": 7,
+      "cell": 16,
+      "config": {
+        "game": "SpaceInvaders",
+        "learning_rate": "1e-3",
+        "network_size": "medium"
+      },
+      "outcome": 0.0,
+      "raw_reward": 6.05,
+      "wall_time_s": 517.9,
+      "training_time_s": 483.2,
+      "fps": 2069.6,
+      "scores": {
+        "pragmatic": -0.4363106594106859,
+        "epistemic": 4.003534705900082,
+        "total": 3.567224046489396
+      },
+      "appraisal": {
+        "surprise": 0.00019397936899168133,
+        "theory_conflict": 3.876846677268856e-05,
+        "prediction_impact_breadth": 6.0,
+        "learntropy": 1.8275630500782284e-05
+      },
+      "error": null
+    },
+    {
+      "experiment": 8,
+      "cell": 14,
+      "config": {
+        "game": "SpaceInvaders",
+        "learning_rate": "5e-4",
+        "network_size": "large"
+      },
+      "outcome": 0.0,
+      "raw_reward": 9.3,
+      "wall_time_s": 517.8,
+      "training_time_s": 485.9,
+      "fps": 2058.2,
+      "scores": {
+        "pragmatic": -0.5638813529023262,
+        "epistemic": 3.9418141953827286,
+        "total": 3.3779328424804023
+      },
+      "appraisal": {
+        "surprise": 0.0003280082705710008,
+        "theory_conflict": 6.637405972840255e-05,
+        "prediction_impact_breadth": 6.0,
+        "learntropy": 3.1289031819222914e-05
+      },
+      "error": null
+    },
+    {
+      "experiment": 9,
+      "cell": 4,
+      "config": {
+        "game": "Breakout",
+        "learning_rate": "5e-4",
+        "network_size": "medium"
+      },
+      "outcome": 0.05830388692579506,
+      "raw_reward": 3.35,
+      "wall_time_s": 518.0,
+      "training_time_s": 493.1,
+      "fps": 2028.1,
+      "scores": {
+        "pragmatic": -0.4134827724150557,
+        "epistemic": 3.8626189406794715,
+        "total": 3.449136168264416
+      },
+      "appraisal": {
+        "surprise": 2.2843629776669871e-07,
+        "theory_conflict": 4.6978038080602396e-08,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "error": null
+    },
+    {
+      "experiment": 10,
+      "cell": 18,
+      "config": {
+        "game": "Pong",
+        "learning_rate": "1e-4",
+        "network_size": "small"
+      },
+      "outcome": 0.9192634560906517,
+      "raw_reward": 11.75,
+      "wall_time_s": 486.8,
+      "training_time_s": 440.1,
+      "fps": 2272.3,
+      "scores": {
+        "pragmatic": -0.30432145172529596,
+        "epistemic": 2.326378926360497,
+        "total": 2.0220574746352007
+      },
+      "appraisal": {
+        "surprise": 0.11943076709125688,
+        "theory_conflict": 0.035904137723097626,
+        "prediction_impact_breadth": 17.0,
+        "learntropy": 0.028489647759783014
+      },
+      "error": null
+    },
+    {
+      "experiment": 11,
+      "cell": 1,
+      "config": {
+        "game": "Breakout",
+        "learning_rate": "1e-4",
+        "network_size": "medium"
+      },
+      "outcome": 0.014134275618374563,
+      "raw_reward": 2.1,
+      "wall_time_s": 517.3,
+      "training_time_s": 505.3,
+      "fps": 1978.9,
+      "scores": {
+        "pragmatic": -0.3743429989552102,
+        "epistemic": 2.237105477070691,
+        "total": 1.8627624781154808
+      },
+      "appraisal": {
+        "surprise": 0.0012187000764747324,
+        "theory_conflict": 0.00037647833384087126,
+        "prediction_impact_breadth": 11.0,
+        "learntropy": 0.00024030037486812698
+      },
+      "error": null
+    },
+    {
+      "experiment": 12,
+      "cell": 24,
+      "config": {
+        "game": "Pong",
+        "learning_rate": "1e-3",
+        "network_size": "small"
+      },
+      "outcome": 0.0,
+      "raw_reward": -21.0,
+      "wall_time_s": 488.0,
+      "training_time_s": 444.5,
+      "fps": 2249.7,
+      "scores": {
+        "pragmatic": -0.1501046213560451,
+        "epistemic": 2.032296270623875,
+        "total": 1.88219164926783
+      },
+      "appraisal": {
+        "surprise": 0.023634855325129656,
+        "theory_conflict": 0.007794375356424832,
+        "prediction_impact_breadth": 12.0,
+        "learntropy": 0.005196250237616554
+      },
+      "error": null
+    },
+    {
+      "experiment": 13,
+      "cell": 20,
+      "config": {
+        "game": "Pong",
+        "learning_rate": "1e-4",
+        "network_size": "large"
+      },
+      "outcome": 0.6628895184135978,
+      "raw_reward": 2.7,
+      "wall_time_s": 518.1,
+      "training_time_s": 445.1,
+      "fps": 2246.8,
+      "scores": {
+        "pragmatic": -0.023309575898086774,
+        "epistemic": 1.6472483589707574,
+        "total": 1.6239387830726706
+      },
+      "appraisal": {
+        "surprise": 0.0040211920434046755,
+        "theory_conflict": 0.001519008229725791,
+        "prediction_impact_breadth": 12.0,
+        "learntropy": 0.0010126721531505273
+      },
+      "error": null
+    },
+    {
+      "experiment": 14,
+      "cell": 3,
+      "config": {
+        "game": "Breakout",
+        "learning_rate": "5e-4",
+        "network_size": "small"
+      },
+      "outcome": 0.045936395759717315,
+      "raw_reward": 3.0,
+      "wall_time_s": 516.8,
+      "training_time_s": 490.1,
+      "fps": 2040.5,
+      "scores": {
+        "pragmatic": -0.4738071696090184,
+        "epistemic": 1.9013444181403403,
+        "total": 1.4275372485313218
+      },
+      "appraisal": {
+        "surprise": 0.0003072320543026086,
+        "theory_conflict": 0.00010589299649558103,
+        "prediction_impact_breadth": 7.0,
+        "learntropy": 5.39180746674104e-05
+      },
+      "error": null
+    },
+    {
+      "experiment": 15,
+      "cell": 11,
+      "config": {
+        "game": "SpaceInvaders",
+        "learning_rate": "1e-4",
+        "network_size": "large"
+      },
+      "outcome": 0.0,
+      "raw_reward": 11.6,
+      "wall_time_s": 516.6,
+      "training_time_s": 484.8,
+      "fps": 2062.5,
+      "scores": {
+        "pragmatic": -0.533978771952149,
+        "epistemic": 1.665341375188715,
+        "total": 1.1313626032365658
+      },
+      "appraisal": {
+        "surprise": 0.0002819493645318527,
+        "theory_conflict": 0.000105783584480577,
+        "prediction_impact_breadth": 7.0,
+        "learntropy": 5.386236479622222e-05
+      },
+      "error": null
+    },
+    {
+      "experiment": 16,
+      "cell": 7,
+      "config": {
+        "game": "Breakout",
+        "learning_rate": "1e-3",
+        "network_size": "medium"
+      },
+      "outcome": 0.08657243816254417,
+      "raw_reward": 4.15,
+      "wall_time_s": 516.5,
+      "training_time_s": 492.5,
+      "fps": 2030.4,
+      "scores": {
+        "pragmatic": -0.38107009632538624,
+        "epistemic": 1.2930273373959982,
+        "total": 0.9119572410706119
+      },
+      "appraisal": {
+        "surprise": 5.780231766117083e-06,
+        "theory_conflict": 2.5207862426451553e-06,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "error": null
+    },
+    {
+      "experiment": 17,
+      "cell": 23,
+      "config": {
+        "game": "Pong",
+        "learning_rate": "5e-4",
+        "network_size": "large"
+      },
+      "outcome": 0.0,
+      "raw_reward": -21.0,
+      "wall_time_s": 486.2,
+      "training_time_s": 446.3,
+      "fps": 2240.8,
+      "scores": {
+        "pragmatic": -0.4392460080346192,
+        "epistemic": 0.8691743690048558,
+        "total": 0.42992836097023657
+      },
+      "appraisal": {
+        "surprise": 0.0007885471555783008,
+        "theory_conflict": 0.00042186923202789344,
+        "prediction_impact_breadth": 10.0,
+        "learntropy": 0.00025674143855450906
+      },
+      "error": null
+    },
+    {
+      "experiment": 18,
+      "cell": 0,
+      "config": {
+        "game": "Breakout",
+        "learning_rate": "1e-4",
+        "network_size": "small"
+      },
+      "outcome": 0.024734982332155476,
+      "raw_reward": 2.4,
+      "wall_time_s": 516.5,
+      "training_time_s": 505.6,
+      "fps": 1977.7,
+      "scores": {
+        "pragmatic": -0.08957213209451663,
+        "epistemic": 0.6325804744768152,
+        "total": 0.5430083423822986
+      },
+      "appraisal": {
+        "surprise": 0.10416062930075431,
+        "theory_conflict": 0.06380122200967407,
+        "prediction_impact_breadth": 8.0,
+        "learntropy": 0.034728986419939774
+      },
+      "error": null
+    },
+    {
+      "experiment": 19,
+      "cell": 20,
+      "config": {
+        "game": "Pong",
+        "learning_rate": "1e-4",
+        "network_size": "large"
+      },
+      "outcome": 0.6742209631728046,
+      "raw_reward": 3.1,
+      "wall_time_s": 516.6,
+      "training_time_s": 445.0,
+      "fps": 2247.2,
+      "scores": {
+        "pragmatic": -0.0012391218520875697,
+        "epistemic": 0.009845442165297535,
+        "total": 0.008606320313209966
+      },
+      "appraisal": {
+        "surprise": 0.002234196782426312,
+        "theory_conflict": 0.0022124145826075883,
+        "prediction_impact_breadth": 0.0,
+        "learntropy": 0.0
+      },
+      "error": null
+    }
+  ],
+  "n_successful": 20
+}

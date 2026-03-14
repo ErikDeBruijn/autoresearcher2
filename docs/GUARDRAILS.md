@@ -37,12 +37,49 @@ This phase ends when:
 
 ## Next phases
 
-Expansion path (each phase requires evidence-quality validation of the previous one):
+Each phase requires evidence-quality validation of the previous one.
 
-0. Multi-runner controller (local + remote workers)
-1. Throughput-aware reasoning (expose metadata to analysis and LLM)
-2. Throughput-affecting knobs (new explicit phase)
-3. Multi-worker execution under one controller
-4. Heterogeneous workers / compute-aware generalization
-5. Multi-agent social research
+### Intelligence track (primary — making the agent smarter)
+
+**v2.0 — Unconstrained research agent**
+- LLM proposes "research steps" instead of just configs (analysis, hypothesis, experiment)
+- Code execution on dllm-experiment.home sandbox (Python scripts via SSH — already isolated)
+- LLM can use statistical tools (regression, power analysis, factorial design)
+- LLM can modify train.py: architecture changes (e.g. transformer → Mamba), optimizer,
+  data pipeline — like Karpathy's autoresearch but with epistemic governance
+- Must still solve the current problem (val_bpb optimization) as a baseline
+- Evidence test: does richer LLM interaction improve sample efficiency vs v1.5?
+
+**v2.1 — Domain transfer test**
+- Same pipeline, different dataset (Wikipedia, code, or multilingual)
+- Same schema to isolate dataset-specific vs generalizable findings
+- Evidence test: do optimal configs transfer, or are they dataset-specific?
+- This is the G-factor test — fluid intelligence vs crystallized
+
+**v2.2 — Cross-domain generalization**
+- Apply the agent to non-ML verifiable problems
+- Concrete test: Atari games via Arcade Learning Environment (reinforcement learning)
+  - Multiple games (Breakout, Space Invaders, etc.) to test cross-game transfer
+  - Agent must set up its own training + evaluation pipeline
+  - Known benchmark with published scores for comparison
+- Also: compiler optimization, material properties, or other domains
+- Minimal harness changes — same governance, same meta-loop, different environment
+- Evidence test: does the research methodology generalize beyond ML?
+  If the same agent optimizes both LLM training and Atari scores → fluid intelligence
+
+### Infrastructure track (secondary — scaling what works)
+
+**v3.0 — Throughput-aware reasoning**
+- Expose tokens_M, tok/sec, wall_time to LLM analysis (partially done in v1.5)
+- Throughput-affecting knobs as new factors
+
+**v3.1 — Multi-worker execution**
+- Arbitrarily many workers: unprivileged VMs/containers with GPU passthrough
+- Workers run on Proxmox cluster (or any host with GPU passthrough)
+- Central controller distributes experiments to available workers
+- Workers are stateless and disposable — results flow back to controller
+
+**v3.2 — Multi-agent social research**
+- Multiple agents with different priors
+- Coordinated exploration with shared evidence grammar
 

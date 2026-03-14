@@ -1,0 +1,65 @@
+[14:10:15] ============================================================
+[14:10:15] v2.2 CROSS-DOMAIN ATARI — run_id=787eac14
+[14:10:15] ============================================================
+[14:10:15] Schema: 27 cells, 3 factors
+[14:10:15] Budget: 20 experiments
+[14:10:15] GPU: 0, Timesteps: 1000000
+[14:10:15] SSH: root@10.1.1.146
+[14:10:15]   [1/20] cell 26 {'game': 'Pong', 'learning_rate': '1e-3', 'network_size': 'large'} (prag=-0.490 epist=6.000)
+[14:18:21]     → reward=-21.0 outcome=0.0000 surprise=0.0000
+[14:18:21]   [2/20] cell 13 {'game': 'SpaceInvaders', 'learning_rate': '5e-4', 'network_size': 'medium'} (prag=-0.490 epist=6.000)
+[14:26:57]     → reward=8.35 outcome=0.0000 surprise=0.0000
+[14:26:57]   [3/20] cell 6 {'game': 'Breakout', 'learning_rate': '1e-3', 'network_size': 'small'} (prag=-0.490 epist=5.834)
+[14:35:34]     → reward=4.3 outcome=0.0919 surprise=0.0007
+[14:35:34]   [4/20] cell 2 {'game': 'Breakout', 'learning_rate': '1e-4', 'network_size': 'large'} (prag=-0.472 epist=5.715)
+[14:44:12]     → reward=3.95 outcome=0.0795 surprise=0.0004
+[14:44:12]   [5/20] cell 9 {'game': 'SpaceInvaders', 'learning_rate': '1e-4', 'network_size': 'small'} (prag=-0.455 epist=5.534)
+[14:52:49]     → reward=8.6 outcome=0.0000 surprise=0.0001
+[14:52:49]   [6/20] cell 21 {'game': 'Pong', 'learning_rate': '5e-4', 'network_size': 'small'} (prag=-0.481 epist=5.437)
+[15:00:56]     → reward=-21.0 outcome=0.0000 surprise=0.0000
+[15:00:56]   [7/20] cell 19 {'game': 'Pong', 'learning_rate': '1e-4', 'network_size': 'medium'} (prag=-0.486 epist=5.363)
+[15:11:34]     → reward=-7.65 outcome=0.3697 surprise=0.0124
+[15:11:34]   [8/20] cell 16 {'game': 'SpaceInvaders', 'learning_rate': '1e-3', 'network_size': 'medium'} (prag=-0.436 epist=4.004)
+[15:20:12]     → reward=6.05 outcome=0.0000 surprise=0.0002
+[15:20:12]   [9/20] cell 14 {'game': 'SpaceInvaders', 'learning_rate': '5e-4', 'network_size': 'large'} (prag=-0.564 epist=3.942)
+[15:28:50]     → reward=9.3 outcome=0.0000 surprise=0.0003
+[15:28:50]   [10/20] cell 4 {'game': 'Breakout', 'learning_rate': '5e-4', 'network_size': 'medium'} (prag=-0.413 epist=3.863)
+[15:37:28]     → reward=3.35 outcome=0.0583 surprise=0.0000
+[15:37:28]   [11/20] cell 18 {'game': 'Pong', 'learning_rate': '1e-4', 'network_size': 'small'} (prag=-0.304 epist=2.326)
+[15:45:35]     → reward=11.75 outcome=0.9193 surprise=0.1194
+[15:45:35]   [12/20] cell 1 {'game': 'Breakout', 'learning_rate': '1e-4', 'network_size': 'medium'} (prag=-0.374 epist=2.237)
+[15:54:12]     → reward=2.1 outcome=0.0141 surprise=0.0012
+[15:54:12]   [13/20] cell 24 {'game': 'Pong', 'learning_rate': '1e-3', 'network_size': 'small'} (prag=-0.150 epist=2.032)
+[16:02:20]     → reward=-21.0 outcome=0.0000 surprise=0.0236
+[16:02:20]   [14/20] cell 20 {'game': 'Pong', 'learning_rate': '1e-4', 'network_size': 'large'} (prag=-0.023 epist=1.647)
+[16:10:58]     → reward=2.7 outcome=0.6629 surprise=0.0040
+[16:10:58]   [15/20] cell 3 {'game': 'Breakout', 'learning_rate': '5e-4', 'network_size': 'small'} (prag=-0.474 epist=1.901)
+[16:19:35]     → reward=3.0 outcome=0.0459 surprise=0.0003
+[16:19:35]   [16/20] cell 11 {'game': 'SpaceInvaders', 'learning_rate': '1e-4', 'network_size': 'large'} (prag=-0.534 epist=1.665)
+[16:28:11]     → reward=11.6 outcome=0.0000 surprise=0.0003
+[16:28:12]   [17/20] cell 7 {'game': 'Breakout', 'learning_rate': '1e-3', 'network_size': 'medium'} (prag=-0.381 epist=1.293)
+[16:36:48]     → reward=4.15 outcome=0.0866 surprise=0.0000
+[16:36:48]   [18/20] cell 23 {'game': 'Pong', 'learning_rate': '5e-4', 'network_size': 'large'} (prag=-0.439 epist=0.869)
+[16:44:54]     → reward=-21.0 outcome=0.0000 surprise=0.0008
+[16:44:54]   [19/20] cell 0 {'game': 'Breakout', 'learning_rate': '1e-4', 'network_size': 'small'} (prag=-0.090 epist=0.633)
+[16:53:31]     → reward=2.4 outcome=0.0247 surprise=0.1042
+[16:53:31]   [20/20] cell 20 {'game': 'Pong', 'learning_rate': '1e-4', 'network_size': 'large'} (prag=-0.001 epist=0.010)
+[17:02:07]     → reward=3.1 outcome=0.6742 surprise=0.0022
+[17:02:07] 
+============================================================
+[17:02:07] DONE — 171.9 min total
+[17:02:07]   20/20 experiments succeeded
+[17:02:07]   Best: cell 18 {'game': 'Pong', 'learning_rate': '1e-4', 'network_size': 'small'}
+[17:02:07]     reward=11.8 outcome=0.9193
+[17:02:07] 
+  Factor importances:
+[17:02:07]     learning_rate: 0.1713
+[17:02:07]     network_size: 0.1178
+[17:02:07]     game: 0.0886
+[17:02:07] 
+  Best per game:
+[17:02:07]     Breakout: reward=4.3 lr=1e-3 net=small
+[17:02:07]     SpaceInvaders: reward=8.3 lr=5e-4 net=medium
+[17:02:07]     Pong: reward=11.8 lr=1e-4 net=small
+[17:02:07] 
+Results: artifacts/v22_atari/787eac14.json

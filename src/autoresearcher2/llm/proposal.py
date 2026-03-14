@@ -17,8 +17,9 @@ logger = logging.getLogger(__name__)
 
 def propose_experiments(
     schema: InterventionSchema,
-    history: list[dict],  # [{config, val_bpb, outcome, appraisal}, ...]
+    history: list[dict],  # [{config, val_bpb, outcome, appraisal, tokens_M, tok_per_sec}, ...]
     factor_importances: dict[str, float],
+    prior_results: list[dict] | None = None,  # results from earlier approaches
     ssh_host: str = "root@dllm-experiment.home",
     ssh_key: str = "~/.ssh/pve03_key",
 ) -> list[dict]:
@@ -30,7 +31,7 @@ def propose_experiments(
     if not history:
         return []
 
-    prompt = _build_prompt(schema, history, factor_importances)
+    prompt = _build_prompt(schema, history, factor_importances, prior_results)
 
     try:
         raw = _call_claude(prompt, ssh_host, ssh_key)
@@ -45,6 +46,7 @@ def _build_prompt(
     schema: InterventionSchema,
     history: list[dict],
     factor_importances: dict[str, float],
+    prior_results: list[dict] | None = None,
 ) -> str:
     # Schema description
     schema_lines = []
@@ -52,9 +54,9 @@ def _build_prompt(
         schema_lines.append(f"  {name}: {levels}")
     schema_desc = "\n".join(schema_lines)
 
-    # Results table
-    table_lines = ["cell | config | outcome | surprise | learntropy"]
-    table_lines.append("---- | ------ | ------- | -------- | ----------")
+    # Results table — now includes tokens_M and tok_per_sec
+    table_lines = ["cell | config | outcome | tokens_M | tok/s | surprise | learntropy"]
+    table_lines.append("---- | ------ | ------- | -------- | ----- | -------- | ----------")
     for rec in history:
         config = rec.get("config", {})
         outcome = rec.get("outcome", rec.get("val_bpb", "?"))
@@ -62,6 +64,8 @@ def _build_prompt(
         surprise = appraisal.get("surprise", "?")
         learntropy = appraisal.get("learntropy", "?")
         cell = rec.get("cell_index", "?")
+        tokens_m = rec.get("tokens_M", "?")
+        tok_per_sec = rec.get("tok_per_sec", "?")
 
         config_str = ", ".join(f"{k}={v}" for k, v in config.items())
         if isinstance(outcome, float):
@@ -70,8 +74,14 @@ def _build_prompt(
             surprise = f"{surprise:.3f}"
         if isinstance(learntropy, float):
             learntropy = f"{learntropy:.3f}"
+        if isinstance(tokens_m, float):
+            tokens_m = f"{tokens_m:.0f}"
+        if isinstance(tok_per_sec, float):
+            tok_per_sec = f"{tok_per_sec:.0f}"
 
-        table_lines.append(f"{cell} | {config_str} | {outcome} | {surprise} | {learntropy}")
+        table_lines.append(
+            f"{cell} | {config_str} | {outcome} | {tokens_m} | {tok_per_sec} | {surprise} | {learntropy}"
+        )
     results_table = "\n".join(table_lines)
 
     # Factor importances
@@ -86,19 +96,34 @@ def _build_prompt(
     # Coverage gaps (factor levels never or rarely tested)
     coverage_desc = _format_coverage_gaps(schema, history)
 
+    # Prior approach results (what other methods already found)
+    prior_desc = _format_prior_results(prior_results) if prior_results else ""
+
+    # Epistemic context from project governance documents
+    epistemic_context = _epistemic_context()
+
     return textwrap.dedent(f"""\
-        You are an experiment advisor for an automated Bayesian research system.
-        The system maintains a structured model of factor effects and updates beliefs
-        after each experiment. Your role: suggest experiments that the Bayesian model
-        would not choose on its own — especially exploring untested regions and
-        following up on surprising results.
+        You are an experiment advisor for an automated Bayesian research system
+        (autoresearcher2). The system maintains a structured model of factor effects
+        and updates beliefs after each experiment. Your role: suggest experiments
+        that the Bayesian model would not choose on its own — especially exploring
+        untested regions and following up on surprising results.
+
+        {epistemic_context}
 
         SCHEMA (factors and their levels):
         {schema_desc}
 
         Total cells: {schema.n_cells}
 
-        RESULTS SO FAR:
+        IMPORTANT CONFOUND — TOKEN BUDGET VARIES BY CONFIG:
+        All experiments run for the same wall-clock time (~5 minutes), but deeper
+        models process fewer tokens. DEPTH=6 trains ~323M tokens, DEPTH=8 ~176M,
+        DEPTH=10 ~101M. Lower val_bpb for shallower models may partly reflect more
+        training data, not inherently better architecture. The tokens_M and tok/s
+        columns below let you assess this.
+
+        RESULTS SO FAR (this approach):
         {results_table}
 
         FACTOR IMPORTANCES (higher = more influential on outcome):
@@ -108,6 +133,8 @@ def _build_prompt(
 
         {coverage_desc}
 
+        {prior_desc}
+
         TASK: Suggest exactly 3 experiment configurations to run next.
 
         Guidelines:
@@ -116,6 +143,9 @@ def _build_prompt(
         - If high-signal experiments exist, consider follow-ups that test whether
           the surprising finding generalizes
         - Avoid exact configs already run (see results table)
+        - Consider the token budget confound when interpreting results
+        - If prior approach results are available, use them as additional signal
+          but do not simply repeat their best configs — look for gaps in what they explored
 
         Respond with ONLY a JSON array of 3 objects, each with:
         - "config": dict mapping factor names to level values
@@ -192,6 +222,58 @@ def _format_coverage_gaps(schema: InterventionSchema, history: list[dict]) -> st
     lines.extend(untried)
     lines.extend(underexplored)
     return "\n".join(lines)
+
+
+def _format_prior_results(prior_results: list[dict]) -> str:
+    """Summarize results from earlier approaches (random, bayesian, etc.)."""
+    if not prior_results:
+        return ""
+
+    lines = [
+        "PRIOR APPROACH RESULTS (from earlier methods on the same schema):",
+        "These runs already completed. Use them as additional signal — they show",
+        "which regions of the space have been explored and what was found.",
+        "",
+    ]
+    for prior in prior_results:
+        name = prior.get("approach", "unknown")
+        results = prior.get("results", [])
+        successful = [r for r in results if r.get("error") is None]
+        if not successful:
+            lines.append(f"  {name}: no successful experiments")
+            continue
+
+        best = min(r["val_bpb"] for r in successful)
+        mean = sum(r["val_bpb"] for r in successful) / len(successful)
+        unique_cells = len(set(r.get("cell", r.get("cell_index", -1)) for r in successful))
+
+        # Top 3 configs
+        top3 = sorted(successful, key=lambda r: r["val_bpb"])[:3]
+        top3_str = "; ".join(
+            f"{','.join(f'{k}={v}' for k,v in r['config'].items())}={r['val_bpb']:.4f}"
+            for r in top3
+        )
+
+        lines.append(
+            f"  {name}: {len(successful)} experiments, {unique_cells} unique cells, "
+            f"best={best:.6f}, mean={mean:.6f}"
+        )
+        lines.append(f"    Top 3: {top3_str}")
+
+    return "\n".join(lines)
+
+
+def _epistemic_context() -> str:
+    """Condensed epistemic governance context from CONSTITUTION and CHARTER."""
+    return textwrap.dedent("""\
+        EPISTEMIC GOVERNANCE (from project Constitution and Charter):
+        - Distinguish observation from interpretation. Do not convert excitement into evidence.
+        - Claims require concrete evidence. Label confidence: observed / supported / plausible / speculative.
+        - Prefer honest uncertainty over polished narrative. Say what you don't know.
+        - Watch for confirmation bias, overgeneralization from thin evidence, and proxy gaming.
+        - Exploration and surprise are valuable, but must remain accountable to reality.
+        - The goal is not just better results, but better judgment about what the results mean.
+        - When reasoning about experiment suggestions, be explicit about your uncertainty.""")
 
 
 def _call_claude(prompt: str, ssh_host: str, ssh_key: str) -> str:

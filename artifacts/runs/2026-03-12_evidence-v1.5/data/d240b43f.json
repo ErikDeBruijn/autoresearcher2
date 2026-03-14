@@ -1,0 +1,616 @@
+{
+  "run_id": "d240b43f",
+  "schema": {
+    "DEPTH": [
+      "6",
+      "8",
+      "10"
+    ],
+    "MATRIX_LR": [
+      "0.02",
+      "0.04",
+      "0.08"
+    ],
+    "WEIGHT_DECAY": [
+      "0.1",
+      "0.2",
+      "0.4"
+    ]
+  },
+  "n_experiments": 20,
+  "seed": 42,
+  "gpu_device": "1",
+  "llm_every": 3,
+  "approaches": {
+    "full": {
+      "results": [
+        {
+          "cell": 26,
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.9370609999999999,
+          "val_bpb": 1.062939,
+          "wall_time_s": 357.7,
+          "tokens_M": 101.6,
+          "tok_per_sec": 283998.5,
+          "num_steps": 775.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-0",
+          "trial_id": 0,
+          "source": "lookahead",
+          "experiment": 0,
+          "scores": {
+            "pragmatic": -1.0,
+            "epistemic": 6.0,
+            "total": 5.0
+          },
+          "retry_of_original_error": null
+        },
+        {
+          "cell": 26,
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": null,
+          "val_bpb": null,
+          "wall_time_s": 21.6,
+          "tokens_M": null,
+          "tok_per_sec": null,
+          "num_steps": null,
+          "mfu": null,
+          "error": "train.py failed (exit 143): 37,211 | mfu: 66.0% | epoch: 1 | remaining: 293s    \nstep 00029 (2.3%) | loss: 6.783101 | lrm: 1.00 | dt: 389ms | tok/sec: 336,758 | mfu: 65.9% | epoch: 1 | remaining: 293s    \nstep 00030 (2.4%) | loss: 6.672009 | lrm: 1.00 | dt: 390ms | tok/sec: 336,513 | mfu: 65.9% | epoch: 1 | remaining: 292s    ",
+          "decision_id": "full-1",
+          "trial_id": 1,
+          "source": "lookahead",
+          "experiment": 1,
+          "scores": {
+            "pragmatic": -1.0,
+            "epistemic": 6.0,
+            "total": 5.0
+          },
+          "retry_error": "train.py timed out after 600s"
+        },
+        {
+          "cell": 26,
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.9382900000000001,
+          "val_bpb": 1.06171,
+          "wall_time_s": 337.7,
+          "tokens_M": 101.1,
+          "tok_per_sec": 299373.9,
+          "num_steps": 771.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-2",
+          "trial_id": 2,
+          "source": "lookahead",
+          "experiment": 2,
+          "scores": {
+            "pragmatic": -1.0,
+            "epistemic": 6.0,
+            "total": 5.0
+          },
+          "appraisal": {
+            "surprise": 0.07068227383423098,
+            "theory_conflict": 0.010097467690604425,
+            "prediction_impact_breadth": 19.0,
+            "learntropy": 0.008470467697728789
+          }
+        },
+        {
+          "cell": 4,
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.9502269999999999,
+          "val_bpb": 1.049773,
+          "wall_time_s": 321.1,
+          "tokens_M": 323.0,
+          "tok_per_sec": 1005996.1,
+          "num_steps": 2464.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-3",
+          "trial_id": 3,
+          "source": "llm_augmented",
+          "experiment": 3,
+          "scores": {
+            "pragmatic": -1.0,
+            "epistemic": 6.0,
+            "total": 5.0
+          },
+          "appraisal": {
+            "surprise": 0.07242500250576611,
+            "theory_conflict": 0.010346428929395158,
+            "prediction_impact_breadth": 19.0,
+            "learntropy": 0.008679313934803227
+          }
+        },
+        {
+          "cell": 13,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.966577,
+          "val_bpb": 1.033423,
+          "wall_time_s": 327.8,
+          "tokens_M": 175.5,
+          "tok_per_sec": 535451.5,
+          "num_steps": 1339.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-4",
+          "trial_id": 4,
+          "source": "llm_augmented",
+          "experiment": 4,
+          "scores": {
+            "pragmatic": -0.27592128274343325,
+            "epistemic": 4.501248959200666,
+            "total": 4.2253276764572325
+          },
+          "appraisal": {
+            "surprise": 0.02648624103475572,
+            "theory_conflict": 0.004814586874941974,
+            "prediction_impact_breadth": 22.0,
+            "learntropy": 0.004345987630498314
+          }
+        },
+        {
+          "cell": 22,
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.9421280000000001,
+          "val_bpb": 1.057872,
+          "wall_time_s": 337.3,
+          "tokens_M": 101.2,
+          "tok_per_sec": 300063.0,
+          "num_steps": 772.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-5",
+          "trial_id": 5,
+          "source": "llm_augmented",
+          "experiment": 5,
+          "scores": {
+            "pragmatic": -0.042094171998810194,
+            "epistemic": 3.8345826007477606,
+            "total": 3.79248842874895
+          },
+          "appraisal": {
+            "surprise": 0.002821358765219828,
+            "theory_conflict": 0.0005835785626629796,
+            "prediction_impact_breadth": 24.0,
+            "learntropy": 0.0005502031453521219
+          }
+        },
+        {
+          "cell": 10,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.9600150000000001,
+          "val_bpb": 1.039985,
+          "wall_time_s": 327.6,
+          "tokens_M": 176.0,
+          "tok_per_sec": 537230.4,
+          "num_steps": 1343.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-6",
+          "trial_id": 6,
+          "source": "llm_augmented",
+          "experiment": 6,
+          "scores": {
+            "pragmatic": -0.33825657177386675,
+            "epistemic": 4.417237329677145,
+            "total": 4.078980757903278
+          },
+          "appraisal": {
+            "surprise": 0.032623034916576255,
+            "theory_conflict": 0.006022079693252153,
+            "prediction_impact_breadth": 20.0,
+            "learntropy": 0.005182980969222101
+          }
+        },
+        {
+          "cell": 12,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.1"
+          },
+          "outcome": 0.961449,
+          "val_bpb": 1.038551,
+          "wall_time_s": 326.9,
+          "tokens_M": 175.1,
+          "tok_per_sec": 535596.9,
+          "num_steps": 1336.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-7",
+          "trial_id": 7,
+          "source": "llm_augmented",
+          "experiment": 7,
+          "scores": {
+            "pragmatic": -0.4263725881392901,
+            "epistemic": 4.340440834011286,
+            "total": 3.914068245871996
+          },
+          "appraisal": {
+            "surprise": 0.04250795033107235,
+            "theory_conflict": 0.007959633231091147,
+            "prediction_impact_breadth": 21.0,
+            "learntropy": 0.007019736685584229
+          }
+        },
+        {
+          "cell": 8,
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.9391780000000001,
+          "val_bpb": 1.060822,
+          "wall_time_s": 321.3,
+          "tokens_M": 322.4,
+          "tok_per_sec": 1003271.5,
+          "num_steps": 2460.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-8",
+          "trial_id": 8,
+          "source": "llm_augmented",
+          "experiment": 8,
+          "scores": {
+            "pragmatic": -0.20123511121080692,
+            "epistemic": 4.097957302312379,
+            "total": 3.896722191101572
+          },
+          "appraisal": {
+            "surprise": 0.01815721737631215,
+            "theory_conflict": 0.003561665251310801,
+            "prediction_impact_breadth": 20.0,
+            "learntropy": 0.0030653933784649747
+          }
+        },
+        {
+          "cell": 16,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.958764,
+          "val_bpb": 1.041236,
+          "wall_time_s": 364.6,
+          "tokens_M": 175.4,
+          "tok_per_sec": 481109.2,
+          "num_steps": 1338.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-9",
+          "trial_id": 9,
+          "source": "llm_augmented",
+          "experiment": 9,
+          "scores": {
+            "pragmatic": -0.07369421770941191,
+            "epistemic": 3.6708548555971525,
+            "total": 3.5971606378877405
+          },
+          "appraisal": {
+            "surprise": 0.0071841228835054505,
+            "theory_conflict": 0.0015380745293116125,
+            "prediction_impact_breadth": 17.0,
+            "learntropy": 0.0012204499076492903
+          }
+        },
+        {
+          "cell": 14,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.966186,
+          "val_bpb": 1.033814,
+          "wall_time_s": 338.4,
+          "tokens_M": 176.0,
+          "tok_per_sec": 520091.9,
+          "num_steps": 1343.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-10",
+          "trial_id": 10,
+          "source": "llm_augmented",
+          "experiment": 10,
+          "scores": {
+            "pragmatic": -0.09246823864524427,
+            "epistemic": 3.5944533054694983,
+            "total": 3.501985066824254
+          },
+          "retry_of_original_error": null
+        },
+        {
+          "cell": 0,
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.1"
+          },
+          "outcome": 0.9460569999999999,
+          "val_bpb": 1.053943,
+          "wall_time_s": 333.7,
+          "tokens_M": 323.0,
+          "tok_per_sec": 967995.1,
+          "num_steps": 2464.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-11",
+          "trial_id": 11,
+          "source": "llm_augmented",
+          "experiment": 11,
+          "scores": {
+            "pragmatic": -0.3068750405217763,
+            "epistemic": 5.0095318627195295,
+            "total": 4.702656822197754
+          },
+          "retry_of_original_error": null
+        },
+        {
+          "cell": 0,
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.1"
+          },
+          "outcome": 0.9461520000000001,
+          "val_bpb": 1.053848,
+          "wall_time_s": 742.6,
+          "tokens_M": 325.6,
+          "tok_per_sec": 438477.4,
+          "num_steps": 2484.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-12",
+          "trial_id": 12,
+          "source": "llm_fallback",
+          "experiment": 12,
+          "scores": {
+            "pragmatic": -0.3068750405217763,
+            "epistemic": 5.0095318627195295,
+            "total": 4.702656822197754
+          },
+          "appraisal": {
+            "surprise": 0.02463061410663936,
+            "theory_conflict": 0.004098591149742755,
+            "prediction_impact_breadth": 16.0,
+            "learntropy": 0.003155096938136263
+          }
+        },
+        {
+          "cell": 11,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.9631909999999999,
+          "val_bpb": 1.036809,
+          "wall_time_s": 341.3,
+          "tokens_M": 175.9,
+          "tok_per_sec": 515420.1,
+          "num_steps": 1342.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-13",
+          "trial_id": 13,
+          "source": "lookahead",
+          "experiment": 13,
+          "scores": {
+            "pragmatic": -0.10927136968595262,
+            "epistemic": 3.9844869996673795,
+            "total": 3.875215629981427
+          },
+          "retry_of_original_error": null
+        },
+        {
+          "cell": 11,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.9628589999999999,
+          "val_bpb": 1.037141,
+          "wall_time_s": 340.7,
+          "tokens_M": 175.8,
+          "tok_per_sec": 515971.2,
+          "num_steps": 1341.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-14",
+          "trial_id": 14,
+          "source": "lookahead",
+          "experiment": 14,
+          "scores": {
+            "pragmatic": -0.10927136968595262,
+            "epistemic": 3.9844869996673795,
+            "total": 3.875215629981427
+          },
+          "retry_of_original_error": null
+        },
+        {
+          "cell": 11,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.9627939999999999,
+          "val_bpb": 1.037206,
+          "wall_time_s": 340.9,
+          "tokens_M": 175.9,
+          "tok_per_sec": 516019.9,
+          "num_steps": 1342.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-15",
+          "trial_id": 15,
+          "source": "llm_fallback",
+          "experiment": 15,
+          "scores": {
+            "pragmatic": -0.10927136968595262,
+            "epistemic": 3.9844869996673795,
+            "total": 3.875215629981427
+          },
+          "retry_of_original_error": null
+        },
+        {
+          "cell": 11,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.9631959999999999,
+          "val_bpb": 1.036804,
+          "wall_time_s": 327.0,
+          "tokens_M": 176.7,
+          "tok_per_sec": 540336.4,
+          "num_steps": 1348.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-16",
+          "trial_id": 16,
+          "source": "lookahead",
+          "experiment": 16,
+          "scores": {
+            "pragmatic": -0.10927136968595262,
+            "epistemic": 3.9844869996673795,
+            "total": 3.875215629981427
+          },
+          "appraisal": {
+            "surprise": 0.010756886557752976,
+            "theory_conflict": 0.002158072948825184,
+            "prediction_impact_breadth": 17.0,
+            "learntropy": 0.0017124137230677186
+          }
+        },
+        {
+          "cell": 24,
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.1"
+          },
+          "outcome": 0.9385870000000001,
+          "val_bpb": 1.061413,
+          "wall_time_s": 337.7,
+          "tokens_M": 101.1,
+          "tok_per_sec": 299377.2,
+          "num_steps": 771.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-17",
+          "trial_id": 17,
+          "source": "lookahead",
+          "experiment": 17,
+          "scores": {
+            "pragmatic": -0.09319977243116523,
+            "epistemic": 3.8005287693030447,
+            "total": 3.7073289968718797
+          },
+          "appraisal": {
+            "surprise": 0.007783735283303117,
+            "theory_conflict": 0.0016214328998664005,
+            "prediction_impact_breadth": 15.0,
+            "learntropy": 0.0012085447283519603
+          }
+        },
+        {
+          "cell": 17,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.9534400000000001,
+          "val_bpb": 1.04656,
+          "wall_time_s": 327.3,
+          "tokens_M": 175.5,
+          "tok_per_sec": 536226.5,
+          "num_steps": 1339.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-18",
+          "trial_id": 18,
+          "source": "llm_augmented",
+          "experiment": 18,
+          "scores": {
+            "pragmatic": -0.0004984261862015267,
+            "epistemic": 1.8174481842011736,
+            "total": 1.816949758014972
+          },
+          "appraisal": {
+            "surprise": 0.0001611199690183529,
+            "theory_conflict": 5.7186488795723844e-05,
+            "prediction_impact_breadth": 6.0,
+            "learntropy": 2.69579693464699e-05
+          }
+        },
+        {
+          "cell": 5,
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.9479280000000001,
+          "val_bpb": 1.052072,
+          "wall_time_s": 320.4,
+          "tokens_M": 322.8,
+          "tok_per_sec": 1007455.0,
+          "num_steps": 2463.0,
+          "mfu": null,
+          "error": null,
+          "decision_id": "full-19",
+          "trial_id": 19,
+          "source": "llm_augmented",
+          "experiment": 19,
+          "scores": {
+            "pragmatic": -0.043351989509553004,
+            "epistemic": 3.0362952814637207,
+            "total": 2.992943291954168
+          },
+          "appraisal": {
+            "surprise": 0.004000059098909325,
+            "theory_conflict": 0.0009910224153518187,
+            "prediction_impact_breadth": 12.0,
+            "learntropy": 0.0006606816102345458
+          }
+        }
+      ],
+      "total_time_s": 21747.3
+    }
+  }
+}

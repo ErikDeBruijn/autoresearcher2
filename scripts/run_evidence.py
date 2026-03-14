@@ -60,42 +60,60 @@ def log(msg: str):
     print(f"[{ts}] {msg}", flush=True)
 
 
-def run_experiment(env: TrainPyEnvironment, cell: int, config: dict) -> dict:
-    """Run one train.py experiment with full instrumentation."""
-    start = time.time()
-    try:
-        outcome = env.run(cell)
-        val_bpb = 2.0 - outcome
-        wall_time = time.time() - start
-        metadata = getattr(env, "last_run_metadata", {})
-        tokens_M = metadata.get("total_tokens_M")
-        tok_per_sec = round(tokens_M * 1e6 / wall_time, 1) if tokens_M and wall_time > 0 else None
-        return {
-            "cell": cell,
-            "config": config,
-            "outcome": outcome,
-            "val_bpb": val_bpb,
-            "wall_time_s": round(wall_time, 1),
-            "tokens_M": tokens_M,
-            "tok_per_sec": tok_per_sec,
-            "num_steps": metadata.get("num_steps"),
-            "mfu": metadata.get("steady_state_mfu"),
-            "error": None,
-        }
-    except Exception as e:
-        wall_time = time.time() - start
-        return {
-            "cell": cell,
-            "config": config,
-            "outcome": None,
-            "val_bpb": None,
-            "wall_time_s": round(wall_time, 1),
-            "tokens_M": None,
-            "tok_per_sec": None,
-            "num_steps": None,
-            "mfu": None,
-            "error": str(e),
-        }
+def run_experiment(env: TrainPyEnvironment, cell: int, config: dict, max_retries: int = 1) -> dict:
+    """Run one train.py experiment with full instrumentation and retry on failure."""
+    attempts = []
+    for attempt in range(1 + max_retries):
+        start = time.time()
+        try:
+            outcome = env.run(cell)
+            val_bpb = 2.0 - outcome
+            wall_time = time.time() - start
+            metadata = getattr(env, "last_run_metadata", {})
+            tokens_M = metadata.get("total_tokens_M")
+            tok_per_sec = round(tokens_M * 1e6 / wall_time, 1) if tokens_M and wall_time > 0 else None
+            result = {
+                "cell": cell,
+                "config": config,
+                "outcome": outcome,
+                "val_bpb": val_bpb,
+                "wall_time_s": round(wall_time, 1),
+                "tokens_M": tokens_M,
+                "tok_per_sec": tok_per_sec,
+                "num_steps": metadata.get("num_steps"),
+                "mfu": metadata.get("steady_state_mfu"),
+                "error": None,
+            }
+            if attempts:
+                result["retries"] = len(attempts)
+                result["retry_errors"] = attempts
+                log(f"    ↳ succeeded on retry (failure was intermittent)")
+            return result
+        except Exception as e:
+            wall_time = time.time() - start
+            error_msg = str(e)
+            attempts.append({"attempt": attempt, "error": error_msg, "wall_time_s": round(wall_time, 1)})
+            if attempt < max_retries:
+                log(f"    ↳ attempt {attempt+1} failed: {error_msg[:100]}... retrying")
+                time.sleep(5)
+
+    # All attempts failed
+    failure_type = "reproducible" if len(set(a["error"] for a in attempts)) == 1 else "intermittent_different_errors"
+    return {
+        "cell": cell,
+        "config": config,
+        "outcome": None,
+        "val_bpb": None,
+        "wall_time_s": sum(a["wall_time_s"] for a in attempts),
+        "tokens_M": None,
+        "tok_per_sec": None,
+        "num_steps": None,
+        "mfu": None,
+        "error": attempts[-1]["error"],
+        "retries": len(attempts) - 1,
+        "retry_errors": attempts,
+        "failure_type": failure_type,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -222,11 +240,17 @@ def run_full(env: TrainPyEnvironment, save_cb=None) -> list[dict]:
                     "val_bpb": r["val_bpb"],
                     "outcome": r["outcome"],
                     "cell_index": r["cell"],
+                    "tokens_M": r.get("tokens_M"),
+                    "tok_per_sec": r.get("tok_per_sec"),
                     "appraisal": r.get("appraisal", {}),
                 }
                 for r in results if r["error"] is None
             ]
-            suggestions = propose_experiments(SCHEMA, history, model.factor_importances())
+            prior = _load_prior_results()
+            suggestions = propose_experiments(
+                SCHEMA, history, model.factor_importances(),
+                prior_results=prior,
+            )
             if suggestions:
                 for s in suggestions:
                     log(f"    LLM: cell {s['cell']} {s['config']} — {s['reasoning']}")
@@ -372,6 +396,71 @@ def main():
 
     _save_results(all_results)
     log(f"\nResults: artifacts/evidence/{RUN_ID}.json")
+
+    # Generate run report
+    run_dir = _setup_run_dir(all_results)
+    if run_dir:
+        log(f"Run directory: {run_dir}")
+        try:
+            from scripts.generate_run_paper import generate_latex, load_approaches
+            import subprocess as _sp
+            approaches = load_approaches(run_dir)
+            latex = generate_latex(approaches, run_dir, use_llm=True)
+            tex_path = run_dir / "report.tex"
+            tex_path.write_text(latex)
+            _sp.run(["tectonic", str(tex_path)], capture_output=True, timeout=60, cwd=str(run_dir))
+            log(f"Report: {run_dir / 'report.pdf'}")
+        except Exception as e:
+            log(f"Report generation failed: {e}")
+
+
+def _setup_run_dir(all_results: dict) -> Path | None:
+    """Create a timestamped run directory with data and figures."""
+    today = time.strftime("%Y-%m-%d")
+    run_name = f"{today}_evidence-{RUN_ID[:8]}"
+    run_dir = Path("artifacts/runs") / run_name
+    try:
+        (run_dir / "data").mkdir(parents=True, exist_ok=True)
+        (run_dir / "figures").mkdir(exist_ok=True)
+        # Copy the JSON data
+        import shutil
+        src = Path("artifacts/evidence") / f"{RUN_ID}.json"
+        if src.exists():
+            shutil.copy2(src, run_dir / "data" / src.name)
+        # Generate dashboard
+        try:
+            import subprocess as _sp
+            _sp.run(
+                ["uv", "run", "python", "scripts/visualize_evidence.py"],
+                capture_output=True, timeout=30,
+            )
+            dashboard = Path("artifacts/evidence_dashboard.png")
+            if dashboard.exists():
+                shutil.copy2(dashboard, run_dir / "figures" / "evidence_dashboard.png")
+        except Exception:
+            pass
+        return run_dir
+    except Exception as e:
+        log(f"Failed to setup run dir: {e}")
+        return None
+
+
+def _load_prior_results() -> list[dict]:
+    """Load results from all prior evidence runs to provide cross-approach context."""
+    prior = []
+    evidence_dir = Path("artifacts/evidence")
+    if not evidence_dir.exists():
+        return prior
+    for f in sorted(evidence_dir.glob("*.json")):
+        try:
+            data = json.load(open(f))
+            for name, info in data.get("approaches", {}).items():
+                results = info.get("results", [])
+                if results:
+                    prior.append({"approach": name, "results": results})
+        except (json.JSONDecodeError, KeyError):
+            continue
+    return prior
 
 
 def _save_results(all_results: dict):

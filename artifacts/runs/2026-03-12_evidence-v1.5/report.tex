@@ -1,0 +1,141 @@
+
+    \documentclass[10pt,a4paper,twocolumn]{article}
+    \usepackage[margin=1.8cm]{geometry}
+    \usepackage{booktabs}
+    \usepackage{graphicx}
+    \usepackage{xcolor}
+    \usepackage{hyperref}
+    \usepackage[small]{titlesec}
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{0.4em}
+
+    \title{\textbf{Evidence Run Report}\\[0.3em]
+           \large 2026-03-12\_evidence-v1.5}
+    \author{autoresearcher2}
+    \date{2026-03-12 22:49}
+
+    \begin{document}
+    \maketitle
+    \thispagestyle{empty}
+
+    \section*{Status: IN PROGRESS (autoresearch, full running)}
+
+    Head-to-head comparison of four experiment-selection approaches on real \texttt{train.py}.
+    Schema: DEPTH $\times$ MATRIX\_LR $\times$ WEIGHT\_DECAY (27 cells).
+    Budget: 20 experiments per approach. Hardware: GPU~1 (RTX PRO 6000), seed~42.
+
+    \section{Results}
+
+    \begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{lrrrrr}
+    \toprule
+    Approach & Done & Best & Mean & Cells & Tok/exp \\
+    \midrule
+        random & 20/20 & 1.033551 & 1.054828 & 15 & 179 \\
+    bayesian & 20/20 & 1.033778 & 1.051689 & 20 & 205 \\
+    autoresearch & 19/20 & 1.032934 & 1.046333 & 15 & 183 \\
+    full & 13/20 & 1.033423 & 1.048775 & 13 & 204 \\
+    \bottomrule
+    \end{tabular}
+    \caption{Performance summary. Best/mean = val\_bpb (lower is better). Cells = unique cells explored. Tok/exp = mean tokens trained per experiment (millions).}
+    \end{table}
+
+    \section{Convergence}
+
+    Experiment number at which each approach first reached within 0.001 of its final best:
+
+    \begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{lrr}
+    \toprule
+    Approach & Conv.\ exp & Final best \\
+    \midrule
+        random & 11 & 1.033551 \\
+    bayesian & 5 & 1.033778 \\
+    autoresearch & 8 & 1.032934 \\
+    full & 3 & 1.033423 \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+
+    \section{Decision Source Integrity}
+
+    Every experiment carries a source label indicating what method actually chose it.
+    \textcolor{red}{\textbf{WARNING: 5 fallback(s) detected.}}
+
+    \begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{ll}
+    \toprule
+    Approach & Sources \\
+    \midrule
+        random & random: 20 \\
+    bayesian & lookahead: 20 \\
+    autoresearch & llm\_fallback\_empty: 3, llm\_flat: 16, random\_init: 1 \\
+    full & llm\_augmented: 11, llm\_fallback: 2, lookahead: 7 \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+
+    \section{Observations (not claims)}
+
+    These are patterns visible in the data. They are \textbf{not} generalization claims ---
+    this is one run with one seed on one schema.
+
+    \begin{itemize}
+    \item DEPTH=8 consistently produces the best val\_bpb across all approaches.
+          DEPTH=10 is worst (fewer tokens trained in fixed wall time).
+    \item WEIGHT\_DECAY=0.4 appears in most best-performing configurations.
+    \item Reproducibility is strong: repeated cell visits show $\Delta$val\_bpb $< 0.001$.
+    \item Throughput varies $\sim$3$\times$ across depths (300K--1M tok/s), meaning
+          deeper models train fewer tokens in the same wall time.
+    \end{itemize}
+
+    \section{What this does NOT prove}
+
+    \begin{itemize}
+    \item Generalization beyond this schema, seed, or hardware.
+    \item That any approach is \emph{better} in a statistically significant sense
+          (single seed, small budget).
+    \item That the LLM's advantage (if confirmed) comes from world knowledge vs.\ lucky guessing.
+    \item That structured signals (appraisal, factor importances) help the LLM.
+    \end{itemize}
+
+    \section{Methodology notes}
+
+    Random and bayesian ran in the original process (run\_id 5d2ffa21). A silent-fallback
+bug was discovered: LLM failures were labeled as "llm\_flat" instead of "llm\_fallback\_*".
+Process was killed after bayesian completed. Autoresearch and full were restarted
+with fixed source-labeling code (run\_id 65018a7c, commit ce7d19a).
+
+
+    \section{Discussion}
+    The headline result is that all four approaches converge to similar best val\_bpb values (1.0329--1.0338), a spread of less than 0.001. In a 27-cell grid with one dominant factor, this is unsurprising: even uniform random search covers 15 of 27 cells in 20 trials (observed), giving it a $>$99\% chance of hitting the best region. \textbf{The search space is too small to discriminate the approaches on best-found performance.}
+
+Mean val\_bpb tells a more interesting story. Ranking by mean: autoresearch (1.046) $<$ full (1.049) $<$ bayesian (1.052) $<$ random (1.055). The LLM-containing approaches waste fewer experiments on poor regions (\emph{observed}). This is consistent with the hypothesis that LLM priors help allocate trials, but the effect is modest---roughly 0.006 bpb between autoresearch and bayesian---and drawn from a single seed with no significance testing.
+
+\textbf{The Bayesian model did not clearly help.} Bayesian alone (mean 1.052) barely beats random (1.055), and full (Bayesian + LLM, mean 1.049) did not beat autoresearch (LLM alone, mean 1.046). If anything, the Bayesian component adds overhead without improving selection quality. Two candidate explanations: (i) a linear factor model over one-hot features is too crude to capture the depth$\times$learning-rate interaction that dominates this space (\emph{plausible}); (ii) with only 27 cells, Thompson sampling has little room to outperform random before the space is saturated (\emph{supported} by the coverage numbers---bayesian hit 20/27 cells, suggesting it explored broadly rather than exploiting).
+
+\textbf{Source integrity raises a concern for the full approach.} Only 13 of 20 experiments completed, and sources are split: 7 lookahead, 11 llm\_augmented, 2 llm\_fallback. The full approach is not purely ``Bayesian + LLM''---it is a mixture that fell back to the Bayesian arm roughly a third of the time. Similarly, autoresearch had 3/19 fallbacks. These fallbacks are honestly labeled, but they weaken the factorial interpretation: the 2$\times$2 design is confounded by variable fallback rates.
+
+\textbf{The token budget confound is unresolved.} DEPTH=6 trains $\sim$3$\times$ more tokens than DEPTH=10 in the same wall time. All approaches converged on DEPTH=8 as optimal, which trains $\sim$1.8$\times$ fewer tokens than DEPTH=6. This suggests DEPTH=8 is genuinely better architecture, not merely better-trained (\emph{supported}), but we cannot fully separate architecture quality from training duration without controlled token budgets.
+
+\begin{itemize}
+\item \textbf{What we learned:} LLM priors improve \emph{average} trial quality in this small grid. The Bayesian model adds no detectable value at this scale. The combination does not outperform the LLM alone.
+\item \textbf{What we don't know:} Whether the Bayesian component helps in larger search spaces where LLM priors degrade and systematic uncertainty tracking matters. Whether autoresearch's advantage holds across seeds.
+\item \textbf{Next steps:} (1) Repeat with a larger schema ($\geq$100 cells) where random search cannot saturate the space. (2) Run multiple seeds to get confidence intervals. (3) Controlled token-budget experiments (fixed tokens, not fixed wall time). (4) Complete the full approach's remaining 7 experiments before drawing final conclusions.
+\end{itemize}
+
+    \begin{figure*}[b]
+    \centering
+    \includegraphics[width=\textwidth]{/Users/erik/github.com/erikdebruijn/autoresearcher2/artifacts/runs/2026-03-12_evidence-v1.5/figures/evidence_dashboard.png}
+    \caption{Evidence dashboard. Top-left: convergence curves. Top-right: factor effects.
+    Bottom: exploration heatmaps per approach (cell visit counts).}
+    \end{figure*}
+    
+    \end{document}
+    
