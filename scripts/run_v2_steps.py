@@ -47,12 +47,14 @@ def main():
     parser.add_argument("--n-iterations", type=int, default=10,
                         help="Number of LLM consultation rounds (each produces 1-3 steps)")
     parser.add_argument("--gpu", type=str, default=GPU_DEVICE)
+    parser.add_argument("--ssh-host", type=str, default="root@dllm-experiment.home")
     args = parser.parse_args()
 
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
     log(f"Starting v2.0 research steps run {RUN_ID}")
     log(f"Schema: {SCHEMA.n_cells} cells, iterations: {args.n_iterations}")
+    log(f"SSH: {args.ssh_host}")
 
     # Initialize components
     model = BayesianLinearModel(SCHEMA, noise_variance=0.01)
@@ -60,7 +62,7 @@ def main():
     memory = MemoryStore()
     env = TrainPyEnvironment(
         schema=SCHEMA,
-        ssh_host="root@dllm-experiment.home",
+        ssh_host=args.ssh_host,
         ssh_key="~/.ssh/pve03_key",
         cuda_device=args.gpu,
     )
@@ -71,7 +73,25 @@ def main():
         controller=controller,
         memory=memory,
         env=env,
+        ssh_host=args.ssh_host,
     )
+
+    # Live logging callback
+    def on_step(step, result, iteration):
+        status = "OK" if result.success else "FAIL"
+        detail = ""
+        if step.type == "experiment" and result.success:
+            val_bpb = 2.0 - result.payload["outcome"]
+            detail = f" val_bpb={val_bpb:.4f}"
+        elif step.type == "hypothesis":
+            claim = step.payload.get("claim", "")[:50]
+            detail = f" '{claim}'"
+        elif step.type == "analysis":
+            q = step.payload.get("question", "")[:50]
+            detail = f" '{q}'"
+        log(f"  iter={iteration} {step.type} [{status}]{detail}")
+
+    loop.on_step = on_step
 
     # Run
     start = time.time()

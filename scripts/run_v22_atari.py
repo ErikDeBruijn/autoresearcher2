@@ -66,6 +66,7 @@ def main():
     parser.add_argument("--n-experiments", type=int, default=N_EXPERIMENTS)
     parser.add_argument("--total-timesteps", type=int, default=TOTAL_TIMESTEPS)
     parser.add_argument("--gpu", type=str, default=GPU_DEVICE)
+    parser.add_argument("--ssh-host", type=str, default="root@dllm-experiment.home")
     args = parser.parse_args()
 
     n_experiments = args.n_experiments
@@ -77,9 +78,11 @@ def main():
     log(f"Schema: {SCHEMA.n_cells} cells, {SCHEMA.n_factors} factors")
     log(f"Budget: {n_experiments} experiments")
     log(f"GPU: {args.gpu}, Timesteps: {args.total_timesteps}")
+    log(f"SSH: {args.ssh_host}")
 
     env = AtariEnvironment(
         schema=SCHEMA,
+        ssh_host=args.ssh_host,
         cuda_device=args.gpu,
         total_timesteps=args.total_timesteps,
     )
@@ -106,7 +109,7 @@ def main():
             snapshot_after = model.snapshot()
             appraisal = compute_appraisal(SCHEMA, cell, outcome,
                                           snapshot_before, snapshot_after)
-            memory.add(cell, outcome, appraisal)
+            memory.add(cell_index=cell, config=config, outcome=outcome, appraisal=appraisal)
 
             result = {
                 "experiment": i,
