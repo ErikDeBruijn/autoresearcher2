@@ -55,6 +55,7 @@ class ResearchLoopV2:
 
         self.history: list[dict] = []
         self.step_log: list[dict] = []
+        self.on_step: callable = None  # Optional callback: on_step(step, result, iteration)
 
     def run(self, n_iterations: int) -> list[dict]:
         """Run n iterations of the research loop.
@@ -100,6 +101,9 @@ class ResearchLoopV2:
                 })
 
                 logger.info("  %s: %s", step.type, result.summary)
+
+                if self.on_step:
+                    self.on_step(step, result, iteration)
 
                 # Only experiment results update the model and memory
                 if step.type == "experiment" and result.success:
