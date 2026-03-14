@@ -4,12 +4,13 @@ Polling loop that:
 1. If new results in done/: run orientation step (update world model)
 2. If backlog + todo < threshold: run generator
 3. If backlog has items: run critic, promote top-N to todo
+
+Works with both Workspace (filesystem, v3) and Store (SQLite, v4).
 """
 
 import logging
 import time
 
-from autoresearcher2.v3.workspace import Workspace
 from autoresearcher2.v3.orientation import orient
 from autoresearcher2.v3.generator import generate_proposals
 from autoresearcher2.v3.critic import critique_proposals
@@ -22,7 +23,7 @@ class Planner:
 
     def __init__(
         self,
-        workspace: Workspace,
+        workspace,
         llm_call_fn,
         min_queue_size: int = 5,
         n_proposals: int = 5,
@@ -43,14 +44,13 @@ class Planner:
         done_proposals = self.workspace.list_proposals("done")
         for p in done_proposals:
             if p.observation_id and p.observation_id not in self._processed_observations:
-                obs_path = self.workspace.results_dir / f"{p.observation_id}.json"
-                if obs_path.exists():
-                    from autoresearcher2.v3.observation import Observation
-                    obs = Observation.load(obs_path)
+                obs = self.workspace.load_observation(p.observation_id)
+                if obs is not None:
                     wm = self.workspace.load_world_model()
                     delta = orient(wm, obs, self.llm_call_fn)
                     if delta:
-                        self.workspace.save_world_model(wm)
+                        # Store supports delta traceability; Workspace ignores extra kwargs
+                        self._save_world_model(wm, trigger_obs_id=p.observation_id, delta=delta)
                         summary["oriented"] += 1
                     self._processed_observations.add(p.observation_id)
 
@@ -78,6 +78,14 @@ class Planner:
                 summary["promoted"] += 1
 
         return summary
+
+    def _save_world_model(self, wm, trigger_obs_id=None, delta=None):
+        """Save world model, passing delta info if the backend supports it (Store)."""
+        try:
+            self.workspace.save_world_model(wm, trigger_obs_id=trigger_obs_id, delta=delta)
+        except TypeError:
+            # Workspace (filesystem) doesn't accept extra kwargs
+            self.workspace.save_world_model(wm)
 
     def run(self, poll_interval: float = 60.0, max_ticks: int = None):
         """Run the planner loop.

@@ -75,6 +75,13 @@ class Workspace:
             proposals.append(Proposal.load(path))
         return proposals
 
+    def load_observation(self, obs_id: str) -> Observation | None:
+        """Load a single observation by ID."""
+        path = self.results_dir / f"{obs_id}.json"
+        if path.exists():
+            return Observation.load(path)
+        return None
+
     def list_observations(self) -> list[Observation]:
         """List all observations."""
         observations = []
