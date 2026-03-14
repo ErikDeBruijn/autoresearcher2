@@ -46,3 +46,25 @@ def test_parse_wrapper_with_dict_result():
     raw = json.dumps({"result": {"proposals": []}})
     result = parse_json_response(raw)
     assert result["proposals"] == []
+
+
+def test_parse_claude_full_wrapper():
+    """Real claude --output-format json response with many keys."""
+    inner_json = '{"beliefs_added": [{"claim": "test", "confidence": 0.5}]}'
+    wrapper = {
+        "type": "result", "subtype": "success", "is_error": False,
+        "result": f"```json\n{inner_json}\n```\n\nExtra text here.",
+        "usage": {"input_tokens": 100},
+    }
+    result = parse_json_response(json.dumps(wrapper))
+    assert result["beliefs_added"][0]["claim"] == "test"
+
+
+def test_parse_json_with_trailing_text():
+    """JSON in fences followed by LLM commentary."""
+    wrapper = {
+        "type": "result",
+        "result": '\n\n```json\n{"proposals": [{"intent": "test"}]}\n```\n\nI hope this helps!',
+    }
+    result = parse_json_response(json.dumps(wrapper))
+    assert result["proposals"][0]["intent"] == "test"

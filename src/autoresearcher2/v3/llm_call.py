@@ -76,21 +76,11 @@ def parse_json_response(raw: str) -> dict:
         if isinstance(data, dict) and "result" in data:
             inner = data["result"]
             if isinstance(inner, str):
-                # Try to parse the inner content as JSON
-                inner = inner.strip()
-                # Strip markdown code fences if present
-                if inner.startswith("```json"):
-                    inner = inner[7:]
-                if inner.startswith("```"):
-                    inner = inner[3:]
-                if inner.endswith("```"):
-                    inner = inner[:-3]
-                inner = inner.strip()
-                try:
-                    return json.loads(inner)
-                except json.JSONDecodeError:
-                    logger.warning("Could not parse inner result as JSON: %s", inner[:200])
-                    return data
+                parsed = _extract_json_from_text(inner)
+                if parsed is not None:
+                    return parsed
+                logger.warning("Could not parse inner result as JSON: %s", inner[:200])
+                return data
             if isinstance(inner, dict):
                 return inner
         # If no result key, return as-is (direct JSON response)
@@ -109,3 +99,35 @@ def parse_json_response(raw: str) -> dict:
                 pass
 
     raise ValueError(f"Could not parse JSON from response: {raw[:200]}")
+
+
+def _extract_json_from_text(text: str) -> dict | None:
+    """Extract JSON from text that may contain markdown fences, preamble, or trailing text."""
+    text = text.strip()
+
+    # Strategy 1: direct parse (clean JSON)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Strategy 2: extract from markdown code fences
+    import re
+    fence_pattern = re.compile(r'```(?:json)?\s*\n?(.*?)\n?```', re.DOTALL)
+    match = fence_pattern.search(text)
+    if match:
+        try:
+            return json.loads(match.group(1).strip())
+        except json.JSONDecodeError:
+            pass
+
+    # Strategy 3: find first { ... } block (greedy from first { to last })
+    first_brace = text.find('{')
+    last_brace = text.rfind('}')
+    if first_brace != -1 and last_brace > first_brace:
+        try:
+            return json.loads(text[first_brace:last_brace + 1])
+        except json.JSONDecodeError:
+            pass
+
+    return None
