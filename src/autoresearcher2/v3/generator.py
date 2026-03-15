@@ -47,6 +47,8 @@ class DomainConfig:
     parameters: str = "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size. For code_change: {\"file_changes\": {\"train.py\": \"full file content\"}}"
     diversity_hint: str = "Mix of config_change (full run), probe (short run, include \"run_steps\" in spec), and code_change (when the hypothesis requires structural code changes, not just parameter tweaks)"
     hardware: str = ""
+    base_script: str = ""  # Current training script content — shown to LLM for code_change proposals
+    base_script_name: str = "train.py"  # Filename for the base script
 
 
 NANOGPT_DOMAIN = DomainConfig(
@@ -76,12 +78,46 @@ def build_generator_prompt(world_model: WorldModel, n_proposals: int = 5, domain
     wm_json = json.dumps(world_model.to_dict(), indent=2, default=str)
     schema_json = json.dumps(PROPOSAL_SCHEMA, indent=2)
 
+    base_script_section = ""
+    if domain.base_script:
+        base_script_section = f"""
+## CURRENT TRAINING SCRIPT ({domain.base_script_name})
+
+This is the script that gets executed. For code_change proposals, you MUST provide the COMPLETE modified version of this script in intervention_spec.file_changes.
+
+```python
+{domain.base_script}
+```
+"""
+
+    code_change_rules = ""
+    if "code_change" in domain.intervention_types:
+        code_change_rules = f"""
+## CODE_CHANGE RULES (CRITICAL)
+
+For code_change proposals, intervention_spec MUST contain actual code, NOT descriptions.
+
+Two formats are supported (pick one):
+
+**Option A — Unified diff (preferred for small changes):**
+{{"diff": "--- a/{domain.base_script_name}\\n+++ b/{domain.base_script_name}\\n@@ -37,6 +37,8 @@\\n def main():\\n     n_envs = 4\\n+    # Add reward shaping\\n+    reward_scale = 2.0\\n"}}
+
+**Option B — Full file replacement (for major rewrites):**
+{{"file_changes": {{"{domain.base_script_name}": "#!/usr/bin/env python3\\n...COMPLETE FILE CONTENT..."}}}}
+
+Rules:
+- NEVER put text descriptions in intervention_spec — only working code (diff or full file)
+- The script must print metrics in "key: value" format so they can be parsed
+- Required output: mean_reward, std_reward, wall_time_s, fps
+- You can change ANYTHING: algorithm, network architecture, reward shaping, preprocessing, etc.
+"""
+
     return f"""You are a curious researcher generating experiment proposals for a research system.
 
 ## CURRENT WORLD MODEL (what we currently believe and don't know)
 
 {wm_json}
-
+{base_script_section}
 ## YOUR ROLE
 
 Generate {n_proposals} diverse research proposals. You are the creative, divergent thinker:
@@ -91,7 +127,7 @@ Generate {n_proposals} diverse research proposals. You are the creative, diverge
 - {domain.description} Available intervention types are ONLY: {domain.intervention_types}
 {f"- Hardware: {domain.hardware}" if domain.hardware else ""}
 - Prioritize proposals that teach us something regardless of outcome
-
+{code_change_rules}
 ## COGNITIVE ORDER (follow this for each proposal)
 
 For each proposal, reason in this order:

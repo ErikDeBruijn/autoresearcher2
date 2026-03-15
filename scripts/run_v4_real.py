@@ -223,12 +223,24 @@ def main():
                     domain = None
                     if proj.get("domain_config"):
                         dc = proj["domain_config"]
+                        # Load base script from disk if path is configured
+                        base_script = ""
+                        base_script_name = dc.get("base_script_name", "train.py")
+                        base_script_path = dc.get("base_script_path", "")
+                        if base_script_path:
+                            try:
+                                with open(base_script_path) as f:
+                                    base_script = f.read()
+                            except FileNotFoundError:
+                                logger.warning("Base script not found: %s", base_script_path)
                         domain = DomainConfig(
                             name=dc.get("name", proj["name"]),
                             description=dc.get("description", proj.get("description", "")),
                             intervention_types=dc.get("intervention_types", "config_change or probe"),
                             parameters=dc.get("parameters", ""),
                             diversity_hint=dc.get("diversity_hint", ""),
+                            base_script=base_script,
+                            base_script_name=base_script_name,
                         )
                     planner = get_or_create_planner(proj["id"], domain)
                     summary = planner.tick()

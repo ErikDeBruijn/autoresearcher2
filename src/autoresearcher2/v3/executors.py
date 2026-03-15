@@ -139,20 +139,29 @@ def make_trainpy_executor(
         run_cmd(f"cp {base_dir}/train.py {train_dir}/train.py")
 
         if itype == "code_change":
-            # LLM provides file contents directly via file_changes key
+            import base64
+            diff_content = spec.get("diff")
             file_changes = spec.get("file_changes", {})
-            if not file_changes:
-                raise ValueError("code_change requires 'file_changes' in intervention_spec")
-            for filename, content in file_changes.items():
-                # Sanitize filename: only allow simple filenames within train_dir
-                safe_name = filename.replace("/", "_").replace("..", "_")
-                # Write via python -c to avoid shell quoting issues
-                import base64
-                b64 = base64.b64encode(content.encode()).decode()
+            if not diff_content and not file_changes:
+                raise ValueError("code_change requires 'diff' or 'file_changes' in intervention_spec")
+            if diff_content:
+                # Apply unified diff via patch
+                b64 = base64.b64encode(diff_content.encode()).decode()
                 run_cmd(
-                    f"python3 -c \"import base64; open('{train_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
+                    f"python3 -c \"import base64; open('/tmp/_ar_patch.diff','w').write(base64.b64decode('{b64}').decode())\""
                 )
-                logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
+                rc, out = run_cmd(f"cd {train_dir} && patch -p1 --no-backup-if-mismatch < /tmp/_ar_patch.diff")
+                if rc != 0:
+                    raise RuntimeError(f"patch failed (exit {rc}): {out[-500:]}")
+                logger.info("code_change: applied diff (%d bytes)", len(diff_content))
+            else:
+                for filename, content in file_changes.items():
+                    safe_name = filename.replace("/", "_").replace("..", "_")
+                    b64 = base64.b64encode(content.encode()).decode()
+                    run_cmd(
+                        f"python3 -c \"import base64; open('{train_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
+                    )
+                    logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
         else:
             # Patch knobs from intervention_spec
             for knob, value in spec.items():
@@ -259,21 +268,37 @@ def make_shell_executor(
         spec = proposal.intervention_spec
         itype = proposal.intervention_type
 
-        # Handle code_change: write file_changes before running
+        # Handle code_change: apply diff or write file_changes before running
         if itype == "code_change" and work_dir:
+            diff_content = spec.get("diff")
             file_changes = spec.get("file_changes", {})
-            if not file_changes:
-                raise ValueError("code_change requires 'file_changes' in intervention_spec")
-            # Reset base script if configured
+
+            if not diff_content and not file_changes:
+                raise ValueError("code_change requires 'diff' or 'file_changes' in intervention_spec")
+
+            # Always reset base script first
             if base_script:
                 run_cmd(f"cp {base_script} {work_dir}/$(basename {base_script})")
-            for filename, content in file_changes.items():
-                safe_name = filename.replace("/", "_").replace("..", "_")
-                b64 = b64mod.b64encode(content.encode()).decode()
+
+            if diff_content:
+                # Apply unified diff via patch
+                b64 = b64mod.b64encode(diff_content.encode()).decode()
                 run_cmd(
-                    f"python3 -c \"import base64; open('{work_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
+                    f"python3 -c \"import base64; open('/tmp/_ar_patch.diff','w').write(base64.b64decode('{b64}').decode())\""
                 )
-                logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
+                rc, out = run_cmd(f"cd {work_dir} && patch -p1 --no-backup-if-mismatch < /tmp/_ar_patch.diff")
+                if rc != 0:
+                    raise RuntimeError(f"patch failed (exit {rc}): {out[-500:]}")
+                logger.info("code_change: applied diff (%d bytes)", len(diff_content))
+            else:
+                # Write full file replacements
+                for filename, content in file_changes.items():
+                    safe_name = filename.replace("/", "_").replace("..", "_")
+                    b64 = b64mod.b64encode(content.encode()).decode()
+                    run_cmd(
+                        f"python3 -c \"import base64; open('{work_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
+                    )
+                    logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
 
         # Build env vars from spec (skip file_changes and non-shell-safe values)
         safe_pairs = []
