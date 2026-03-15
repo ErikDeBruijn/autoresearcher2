@@ -39,6 +39,9 @@ interface Proposal {
   is_record?: boolean;
   target_metric?: string;
   optimize?: string;
+  started_at?: number | null;
+  promoted_at?: number | null;
+  finished_at?: number | null;
 }
 
 const typeColors: Record<string, string> = {
@@ -111,7 +114,11 @@ export default function ProposalCard({
         <span className={`text-xs px-1.5 py-0.5 rounded border ${typeColors[proposal.intervention_type] || "bg-gray-800 text-gray-400 border-gray-600"}`}>
           {proposal.intervention_type}
         </span>
-        <span className="text-xs text-gray-500">{timeAgo(proposal.created_at)}</span>
+        <span className="text-xs text-gray-500">{timeAgo(
+          proposal.status === "running" ? (proposal.started_at || proposal.created_at)
+          : proposal.status === "done" || proposal.status === "reviewed" ? (proposal.finished_at || proposal.created_at)
+          : (proposal.promoted_at || proposal.created_at)
+        )}</span>
         {proposal.is_record && (
           <span className="text-xs text-amber-400">🥇 New best</span>
         )}

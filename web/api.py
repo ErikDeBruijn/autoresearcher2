@@ -245,12 +245,21 @@ def get_queue():
             for p in proposals:
                 d = p.to_dict()
                 d["project_id"] = p.project_id
-                # Add worker_id from DB for running proposals
+                # Add worker_id and started_at from DB for running proposals
                 if stage == "running":
                     row = store.conn.execute(
-                        "SELECT worker_id FROM queue WHERE id = ?", (p.id,)
+                        "SELECT worker_id, started_at FROM queue WHERE id = ?", (p.id,)
                     ).fetchone()
                     d["worker_id"] = row["worker_id"] if row else None
+                    d["started_at"] = row["started_at"] if row else None
+                # Add stage timestamps for all proposals
+                row = store.conn.execute(
+                    "SELECT promoted_at, started_at, finished_at FROM queue WHERE id = ?", (p.id,)
+                ).fetchone()
+                if row:
+                    d["promoted_at"] = row["promoted_at"]
+                    d["started_at"] = d.get("started_at") or row["started_at"]
+                    d["finished_at"] = row["finished_at"]
                 # Add observation and world model delta for done/reviewed
                 if stage in ("done", "reviewed") and p.observation_id:
                     obs = store.load_observation(p.observation_id)
