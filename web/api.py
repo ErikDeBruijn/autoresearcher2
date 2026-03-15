@@ -108,9 +108,13 @@ class ChatMessage(BaseModel):
 
 @app.get("/api/queue")
 def get_queue():
-    """Get all proposals grouped by stage, with worker_id for running."""
+    """Get all proposals grouped by stage, with worker_id for running and observation data for done/reviewed."""
     store = get_store()
     try:
+        # Pre-load world model history for delta lookups
+        wm_history = store.get_world_model_history()
+        delta_by_obs = {h["trigger_obs_id"]: h for h in wm_history if h["trigger_obs_id"]}
+
         stages: dict[str, list] = {}
         for stage in ("backlog", "todo", "running", "done", "reviewed"):
             proposals = store.list_proposals(stage)
@@ -123,6 +127,24 @@ def get_queue():
                         "SELECT worker_id FROM queue WHERE id = ?", (p.id,)
                     ).fetchone()
                     d["worker_id"] = row["worker_id"] if row else None
+                # Add observation and world model delta for done/reviewed
+                if stage in ("done", "reviewed") and p.observation_id:
+                    obs = store.load_observation(p.observation_id)
+                    if obs:
+                        d["observation"] = {
+                            "outcome_success": obs.outcome_success,
+                            "outcome_metrics": obs.outcome_metrics,
+                            "wall_time_s": obs.wall_time_s,
+                            "error": obs.error,
+                        }
+                    # Find the world model update triggered by this observation
+                    wm_update = delta_by_obs.get(p.observation_id)
+                    if wm_update:
+                        d["world_model_update"] = {
+                            "version": wm_update["version"],
+                            "reasoning": wm_update["reasoning"],
+                            "delta": wm_update["delta"],
+                        }
                 items.append(d)
             stages[stage] = items
         return stages
@@ -414,7 +436,7 @@ def get_worker_status():
         gpu_info = None
         try:
             gpu_result = subprocess.run(
-                ["nvidia-smi", "--query-gpu=utilization.gpu,power.draw,memory.used,memory.total",
+                ["/usr/local/bin/nvidia-smi", "--query-gpu=utilization.gpu,power.draw,memory.used,memory.total",
                  "--format=csv,noheader,nounits"],
                 capture_output=True, text=True, timeout=5,
             )
