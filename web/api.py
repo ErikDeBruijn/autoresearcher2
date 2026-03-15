@@ -656,41 +656,38 @@ Existing projects:
 
 Be concise and direct. Lower val_bpb is better.
 
-## Project Management
+## Actions (use Bash tool)
 
-You can create research projects using the Bash tool to call the local API. When the user wants a new project:
+You have CLI tools available. Use the Bash tool to run them:
 
-1. Ask clarifying questions to gather: name, description, what domain (nanogpt/atari-rl/generic), and which parameters to vary
-2. Once you have enough info, use the Bash tool to call the API:
+- `research-create-project --name "Name" --description "Desc" --domain nanogpt --parameters "DEPTH,LR"`
+- `research-list-projects`
+- `research-status`
+- `research-submit-proposal --project proj_id --intent "Test X" --type config_change --spec '{{"MATRIX_LR": "0.04"}}'`
 
-```
-curl -s -X POST http://localhost:8000/api/projects -H 'Content-Type: application/json' -d '{{"name": "Project Name", "description": "What we optimize", "domain_config": {{"name": "domain name", "intervention_types": "config_change, probe, code_change", "parameters": "param1, param2"}}}}'
-```
-
-Domain templates:
-- **nanogpt**: name="NanoGPT training", parameters="DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size"
-- **atari-rl**: name="Atari RL", parameters="game, learning_rate, network_size, algorithm, n_envs, total_timesteps"
-- **generic**: name="generic optimization", parameters="whatever the user describes"
-
-The API returns the created project JSON with its ID. Report the result back to the user."""
+Domains: nanogpt, atari-rl, generic. When creating a project, ask the user what they want to optimize and which parameters to vary before calling the tool."""
 
     # Build conversation for LLM
     conversation = [{"role": "system", "content": system}]
     for msg in req.messages:
         conversation.append({"role": msg["role"], "content": msg["content"]})
 
-    # Call LLM via claude CLI with Bash tool for project management
+    # Call LLM via claude CLI with research management tools
     prompt_json = json.dumps(conversation)
+    repo_dir = str(Path(__file__).resolve().parent.parent)
+    skill_bin = f"{repo_dir}/.claude/skills/research-management/bin"
+    env = {**__import__("os").environ, "PATH": f"{skill_bin}:{__import__('os').environ.get('PATH', '')}"}
     try:
         result = subprocess.run(
             [
                 "claude", "-p",
                 "--output-format", "text",
-                "--allowedTools", "Bash(curl:*)",
+                "--allowedTools", "Bash(research-*)",
                 "--permission-mode", "bypassPermissions",
             ],
             input=prompt_json,
             capture_output=True, text=True, timeout=120,
+            env=env,
         )
         if result.returncode != 0:
             return {"role": "assistant", "content": f"LLM error: {result.stderr[:200]}"}
