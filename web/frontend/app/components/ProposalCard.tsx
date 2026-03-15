@@ -36,6 +36,8 @@ interface Proposal {
   project_name?: string;
   project_color?: string;
   is_record?: boolean;
+  target_metric?: string;
+  optimize?: string;
 }
 
 const typeColors: Record<string, string> = {
@@ -112,11 +114,16 @@ export default function ProposalCard({
         {proposal.is_record && (
           <span className="text-xs text-amber-400">🥇 New best</span>
         )}
-        {proposal.observation?.outcome_metrics?.val_bpb != null && (
-          <span className="text-xs font-mono font-bold text-cyan-300">
-            val_bpb: {proposal.observation.outcome_metrics.val_bpb.toFixed(4)}
-          </span>
-        )}
+        {proposal.observation?.outcome_metrics && (() => {
+          const metric = proposal.target_metric || "val_bpb";
+          const val = proposal.observation!.outcome_metrics![metric];
+          if (val == null) return null;
+          return (
+            <span className="text-xs font-mono font-bold text-cyan-300">
+              {metric}: {typeof val === "number" ? val.toFixed(4) : String(val)}
+            </span>
+          );
+        })()}
         {proposal.observation?.cost_eur != null && (
           <span className="text-xs text-emerald-400">{proposal.observation.cost_eur.toFixed(3)}€</span>
         )}

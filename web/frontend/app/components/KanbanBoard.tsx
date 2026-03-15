@@ -119,29 +119,41 @@ export default function KanbanBoard() {
   // Build project lookup for enriching proposals with name/color
   const projectMap = new Map(projects.map((p, i) => [p.id, { ...p, color: getProjectColor(i) }]));
 
-  // Compute which proposals set a new record (running minimum val_bpb per project)
+  // Compute which proposals set a new record (per project, using target metric + optimize direction)
   const recordIds = useMemo(() => {
     const allProposals: ProposalWithWorker[] = [];
     for (const stage of Object.values(queue)) {
       if (Array.isArray(stage)) allProposals.push(...stage);
     }
-    // Sort by created_at ascending
+
+    // Build per-project metric config
+    const metricConfig: Record<string, { metric: string; maximize: boolean }> = {};
+    for (const p of projects) {
+      metricConfig[p.id] = {
+        metric: p.domain_config?.target_metric || "val_bpb",
+        maximize: p.domain_config?.optimize === "maximize",
+      };
+    }
+
     const sorted = allProposals
-      .filter((p) => p.observation?.outcome_success && p.observation?.outcome_metrics?.val_bpb != null)
+      .filter((p) => p.observation?.outcome_success && p.observation?.outcome_metrics)
       .sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
 
     const records = new Set<string>();
     const bestByProject: Record<string, number> = {};
     for (const p of sorted) {
       const pid = p.project_id || "__none__";
-      const val = p.observation!.outcome_metrics!.val_bpb;
-      if (bestByProject[pid] === undefined || val < bestByProject[pid]) {
+      const cfg = p.project_id ? metricConfig[p.project_id] : { metric: "val_bpb", maximize: false };
+      if (!cfg) continue;
+      const val = p.observation!.outcome_metrics![cfg.metric];
+      if (val == null) continue;
+      if (bestByProject[pid] === undefined || (cfg.maximize ? val > bestByProject[pid] : val < bestByProject[pid])) {
         bestByProject[pid] = val;
         records.add(p.id);
       }
     }
     return records;
-  }, [queue]);
+  }, [queue, projects]);
 
   const enrichProposal = useCallback((p: ProposalWithWorker): ProposalWithWorker => {
     const proj = p.project_id ? projectMap.get(p.project_id) : null;
@@ -150,6 +162,8 @@ export default function KanbanBoard() {
       project_name: proj?.name,
       project_color: proj?.color,
       is_record: recordIds.has(p.id),
+      target_metric: proj?.domain_config?.target_metric || "val_bpb",
+      optimize: proj?.domain_config?.optimize || "minimize",
     };
   }, [projectMap, recordIds]);
 
@@ -181,6 +195,35 @@ export default function KanbanBoard() {
     const id = setInterval(fetchData, 5000);
     return () => clearInterval(id);
   }, [fetchData]);
+
+  // Update page title with active projects and their best scores
+  useEffect(() => {
+    const activeProjects = projects.filter((p) => p.active);
+    if (activeProjects.length === 0) {
+      document.title = "AutoResearcher2";
+      return;
+    }
+    // Compute best score per active project from queue data
+    const allProposals: ProposalWithWorker[] = [];
+    for (const stage of Object.values(queue)) {
+      if (Array.isArray(stage)) allProposals.push(...stage);
+    }
+    const parts = activeProjects.map((proj) => {
+      const metric = proj.domain_config?.target_metric || "val_bpb";
+      const maximize = proj.domain_config?.optimize === "maximize";
+      let best: number | null = null;
+      for (const p of allProposals) {
+        if (p.project_id !== proj.id) continue;
+        const val = p.observation?.outcome_metrics?.[metric];
+        if (val != null && p.observation?.outcome_success) {
+          if (best === null || (maximize ? val > best : val < best)) best = val;
+        }
+      }
+      const score = best != null ? ` ${best.toFixed(4)}` : "";
+      return `${proj.name}${score}`;
+    });
+    document.title = `${parts.join(" | ")} — AutoResearcher2`;
+  }, [projects, queue]);
 
   const moveProposal = async (proposalId: string, targetStage: string) => {
     await fetch(`${API}/api/proposals/${proposalId}/promote?target_stage=${targetStage}`, {
