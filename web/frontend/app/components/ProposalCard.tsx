@@ -10,6 +10,7 @@ interface ObservationData {
   energy_kwh: number | null;
   cost_eur: number | null;
   avg_power_w: number | null;
+  artifact_paths: Record<string, string> | null;
 }
 
 interface WorldModelUpdate {
@@ -114,6 +115,9 @@ export default function ProposalCard({
         {proposal.is_record && (
           <span className="text-xs text-amber-400">🥇 New best</span>
         )}
+        {proposal.observation?.artifact_paths?.video && (
+          <span className="text-xs text-gray-500" title="Has gameplay video">🎬</span>
+        )}
         {proposal.observation?.outcome_metrics && (() => {
           const metric = proposal.target_metric || "val_bpb";
           const val = proposal.observation!.outcome_metrics![metric];
@@ -187,6 +191,18 @@ export default function ProposalCard({
               {proposal.observation.error && (
                 <div className="text-red-400 bg-red-950 p-2 rounded mt-1 break-all">
                   {proposal.observation.error.slice(0, 200)}
+                </div>
+              )}
+              {proposal.observation.artifact_paths?.video && proposal.observation_id && (
+                <div className="mt-2">
+                  <video
+                    src={`${process.env.NEXT_PUBLIC_API_URL || ""}/api/artifacts/${proposal.observation_id}/video`}
+                    controls
+                    muted
+                    loop
+                    className="w-full max-w-[300px] rounded border border-gray-700"
+                    preload="metadata"
+                  />
                 </div>
               )}
             </div>

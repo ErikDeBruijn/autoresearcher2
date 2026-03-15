@@ -44,6 +44,7 @@ class Observation:
         self.energy_kwh = energy_kwh
         self.cost_eur = cost_eur
         self.avg_power_w = avg_power_w
+        self.artifact_paths = {}  # {name: path} — e.g. {"video": "/path/to/gameplay.mp4"}
 
     def to_dict(self):
         """Serialize to dict."""
@@ -63,6 +64,7 @@ class Observation:
             "cost_eur": self.cost_eur,
             "avg_power_w": self.avg_power_w,
             "project_id": self.project_id,
+            "artifact_paths": self.artifact_paths,
         }
 
     @classmethod
@@ -84,6 +86,7 @@ class Observation:
             avg_power_w=data.get("avg_power_w"),
         )
         obs.created_at = data.get("created_at", time.time())
+        obs.artifact_paths = data.get("artifact_paths", {})
         return obs
 
     def save(self, path):

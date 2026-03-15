@@ -60,6 +60,34 @@ def test_observation_append_only(store):
         store.save_observation(obs)
 
 
+def test_observation_with_artifacts(store):
+    """Observations can persist artifact paths through the store."""
+    obs = Observation(
+        intervention_type="config_change",
+        intervention_spec={"game": "Breakout"},
+        outcome_metrics={"mean_reward": 3.6},
+        outcome_success=True,
+        wall_time_s=300.0,
+    )
+    obs.artifact_paths = {"video": "/tmp/breakout.mp4"}
+    store.save_observation(obs)
+    loaded = store.load_observation(obs.id)
+    assert loaded.artifact_paths == {"video": "/tmp/breakout.mp4"}
+
+
+def test_observation_without_artifacts_backwards_compat(store):
+    """Observations without artifacts still load fine."""
+    obs = Observation(
+        intervention_type="config_change",
+        intervention_spec={"x": "1"},
+        outcome_success=True,
+        wall_time_s=60.0,
+    )
+    store.save_observation(obs)
+    loaded = store.load_observation(obs.id)
+    assert loaded.artifact_paths == {}
+
+
 # --- Layer 2: World Model ---
 
 def test_initial_world_model(store):

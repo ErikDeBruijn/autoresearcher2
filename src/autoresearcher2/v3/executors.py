@@ -338,11 +338,19 @@ def make_shell_executor(
             if m:
                 metrics[name] = float(m.group(1))
 
+        # Parse artifact paths from stdout (format: "artifact_<name>: /path/to/file")
+        artifact_paths = {}
+        for m in re.finditer(r"artifact_(\w+):\s+(.+)", out):
+            artifact_paths[m.group(1)] = m.group(2).strip()
+
         exec_result = {
             "metrics": metrics,
             "compute_cost": wall_time / 3600,
             "raw_log": out[-2000:] if len(out) > 2000 else out,
         }
+
+        if artifact_paths:
+            exec_result["artifact_paths"] = artifact_paths
 
         if cost_data:
             exec_result["energy_kwh"] = cost_data.get("energy_kwh")

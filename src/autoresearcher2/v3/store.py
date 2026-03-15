@@ -48,7 +48,8 @@ CREATE TABLE IF NOT EXISTS observations (
     project_id         TEXT REFERENCES projects(id),
     energy_kwh         REAL,
     cost_eur           REAL,
-    avg_power_w        REAL
+    avg_power_w        REAL,
+    artifact_paths     TEXT
 );
 
 CREATE TABLE IF NOT EXISTS world_model (
@@ -118,6 +119,8 @@ MIGRATIONS = [
         updated_at REAL
     );""",
     "INSERT OR IGNORE INTO pipeline_activity (id) VALUES (1);",
+    # v4.9: Artifact storage for recordings/previews
+    "ALTER TABLE observations ADD COLUMN artifact_paths TEXT;",
 ]
 
 
@@ -308,8 +311,8 @@ class Store:
                (id, created_at, intervention_type, intervention_spec,
                 outcome_metrics, outcome_success, error, wall_time_s,
                 compute_cost, worker_id, raw_log, project_id,
-                energy_kwh, cost_eur, avg_power_w)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                energy_kwh, cost_eur, avg_power_w, artifact_paths)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 obs.id, obs.created_at, obs.intervention_type,
                 json.dumps(obs.intervention_spec),
@@ -319,6 +322,7 @@ class Store:
                 obs.worker_id, obs.raw_log,
                 project_id,
                 obs.energy_kwh, obs.cost_eur, obs.avg_power_w,
+                json.dumps(obs.artifact_paths) if obs.artifact_paths else None,
             ),
         )
         self.conn.commit()
@@ -362,6 +366,8 @@ class Store:
             obs.energy_kwh = row["energy_kwh"]
             obs.cost_eur = row["cost_eur"]
             obs.avg_power_w = row["avg_power_w"]
+        if "artifact_paths" in row.keys() and row["artifact_paths"]:
+            obs.artifact_paths = json.loads(row["artifact_paths"])
         return obs
 
     # --- Layer 2: World Model (versioned) ---

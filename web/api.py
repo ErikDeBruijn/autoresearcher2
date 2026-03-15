@@ -263,6 +263,7 @@ def get_queue():
                             "energy_kwh": obs.energy_kwh,
                             "cost_eur": obs.cost_eur,
                             "avg_power_w": obs.avg_power_w,
+                            "artifact_paths": obs.artifact_paths or {},
                         }
                     # Find the world model update triggered by this observation
                     wm_update = delta_by_obs.get(p.observation_id)
@@ -822,6 +823,33 @@ async def websocket_endpoint(ws: WebSocket):
                 await ws.send_json({"type": "pong"})
     except WebSocketDisconnect:
         manager.disconnect(ws)
+
+
+# --- Artifact serving ---
+from starlette.responses import FileResponse
+
+
+@app.get("/api/artifacts/{obs_id}/{artifact_name}")
+def get_artifact(obs_id: str, artifact_name: str):
+    """Serve an artifact file (video, image, etc.) for an observation."""
+    store = get_store()
+    try:
+        obs = store.load_observation(obs_id)
+        if not obs or not obs.artifact_paths:
+            raise HTTPException(status_code=404, detail="Artifact not found")
+        path = obs.artifact_paths.get(artifact_name)
+        if not path:
+            raise HTTPException(status_code=404, detail=f"Artifact '{artifact_name}' not found")
+        file_path = Path(path)
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="Artifact file missing from disk")
+        # Determine media type
+        suffix = file_path.suffix.lower()
+        media_types = {".mp4": "video/mp4", ".webm": "video/webm", ".gif": "image/gif", ".png": "image/png", ".jpg": "image/jpeg"}
+        media_type = media_types.get(suffix, "application/octet-stream")
+        return FileResponse(file_path, media_type=media_type)
+    finally:
+        store.close()
 
 
 # --- Serve frontend static files with cache control ---

@@ -57,6 +57,8 @@ class Worker:
                 cost_eur=result.get("cost_eur"),
                 avg_power_w=result.get("avg_power_w"),
             )
+            if result.get("artifact_paths"):
+                obs.artifact_paths = result["artifact_paths"]
         except Exception as e:
             wall_time = time.time() - start
             logger.error("[%s] Execution failed: %s", self.worker_id, e)
