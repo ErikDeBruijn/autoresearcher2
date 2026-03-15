@@ -80,7 +80,9 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--local-llm", action="store_true", help="Call claude locally instead of via SSH")
     parser.add_argument("--max-cycles", type=int, default=None)
-    parser.add_argument("--planner-interval", type=float, default=60.0)
+    parser.add_argument("--planner-interval", type=float, default=30.0)
+    parser.add_argument("--worker-poll", type=float, default=5.0,
+                        help="Seconds workers wait before rechecking for todo items")
     parser.add_argument("--min-queue", type=int, default=5)
     parser.add_argument("--n-proposals", type=int, default=5)
     parser.add_argument("--n-select", type=int, default=2)
@@ -130,16 +132,45 @@ def main():
     logger.info("Starting v4 research loop (dry_run=%s, gpus=%s, workers=%s)",
                 args.dry_run, cuda_devices, worker_ids)
 
+    # Shared stop event for graceful shutdown
+    stop = threading.Event()
+
+    def run_planner():
+        """Planner thread: continuously stock the queue."""
+        cycle = 0
+        while not stop.is_set():
+            cycle += 1
+            try:
+                summary = planner.tick()
+                if any(v > 0 for v in summary.values()):
+                    logger.info("Planner cycle %d: %s", cycle, summary)
+
+                wm = store.load_world_model()
+                logger.info("WM v%d: %d beliefs, %d tensions",
+                           wm.version, len(wm.beliefs), len(wm.tensions))
+            except Exception:
+                logger.error("Planner cycle %d failed", cycle, exc_info=True)
+
+            if args.max_cycles and cycle >= args.max_cycles:
+                logger.info("Planner reached max_cycles=%d", args.max_cycles)
+                stop.set()
+                break
+
+            # Wait before next planning cycle, but wake up early if stopped
+            stop.wait(timeout=args.planner_interval)
+
     def run_worker(worker_id, execute_fn):
-        """Run a single worker with its own DB connection."""
+        """Worker thread: continuously claim and execute experiments."""
         worker_store = Store(args.database)
         worker = Worker(worker_store, execute_fn=execute_fn, worker_id=worker_id)
         executed = 0
         try:
-            while True:
+            while not stop.is_set():
                 result = worker.tick()
                 if result is None:
-                    break
+                    # No work available — wait briefly, then retry
+                    stop.wait(timeout=args.worker_poll)
+                    continue
                 executed += 1
                 metrics = result.get("outcome_metrics") or {}
                 logger.info("[%s] success=%s val_bpb=%s",
@@ -148,66 +179,46 @@ def main():
                            metrics.get("val_bpb", "n/a"))
         finally:
             worker_store.close()
-        return executed
+            logger.info("[%s] stopped after %d experiments", worker_id, executed)
 
-    cycle = 0
     try:
-        while args.max_cycles is None or cycle < args.max_cycles:
-            cycle += 1
-            logger.info("=== Cycle %d ===", cycle)
+        # Start all threads concurrently — planner and workers run in parallel
+        threads = []
 
-            # Plan — ensure enough work in the queue
-            summary = planner.tick()
-            logger.info("Planner: %s", summary)
+        planner_thread = threading.Thread(target=run_planner, name="planner", daemon=True)
+        threads.append(planner_thread)
+        planner_thread.start()
 
-            # Run all workers in parallel threads
-            if len(worker_configs) == 1:
-                wid, exe_fn = worker_configs[0]
-                total_executed = run_worker(wid, exe_fn)
-            else:
-                results = {}
-                threads = []
-                for wid, exe_fn in worker_configs:
-                    def _run(w=wid, e=exe_fn):
-                        results[w] = run_worker(w, e)
-                    t = threading.Thread(target=_run)
-                    threads.append(t)
-                    t.start()
-                for t in threads:
-                    t.join()
-                total_executed = sum(results.values())
-                logger.info("Workers: %s", results)
+        for wid, exe_fn in worker_configs:
+            t = threading.Thread(target=run_worker, args=(wid, exe_fn), name=wid, daemon=True)
+            threads.append(t)
+            t.start()
 
-            logger.info("Executed %d experiments this cycle", total_executed)
-
-            # Status
-            wm = store.load_world_model()
-            logger.info("WM v%d: %d beliefs, %d tensions",
-                       wm.version, len(wm.beliefs), len(wm.tensions))
-
-            if args.max_cycles is None or cycle < args.max_cycles:
-                if total_executed == 0:
-                    time.sleep(args.planner_interval)
-                # If we executed something, immediately loop (no sleep)
+        # Wait for stop signal (from max_cycles or KeyboardInterrupt)
+        while not stop.is_set():
+            stop.wait(timeout=1.0)
 
     except KeyboardInterrupt:
         logger.info("Interrupted by user")
-    finally:
-        # Final report
-        logger.info("=== Final Report ===")
-        logger.info("Observations: %d", len(store.list_observations()))
-        for stage in ("backlog", "todo", "running", "done", "reviewed"):
-            logger.info("  %s: %d", stage, store.count_proposals(stage))
+        stop.set()
 
-        wm = store.load_world_model()
-        logger.info("World model v%d: %d beliefs", wm.version, len(wm.beliefs))
-        for b in wm.beliefs:
-            logger.info("  [%.2f] %s", b["confidence"], b["claim"])
+    # Wait for threads to finish current work
+    logger.info("Shutting down...")
+    for t in threads:
+        t.join(timeout=10)
 
-        history = store.get_world_model_history()
-        logger.info("World model history: %d versions", len(history))
+    # Final report
+    logger.info("=== Final Report ===")
+    logger.info("Observations: %d", len(store.list_observations()))
+    for stage in ("backlog", "todo", "running", "done", "reviewed"):
+        logger.info("  %s: %d", stage, store.count_proposals(stage))
 
-        store.close()
+    wm = store.load_world_model()
+    logger.info("World model v%d: %d beliefs", wm.version, len(wm.beliefs))
+    for b in wm.beliefs:
+        logger.info("  [%.2f] %s", b["confidence"], b["claim"])
+
+    store.close()
 
 
 if __name__ == "__main__":
