@@ -148,6 +148,11 @@ def main():
         while not stop.is_set():
             cycle += 1
             try:
+                # Reclaim proposals stuck in 'running' from crashed workers
+                reclaimed = planner_store.reclaim_stale_running(timeout_s=600)
+                if reclaimed > 0:
+                    logger.info("Reclaimed %d stale running proposals", reclaimed)
+
                 summary = planner.tick()
                 if any(v > 0 for v in summary.values()):
                     logger.info("Planner cycle %d: %s", cycle, summary)
