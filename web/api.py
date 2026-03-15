@@ -329,6 +329,9 @@ def get_stats():
 
         total_energy_kwh = 0.0
         total_cost_eur = 0.0
+        tracked_energy_kwh = 0.0
+        untracked_wall_time = 0.0
+        avg_power_samples = []
 
         for obs in observations:
             if obs.outcome_success:
@@ -340,9 +343,21 @@ def get_stats():
                 wid = obs.worker_id or "unknown"
                 worker_times.setdefault(wid, []).append(obs.wall_time_s)
             if obs.energy_kwh:
+                tracked_energy_kwh += obs.energy_kwh
                 total_energy_kwh += obs.energy_kwh
+                if obs.avg_power_w:
+                    avg_power_samples.append(obs.avg_power_w)
+            elif obs.wall_time_s:
+                untracked_wall_time += obs.wall_time_s
             if obs.cost_eur:
                 total_cost_eur += obs.cost_eur
+
+        # Estimate energy for untracked runs using average power from tracked runs
+        if untracked_wall_time > 0 and avg_power_samples:
+            avg_power_w = sum(avg_power_samples) / len(avg_power_samples)
+            estimated_kwh = (avg_power_w * untracked_wall_time) / 3_600_000
+            total_energy_kwh += estimated_kwh
+            total_cost_eur += estimated_kwh * 0.23  # fallback price
 
         # Per-worker stats
         workers = {}

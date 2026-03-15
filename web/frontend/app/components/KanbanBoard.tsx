@@ -9,7 +9,7 @@ import type { Project } from "./ProjectFilter";
 const API = process.env.NEXT_PUBLIC_API_URL || "";
 
 const STAGES = [
-  { key: "backlog", label: "Backlog", subtitle: "Generator output", color: "border-gray-600", dot: "bg-gray-400" },
+  { key: "backlog", label: "Proposed", subtitle: "Ready for critic", color: "border-gray-600", dot: "bg-gray-400" },
   { key: "todo", label: "Todo", subtitle: "Critic approved", color: "border-blue-600", dot: "bg-blue-400" },
   { key: "running", label: "Running", subtitle: "Worker executing", color: "border-yellow-600", dot: "bg-yellow-400" },
   { key: "done", label: "Done", subtitle: "Awaiting review", color: "border-green-600", dot: "bg-green-400" },
