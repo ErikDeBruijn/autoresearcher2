@@ -45,13 +45,37 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 # --- App ---
+async def poll_store_changes():
+    """Background task: broadcast queue counts to WebSocket clients every few seconds."""
+    last_counts = None
+    while True:
+        await asyncio.sleep(5)
+        if not manager.active:
+            continue
+        try:
+            store = get_store()
+            counts = {
+                stage: store.count_proposals(stage)
+                for stage in ("backlog", "todo", "running", "done", "reviewed")
+            }
+            store.close()
+            if counts != last_counts:
+                last_counts = counts
+                await manager.broadcast({"type": "queue_update", "counts": counts})
+        except Exception:
+            pass
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure DB exists with demo data if needed
     store = get_store()
     store.init()
     store.close()
+    # Start background poller for live updates
+    task = asyncio.create_task(poll_store_changes())
     yield
+    task.cancel()
 
 app = FastAPI(title="AutoResearcher2 — Research Dashboard", lifespan=lifespan)
 app.add_middleware(
@@ -377,59 +401,73 @@ Be concise and direct. Lower val_bpb is better."""
 
 @app.get("/api/workers/status")
 def get_worker_status():
-    """Check if the research loop is running (via screen sessions)."""
+    """Check if the research loop systemd service is running."""
     import subprocess
     try:
         result = subprocess.run(
-            ["screen", "-ls"], capture_output=True, text=True, timeout=5,
+            ["systemctl", "is-active", "autoresearcher"],
+            capture_output=True, text=True, timeout=5,
         )
-        screens = result.stdout
-        running = "v4research" in screens
+        active = result.stdout.strip() == "active"
+
+        # Get GPU utilization if available
+        gpu_info = None
+        try:
+            gpu_result = subprocess.run(
+                ["nvidia-smi", "--query-gpu=utilization.gpu,power.draw,memory.used,memory.total",
+                 "--format=csv,noheader,nounits"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if gpu_result.returncode == 0:
+                gpus = []
+                for line in gpu_result.stdout.strip().split("\n"):
+                    parts = [p.strip() for p in line.split(",")]
+                    if len(parts) == 4:
+                        gpus.append({
+                            "utilization_pct": int(parts[0]),
+                            "power_w": float(parts[1]),
+                            "memory_used_mb": int(parts[2]),
+                            "memory_total_mb": int(parts[3]),
+                        })
+                gpu_info = gpus
+        except FileNotFoundError:
+            pass
+
         return {
-            "running": running,
-            "screens": screens.strip(),
+            "running": active,
+            "service": "autoresearcher.service",
+            "gpus": gpu_info,
         }
+    except FileNotFoundError:
+        return {"running": False, "error": "systemctl not available"}
     except Exception as e:
         return {"running": False, "error": str(e)}
 
 
-class WorkerStartRequest(BaseModel):
-    cuda_device: str = "1"
-    max_cycles: int = 50
-
-
 @app.post("/api/workers/start")
-def start_worker(req: WorkerStartRequest):
-    """Start the v4 research loop in a screen session."""
+def start_worker():
+    """Start the autoresearcher systemd service."""
     import subprocess
-
-    # Check if already running
-    check = subprocess.run(["screen", "-ls"], capture_output=True, text=True, timeout=5)
-    if "v4research" in check.stdout:
-        return {"status": "already_running"}
-
-    project_dir = Path(__file__).resolve().parent.parent
-    cmd = (
-        f"cd {project_dir} && PYTHONPATH=src python3 scripts/run_v4_real.py "
-        f"--init --local-llm --cuda-device {req.cuda_device} "
-        f"--max-cycles {req.max_cycles} 2>&1 | tee v4research.log"
-    )
-    subprocess.run(
-        ["screen", "-dmS", "v4research", "bash", "-c", cmd],
-        timeout=5,
-    )
-    return {"status": "started", "cuda_device": req.cuda_device, "max_cycles": req.max_cycles}
+    try:
+        subprocess.run(["systemctl", "start", "autoresearcher"], timeout=10, check=True)
+        return {"status": "started"}
+    except subprocess.CalledProcessError as e:
+        return {"status": "error", "error": str(e)}
+    except FileNotFoundError:
+        return {"status": "error", "error": "systemctl not available"}
 
 
 @app.post("/api/workers/stop")
 def stop_worker():
-    """Stop the research loop screen session."""
+    """Stop the autoresearcher systemd service."""
     import subprocess
     try:
-        subprocess.run(["screen", "-S", "v4research", "-X", "quit"], timeout=5)
+        subprocess.run(["systemctl", "stop", "autoresearcher"], timeout=10, check=True)
         return {"status": "stopped"}
-    except Exception as e:
+    except subprocess.CalledProcessError as e:
         return {"status": "error", "error": str(e)}
+    except FileNotFoundError:
+        return {"status": "error", "error": "systemctl not available"}
 
 
 # --- WebSocket for live updates ---
