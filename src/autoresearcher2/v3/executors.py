@@ -23,17 +23,28 @@ def make_trainpy_executor(
     remote_dir: str = "~/github.com/karpathy/autoresearch",
     cuda_device: str = "1",
     timeout: int = 900,
+    local: bool = False,
 ):
     """Create an executor for NanoGPT train.py experiments.
 
     Handles config_change (patches train.py knobs) and probe (limited steps).
+    Set local=True when running on the VM itself to skip SSH.
     """
-    def ssh(cmd: str) -> tuple[int, str]:
-        result = subprocess.run(
-            ["ssh", "-i", ssh_key, "-o", "ConnectTimeout=10", ssh_host, cmd],
-            capture_output=True, text=True, timeout=timeout,
-        )
+    def run_cmd(cmd: str) -> tuple[int, str]:
+        if local:
+            result = subprocess.run(
+                ["bash", "-c", cmd],
+                capture_output=True, text=True, timeout=timeout,
+            )
+        else:
+            result = subprocess.run(
+                ["ssh", "-i", ssh_key, "-o", "ConnectTimeout=10", ssh_host, cmd],
+                capture_output=True, text=True, timeout=timeout,
+            )
         return result.returncode, result.stdout + result.stderr
+
+    # Expand ~ for local execution
+    train_dir = remote_dir.replace("~", "/root") if local else remote_dir
 
     def execute(proposal: Proposal) -> dict:
         spec = proposal.intervention_spec
@@ -44,28 +55,28 @@ def make_trainpy_executor(
             return {"metrics": {"unsupported": True}, "raw_log": f"dry-run for {itype}"}
 
         # Reset train.py
-        ssh(f"cd {remote_dir} && git checkout train.py")
+        run_cmd(f"cd {train_dir} && git checkout train.py")
 
         # Patch knobs from intervention_spec
         for knob, value in spec.items():
             if knob == "run_steps":
                 continue  # Not a train.py knob
-            ssh(f"sed -i 's/^{knob} = .*/{knob} = {value}/' {remote_dir}/train.py")
+            run_cmd(f"sed -i 's/^{knob} = .*/{knob} = {value}/' {train_dir}/train.py")
 
         # For probes, limit steps
         if itype == "probe" and "run_steps" in spec:
             run_steps = spec["run_steps"]
-            ssh(f"sed -i 's/^num_steps = .*/num_steps = {run_steps}/' {remote_dir}/train.py")
+            run_cmd(f"sed -i 's/^num_steps = .*/num_steps = {run_steps}/' {train_dir}/train.py")
 
         # Run training
         start = time.time()
-        rc, out = ssh(
-            f"cd {remote_dir} && CUDA_VISIBLE_DEVICES={cuda_device} uv run train.py 2>&1"
+        rc, out = run_cmd(
+            f"cd {train_dir} && CUDA_VISIBLE_DEVICES={cuda_device} uv run train.py 2>&1"
         )
         wall_time = time.time() - start
 
         # Reset
-        ssh(f"cd {remote_dir} && git checkout train.py")
+        run_cmd(f"cd {train_dir} && git checkout train.py")
 
         if rc != 0:
             raise RuntimeError(f"train.py failed (exit {rc}): {out[-500:]}")

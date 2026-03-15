@@ -102,6 +102,7 @@ def main():
             ssh_host=args.ssh_host,
             ssh_key=args.ssh_key,
             cuda_device=args.cuda_device,
+            local=args.local_llm,
         )
 
     planner = Planner(
