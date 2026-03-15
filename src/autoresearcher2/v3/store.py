@@ -8,10 +8,13 @@ Replaces filesystem-based workspace with SQLite tables:
 Same API surface as Workspace so planner/worker code stays unchanged.
 """
 import json
+import logging
 import sqlite3
 import time
 import uuid
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from autoresearcher2.v3.world_model import WorldModel
 from autoresearcher2.v3.proposal import Proposal
@@ -127,6 +130,7 @@ class Store:
     def init(self):
         """Create tables and seed initial world model."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._backup_if_has_data()
         self._migrate()
         self.conn.executescript(SCHEMA)
         # Seed empty world model if none exists
@@ -137,6 +141,42 @@ class Store:
                 (time.time(), None, "{}", "initial empty state", json.dumps(wm.to_dict())),
             )
             self.conn.commit()
+
+    def _backup_if_has_data(self):
+        """Auto-backup the DB before schema changes if it contains research data."""
+        if not self.db_path.exists():
+            return
+        try:
+            conn = sqlite3.connect(str(self.db_path))
+            conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+            has_obs = conn.execute(
+                "SELECT COUNT(*) FROM observations"
+            ).fetchone()[0] > 0
+            has_queue = conn.execute(
+                "SELECT COUNT(*) FROM queue"
+            ).fetchone()[0] > 0
+            conn.close()
+        except sqlite3.OperationalError:
+            return  # DB doesn't have these tables yet
+        if has_obs or has_queue:
+            import shutil
+            from datetime import datetime
+            backup_dir = self.db_path.parent / "db_backups"
+            backup_dir.mkdir(exist_ok=True)
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = backup_dir / f"{self.db_path.stem}_{ts}.db"
+            shutil.copy2(self.db_path, backup_path)
+            # Also copy WAL if it exists
+            wal = Path(str(self.db_path) + "-wal")
+            if wal.exists():
+                shutil.copy2(wal, backup_dir / f"{self.db_path.stem}_{ts}.db-wal")
+            shm = Path(str(self.db_path) + "-shm")
+            if shm.exists():
+                shutil.copy2(shm, backup_dir / f"{self.db_path.stem}_{ts}.db-shm")
+            logger.info("Auto-backed up DB to %s (%s obs, %s queue items)",
+                       backup_path.name,
+                       "has" if has_obs else "no",
+                       "has" if has_queue else "no")
 
     def _migrate(self):
         """Apply migrations for existing databases (idempotent)."""
