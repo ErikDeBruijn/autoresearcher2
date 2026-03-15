@@ -260,6 +260,65 @@ async def promote_proposal(proposal_id: str, target_stage: str = "todo"):
         store.close()
 
 
+# --- Worker management ---
+
+@app.get("/api/workers/status")
+def get_worker_status():
+    """Check if the research loop is running (via screen sessions)."""
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["screen", "-ls"], capture_output=True, text=True, timeout=5,
+        )
+        screens = result.stdout
+        running = "v4research" in screens
+        return {
+            "running": running,
+            "screens": screens.strip(),
+        }
+    except Exception as e:
+        return {"running": False, "error": str(e)}
+
+
+class WorkerStartRequest(BaseModel):
+    cuda_device: str = "1"
+    max_cycles: int = 50
+
+
+@app.post("/api/workers/start")
+def start_worker(req: WorkerStartRequest):
+    """Start the v4 research loop in a screen session."""
+    import subprocess
+
+    # Check if already running
+    check = subprocess.run(["screen", "-ls"], capture_output=True, text=True, timeout=5)
+    if "v4research" in check.stdout:
+        return {"status": "already_running"}
+
+    project_dir = Path(__file__).resolve().parent.parent
+    cmd = (
+        f"cd {project_dir} && PYTHONPATH=src python3 scripts/run_v4_real.py "
+        f"--init --local-llm --cuda-device {req.cuda_device} "
+        f"--max-cycles {req.max_cycles} 2>&1 | tee v4research.log"
+    )
+    subprocess.run(
+        ["screen", "-dmS", "v4research", "bash", "-c", cmd],
+        timeout=5,
+    )
+    return {"status": "started", "cuda_device": req.cuda_device, "max_cycles": req.max_cycles}
+
+
+@app.post("/api/workers/stop")
+def stop_worker():
+    """Stop the research loop screen session."""
+    import subprocess
+    try:
+        subprocess.run(["screen", "-S", "v4research", "-X", "quit"], timeout=5)
+        return {"status": "stopped"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
 # --- WebSocket for live updates ---
 
 @app.websocket("/ws")

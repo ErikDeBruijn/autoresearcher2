@@ -26,7 +26,7 @@ PROPOSAL_SCHEMA = {
             "intent": "which belief/tension/question does this address",
             "rationale": "why is this valuable now",
             "expected_learning": "what we learn regardless of outcome",
-            "intervention_type": "config_change|code_change|schema_extension|probe|replication|other",
+            "intervention_type": "config_change|probe",
             "intervention_spec": {"key": "value"},
             "estimated_cost": {
                 "cost_to_test": "description of compute cost",
@@ -54,7 +54,7 @@ Generate {n_proposals} diverse research proposals. You are the creative, diverge
 - Look for untested assumptions and shaky beliefs
 - Propose experiments that would resolve tensions
 - Consider cheap probes before expensive full experiments
-- Think beyond parameter grid search — code changes, new metrics, replications are all valid
+- We run NanoGPT training experiments. Available intervention types are ONLY: config_change (modify training hyperparameters) or probe (short training run to test hypothesis cheaply)
 - Prioritize proposals that teach us something regardless of outcome
 
 ## COGNITIVE ORDER (follow this for each proposal)
@@ -81,7 +81,8 @@ Your {n_proposals} proposals should include:
 - At least one that challenges the highest-confidence belief
 - At least one cheap probe (lowest cost_to_test)
 - At least one that addresses an unresolved tension
-- Different intervention types where possible (not all config_change)
+- Mix of config_change (full run) and probe (short run, include "run_steps" in spec)
+- intervention_spec must contain valid train.py hyperparameters like: DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size
 
 ## OUTPUT FORMAT
 
