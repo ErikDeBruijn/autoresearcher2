@@ -16,22 +16,27 @@ def call_llm(
     ssh_host: str = "root@dllm-experiment.home",
     ssh_key: str = "~/.ssh/pve03_key",
     timeout: int = 180,
+    local: bool = False,
 ) -> str:
-    """Call claude -p on remote VM, return raw text response.
+    """Call claude -p, either locally or on remote VM via SSH.
 
-    Raises RuntimeError on SSH or claude failure.
+    Set local=True when running on the VM itself to skip the SSH hop.
+    Raises RuntimeError on failure.
     """
-    ssh_cmd = [
-        "ssh",
-        "-i", ssh_key,
-        "-o", "StrictHostKeyChecking=accept-new",
-        "-o", "ConnectTimeout=10",
-        ssh_host,
-        "claude -p --output-format json 2>/dev/null",
-    ]
+    if local:
+        cmd = ["claude", "-p", "--output-format", "json"]
+    else:
+        cmd = [
+            "ssh",
+            "-i", ssh_key,
+            "-o", "StrictHostKeyChecking=accept-new",
+            "-o", "ConnectTimeout=10",
+            ssh_host,
+            "claude -p --output-format json 2>/dev/null",
+        ]
 
     result = subprocess.run(
-        ssh_cmd,
+        cmd,
         input=prompt,
         capture_output=True,
         text=True,
@@ -40,7 +45,7 @@ def call_llm(
 
     if result.returncode != 0:
         raise RuntimeError(
-            f"SSH/claude failed (rc={result.returncode}): {result.stderr[:200]}"
+            f"{'claude' if local else 'SSH/claude'} failed (rc={result.returncode}): {result.stderr[:200]}"
         )
 
     return result.stdout
@@ -51,13 +56,14 @@ def call_llm_json(
     ssh_host: str = "root@dllm-experiment.home",
     ssh_key: str = "~/.ssh/pve03_key",
     timeout: int = 180,
+    local: bool = False,
 ) -> dict:
     """Call claude -p and parse JSON from response.
 
     Handles the claude --output-format json wrapping where the actual
     content is in {"result": "..."} format.
     """
-    raw = call_llm(prompt, ssh_host, ssh_key, timeout)
+    raw = call_llm(prompt, ssh_host, ssh_key, timeout, local=local)
     return parse_json_response(raw)
 
 

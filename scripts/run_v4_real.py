@@ -76,6 +76,7 @@ def main():
     parser.add_argument("--cuda-device", type=str, default="1")
     parser.add_argument("--init", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--local-llm", action="store_true", help="Call claude locally instead of via SSH")
     parser.add_argument("--max-cycles", type=int, default=None)
     parser.add_argument("--planner-interval", type=float, default=60.0)
     parser.add_argument("--min-queue", type=int, default=5)
@@ -91,7 +92,7 @@ def main():
 
     # LLM call function (for planner)
     def llm_fn(prompt):
-        return call_llm_json(prompt, ssh_host=args.ssh_host)
+        return call_llm_json(prompt, ssh_host=args.ssh_host, local=args.local_llm)
 
     # Executor (for worker)
     if args.dry_run:
