@@ -352,7 +352,7 @@ export default function ProjectFilter({
               <div className="flex items-center gap-0.5">
                 <button
                   onClick={(e) => { e.stopPropagation(); if (!p.active) onToggleActive(p.id, true); }}
-                  className={`text-sm transition-all ${p.active ? "text-blue-400 opacity-100" : "text-gray-600 opacity-50 hover:opacity-80"}`}
+                  className={`text-sm transition-all ${p.active ? "text-green-400 opacity-100" : "text-gray-600 opacity-50 hover:opacity-80"}`}
                   title="Run project"
                 >
                   ▶
@@ -378,7 +378,6 @@ export default function ProjectFilter({
               {/* Project name */}
               <span className={`flex items-center gap-1.5 text-xs font-medium ${visible ? "text-gray-200" : "text-gray-500"}`}>
                 <span>{getProjectEmoji(p.name)}</span>
-                <span className={`w-2 h-2 rounded-full ${color}`} />
                 {p.name}
               </span>
 
