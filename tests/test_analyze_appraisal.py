@@ -11,6 +11,8 @@ from analyze_appraisal import (
     waste_ratio,
     cell_coverage,
     information_gain_analysis,
+    score_outcome_correlation,
+    failure_retry_cost,
 )
 
 
@@ -80,3 +82,38 @@ def test_information_gain_analysis():
     assert pairs[0]["from_cell"] == 0
     assert pairs[0]["to_cell"] == 1
     assert pairs[0]["val_bpb_improvement"] > 0  # 1.06 → 1.04 = improvement
+
+
+def test_score_outcome_correlation_negative_is_predictive():
+    # Higher scores → lower val_bpb (better) = negative correlation
+    results = [
+        _make_result(0, val_bpb=1.03, scores={"total": 4.5, "epistemic": 4.0, "pragmatic": 0.5}),
+        _make_result(1, val_bpb=1.04, scores={"total": 3.5, "epistemic": 3.0, "pragmatic": 0.5}),
+        _make_result(2, val_bpb=1.05, scores={"total": 2.5, "epistemic": 2.0, "pragmatic": 0.5}),
+        _make_result(3, val_bpb=1.06, scores={"total": 1.5, "epistemic": 1.0, "pragmatic": 0.5}),
+    ]
+    corr = score_outcome_correlation(results)
+    assert corr is not None
+    assert corr < -0.5  # should be strongly negative (predictive)
+
+
+def test_score_outcome_skips_uniform_scores():
+    results = [
+        _make_result(0, val_bpb=1.05, scores={"total": 5.0}),
+        _make_result(1, val_bpb=1.04, scores={"total": 5.0}),
+    ]
+    assert score_outcome_correlation(results) is None  # all scores uniform at 5.0
+
+
+def test_failure_retry_cost():
+    results = [
+        _make_result(0, error="OOM"),
+        _make_result(0, error="OOM"),
+        _make_result(0, val_bpb=1.05),  # retry success
+        _make_result(1, val_bpb=1.04),
+    ]
+    retry = failure_retry_cost(results)
+    assert retry["total_failures"] == 2
+    assert retry["cells_with_failures"] == 1
+    assert retry["successful_retries"] == 1
+    assert retry["repeated_failure_cells"] == {0: 2}

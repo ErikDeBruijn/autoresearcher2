@@ -353,6 +353,16 @@
         "epistemic_delta": 1.2188470972625471,
         "val_bpb_improvement": -0.005511999999999961
       }
-    ]
+    ],
+    "score_outcome_correlation": -0.06325441543901131,
+    "full_failure_retries": {
+      "total_failures": 7,
+      "cells_with_failures": 4,
+      "successful_retries": 3,
+      "repeated_failure_cells": {
+        "26": 2,
+        "11": 3
+      }
+    }
   }
 }

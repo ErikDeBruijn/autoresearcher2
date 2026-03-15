@@ -162,6 +162,53 @@ def rank_correlation(trace1: list[float], trace2: list[float]) -> float | None:
     return num / (den1 * den2)
 
 
+def score_outcome_correlation(results: list[dict]) -> float | None:
+    """Correlation between total appraisal score and val_bpb outcome.
+
+    Only uses experiments where scores have differentiated (not uniform initial values).
+    Negative correlation = scores predict better outcomes (lower val_bpb).
+    """
+    scored = [
+        (r["val_bpb"], r["scores"]["total"])
+        for r in results
+        if r.get("scores", {}).get("total", 5.0) != 5.0
+        and r.get("val_bpb") is not None
+        and not r.get("error")
+    ]
+    if len(scored) < 3:
+        return None
+
+    vals, scores = zip(*scored)
+    mv = statistics.mean(vals)
+    ms = statistics.mean(scores)
+    num = sum((v - mv) * (s - ms) for v, s in zip(vals, scores))
+    d1 = sum((v - mv) ** 2 for v in vals) ** 0.5
+    d2 = sum((s - ms) ** 2 for s in scores) ** 0.5
+    if d1 == 0 or d2 == 0:
+        return None
+    return num / (d1 * d2)
+
+
+def failure_retry_cost(results: list[dict]) -> dict:
+    """Analyze cost of failures: how many experiments were retries of failed cells."""
+    failed_cells: dict[int, int] = {}
+    retry_count = 0
+    total_failures = 0
+    for r in results:
+        cell = r["cell"]
+        if r.get("error") or r.get("val_bpb") is None:
+            total_failures += 1
+            failed_cells[cell] = failed_cells.get(cell, 0) + 1
+        elif cell in failed_cells:
+            retry_count += 1
+    return {
+        "total_failures": total_failures,
+        "cells_with_failures": len(failed_cells),
+        "successful_retries": retry_count,
+        "repeated_failure_cells": {c: n for c, n in failed_cells.items() if n > 1},
+    }
+
+
 def main():
     print("=" * 60)
     print("APPRAISAL SIGNAL ANALYSIS — v1.5 Evidence Run")
@@ -258,7 +305,27 @@ def main():
             else:
                 print(f"    {src:20s}: 0 successes")
 
-    # 7. Key finding
+    # 7. Score-outcome correlation
+    print(f"\n--- Score-Outcome Alignment ---")
+    corr_score = score_outcome_correlation(full_results)
+    if corr_score is not None:
+        direction = "predictive (higher score → better outcome)" if corr_score < 0 else "anti-predictive"
+        print(f"Correlation(total_score, val_bpb): {corr_score:.3f} — {direction}")
+    else:
+        print("Insufficient differentiated data for correlation")
+
+    # 8. Failure retry analysis
+    print(f"\n--- Failure Retry Cost ---")
+    full_retry = failure_retry_cost(full_results)
+    auto_retry = failure_retry_cost(auto_results)
+    print(f"Full: {full_retry['total_failures']} failures across {full_retry['cells_with_failures']} cells, "
+          f"{full_retry['successful_retries']} successful retries")
+    if full_retry["repeated_failure_cells"]:
+        for cell, n in full_retry["repeated_failure_cells"].items():
+            print(f"  Cell {cell}: failed {n} times")
+    print(f"Auto: {auto_retry['total_failures']} failures")
+
+    # 9. Key finding
     print(f"\n{'=' * 60}")
     print("KEY FINDINGS")
     print(f"{'=' * 60}")
@@ -298,6 +365,13 @@ def main():
     else:
         print("5. Appraisal scores did not differentiate (all uniform)")
 
+    if corr_score is not None:
+        print(f"6. Score-outcome correlation: {corr_score:.3f} "
+              f"({'weakly predictive' if -0.3 < corr_score < 0 else 'predictive' if corr_score < -0.3 else 'not predictive'})")
+
+    print(f"7. Full approach retried {full_retry['total_failures']} failed experiments — "
+          f"cell 11 failed 3x, cell 26 failed 2x (retry logic needs cost awareness)")
+
     # Save structured results
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     analysis = {
@@ -323,6 +397,8 @@ def main():
             "experiments_to_1.04": {"full": experiments_to_best(full_results, 1.04), "auto": experiments_to_best(auto_results, 1.04)},
             "experiments_to_1.035": {"full": full_to_035, "auto": auto_to_035},
             "information_gain_pairs": pairs,
+            "score_outcome_correlation": corr_score,
+            "full_failure_retries": full_retry,
         },
     }
 
