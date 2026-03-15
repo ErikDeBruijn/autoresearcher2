@@ -35,7 +35,7 @@ function WorkerSlot({
 }) {
   const active = proposals.length > 0;
   return (
-    <div className={`rounded-lg border ${active ? "border-yellow-700 bg-yellow-950/20" : "border-gray-700 bg-gray-800/20"} p-2`}>
+    <div className={`rounded-lg border ${active ? "border-yellow-700 bg-yellow-950" : "border-gray-700 bg-gray-800"} p-2`}>
       <div className="flex items-center gap-2 mb-2">
         <span className={`w-2 h-2 rounded-full ${active ? "bg-yellow-400 animate-pulse" : "bg-gray-600"}`} />
         <span className="text-xs font-medium">{workerId}</span>
@@ -85,7 +85,7 @@ export default function KanbanBoard() {
     return (
       <div className="flex gap-4 p-4 h-full">
         {STAGES.map((s) => (
-          <div key={s.key} className="flex-1 bg-gray-900/50 rounded-xl animate-pulse" />
+          <div key={s.key} className="flex-1 bg-gray-900 rounded-xl animate-pulse" />
         ))}
       </div>
     );
@@ -121,7 +121,7 @@ export default function KanbanBoard() {
           return (
             <div
               key={stage.key}
-              className={`flex-1 min-w-[280px] flex flex-col rounded-xl bg-gray-900/30 border-t-2 ${stage.color}`}
+              className={`flex-1 min-w-[280px] flex flex-col rounded-xl bg-gray-900 border-t-2 ${stage.color}`}
             >
               <div className="px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -159,7 +159,7 @@ export default function KanbanBoard() {
         return (
           <div
             key={stage.key}
-            className={`flex-1 min-w-[240px] flex flex-col rounded-xl bg-gray-900/30 border-t-2 ${stage.color}`}
+            className={`flex-1 min-w-[240px] flex flex-col rounded-xl bg-gray-900 border-t-2 ${stage.color}`}
           >
             <div className="px-3 py-2 flex items-center justify-between">
               <div className="flex items-center gap-2">

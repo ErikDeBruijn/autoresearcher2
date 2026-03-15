@@ -37,7 +37,7 @@ export default function ProposalCard({ proposal }: { proposal: Proposal }) {
   return (
     <div
       className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-gray-500 ${
-        proposal.status === "running" ? "border-yellow-600 bg-yellow-950/20 animate-pulse" : "border-gray-700 bg-gray-800/50"
+        proposal.status === "running" ? "border-yellow-600 bg-yellow-950 animate-pulse" : "border-gray-700 bg-gray-800"
       }`}
       onClick={() => setExpanded(!expanded)}
     >
