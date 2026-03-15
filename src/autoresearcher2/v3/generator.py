@@ -55,10 +55,10 @@ NANOGPT_DOMAIN = DomainConfig(
 
 ATARI_DOMAIN = DomainConfig(
     name="Atari RL",
-    description="We optimize Atari game agents using reinforcement learning.",
-    intervention_types="config_change (modify RL hyperparameters), probe (short training run), or code_change (rewrite training script with structural changes — use file_changes key)",
-    parameters="game, learning_rate, network_size, algorithm, n_envs, total_timesteps. For code_change: {\"file_changes\": {\"train.py\": \"full file content\"}}",
-    diversity_hint="Mix of config_change, probe, and code_change. Try different games, algorithms (PPO, DQN), and network sizes",
+    description="We train RL agents to play Atari Breakout. The base script uses SB3 PPO as boilerplate. The real research is in code_change proposals that rewrite the training script with structural improvements: custom reward shaping, novel network architectures, different algorithms, preprocessing tricks, curriculum learning, etc.",
+    intervention_types="config_change (tweak hyperparameters — LEAST interesting), probe (quick diagnostic run), or code_change (MOST VALUABLE: rewrite train_atari.py with structural changes via file_changes key). PREFER code_change — parameter tuning alone won't achieve breakthroughs.",
+    parameters="For config_change: learning_rate, n_envs, total_timesteps, gamma, clip_range. For code_change: {\"file_changes\": {\"train_atari.py\": \"full file content\"}} — you can completely rewrite the training script.",
+    diversity_hint="STRONGLY prefer code_change proposals. The training script is boilerplate SB3 — real progress comes from structural code changes: reward shaping, custom networks, preprocessing, action masking, curriculum learning, exploration strategies. config_change is only useful for establishing baselines.",
 )
 
 GENERIC_DOMAIN = DomainConfig(
