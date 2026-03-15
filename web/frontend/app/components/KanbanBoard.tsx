@@ -88,6 +88,22 @@ export default function KanbanBoard() {
     });
   }, []);
 
+  const toggleProjectActive = useCallback(async (projectId: string, active: boolean) => {
+    // Optimistic update
+    setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, active } : p));
+    try {
+      await fetch(`${API}/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active }),
+      });
+    } catch (e) {
+      console.error("Failed to toggle project active state", e);
+      // Revert on failure
+      setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, active: !active } : p));
+    }
+  }, []);
+
   // Build project lookup for enriching proposals with name/color
   const projectMap = new Map(projects.map((p, i) => [p.id, { ...p, color: getProjectColor(i) }]));
 
@@ -251,6 +267,7 @@ export default function KanbanBoard() {
         projects={projects}
         visibleProjects={visibleProjects}
         onToggle={toggleProject}
+        onToggleActive={toggleProjectActive}
         selectedObservationId={selectedObservationId}
         onSelectObservation={setSelectedObservationId}
       />
