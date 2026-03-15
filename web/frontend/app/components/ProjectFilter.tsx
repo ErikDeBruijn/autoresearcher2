@@ -398,21 +398,6 @@ export default function ProjectFilter({
         );
       })}
 
-      {/* Unassigned toggle */}
-      <div className="flex items-center gap-3 px-4 py-1 border-t border-gray-800">
-        <button
-          onClick={() => onToggle("__none__")}
-          className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-all ${
-            visibleProjects.has("__none__")
-              ? "bg-gray-800 text-gray-200 border border-gray-600"
-              : "bg-gray-900 text-gray-600 border border-gray-800"
-          }`}
-        >
-          <span className={`w-2 h-2 rounded-full ${visibleProjects.has("__none__") ? "bg-gray-400" : "bg-gray-700"}`} />
-          No project
-        </button>
-      </div>
-
       {worldModelProject && (
         <WorldModelPanel
           projectId={worldModelProject.id}
