@@ -87,6 +87,7 @@ export default function KanbanBoard() {
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [trashOver, setTrashOver] = useState(false);
   const [pipelineActivity, setPipelineActivity] = useState<{ phase?: string; proposal_id?: string } | null>(null);
+  const [activeWorkerIds, setActiveWorkerIds] = useState<Set<string>>(new Set());
 
   const toggleProject = useCallback((projectId: string) => {
     setVisibleProjects((prev) => {
@@ -182,6 +183,7 @@ export default function KanbanBoard() {
       ]);
       setQueue(queueRes);
       setWorkers(statsRes.workers || {});
+      setActiveWorkerIds(new Set(statsRes.active_worker_ids || []));
       setPipelineActivity(statsRes.pipeline_activity || null);
       setProjects(projectsRes);
       setLoading(false);
@@ -317,9 +319,10 @@ export default function KanbanBoard() {
   // Build worker slots for the Running column (always unfiltered)
   const runningProposals = ((queue["running"] || []) as ProposalWithWorker[]).map(enrichProposal);
 
-  // Determine worker IDs: known workers from stats + any from running proposals
+  // Determine worker IDs: active workers + any from running proposals
+  // (excludes old/retired workers that only have historical data)
   const workerIds = new Set<string>();
-  Object.keys(workers).forEach((w) => workerIds.add(w));
+  activeWorkerIds.forEach((w) => workerIds.add(w));
   runningProposals.forEach((p) => {
     if (p.worker_id) workerIds.add(p.worker_id);
   });

@@ -403,6 +403,14 @@ def get_stats():
                 "max_time_s": max(times) if times else 0,
             }
 
+        # Active workers: those currently running proposals
+        active_worker_ids = set()
+        running_rows = store.conn.execute(
+            "SELECT DISTINCT worker_id FROM queue WHERE stage = 'running' AND worker_id IS NOT NULL"
+        ).fetchall()
+        for row in running_rows:
+            active_worker_ids.add(row["worker_id"])
+
         # Learntropy from world model history
         learntropy_trace = []
         for h in history:
@@ -440,6 +448,7 @@ def get_stats():
             "tension_count": len(wm.tensions),
             "queue_counts": counts,
             "workers": workers,
+            "active_worker_ids": list(active_worker_ids),
             "learntropy_trace": learntropy_trace,
             "intervention_types": type_counts,
             "total_energy_kwh": round(total_energy_kwh, 4),
