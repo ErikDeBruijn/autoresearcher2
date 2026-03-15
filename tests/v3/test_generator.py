@@ -1,7 +1,7 @@
 """Tests for generator — rationale-first proposal generation."""
 import pytest
 from autoresearcher2.v3.world_model import WorldModel
-from autoresearcher2.v3.generator import generate_proposals, build_generator_prompt
+from autoresearcher2.v3.generator import generate_proposals, build_generator_prompt, DomainConfig, ATARI_DOMAIN, GENERIC_DOMAIN
 
 
 def make_rich_world_model():
@@ -116,3 +116,59 @@ def test_generator_handles_malformed_response():
 
     proposals = generate_proposals(wm, n_proposals=5, llm_call_fn=bad_llm)
     assert proposals == []
+
+
+def test_domain_config_changes_prompt():
+    wm = make_rich_world_model()
+
+    default_prompt = build_generator_prompt(wm, n_proposals=3)
+    assert "NanoGPT" in default_prompt
+    assert "DEPTH" in default_prompt
+
+    atari_prompt = build_generator_prompt(wm, n_proposals=3, domain=ATARI_DOMAIN)
+    assert "Atari" in atari_prompt
+    assert "learning_rate" in atari_prompt
+    assert "NanoGPT" not in atari_prompt
+
+    generic_prompt = build_generator_prompt(wm, n_proposals=3, domain=GENERIC_DOMAIN)
+    assert "NanoGPT" not in generic_prompt
+    assert "Atari" not in generic_prompt
+    assert "optimize a target metric" in generic_prompt
+
+
+def test_custom_domain_config():
+    wm = make_rich_world_model()
+    outreach = DomainConfig(
+        name="cold outreach",
+        description="We optimize B2B cold email campaigns.",
+        intervention_types="config_change (modify email parameters) or probe (small A/B test)",
+        parameters="subject_line, tone, cta_position, personalization_level",
+        diversity_hint="Mix of config_change and probe across different email elements",
+    )
+    prompt = build_generator_prompt(wm, n_proposals=3, domain=outreach)
+    assert "cold email" in prompt
+    assert "subject_line" in prompt
+    assert "NanoGPT" not in prompt
+
+
+def test_generate_proposals_with_domain():
+    wm = make_rich_world_model()
+
+    def mock_llm(prompt):
+        assert "Atari" in prompt
+        return {
+            "proposals": [
+                {
+                    "intent": "Test PPO vs DQN on Breakout",
+                    "rationale": "No evidence yet on algorithm choice",
+                    "expected_learning": "Which algorithm family works best",
+                    "intervention_type": "config_change",
+                    "intervention_spec": {"game": "Breakout", "algorithm": "PPO"},
+                    "estimated_cost": {"cost_to_test": "~30 min GPU"},
+                }
+            ]
+        }
+
+    proposals = generate_proposals(wm, n_proposals=1, llm_call_fn=mock_llm, domain=ATARI_DOMAIN)
+    assert len(proposals) == 1
+    assert proposals[0].intervention_spec["game"] == "Breakout"

@@ -14,6 +14,7 @@ Cognitive order per proposal:
 
 import json
 import logging
+from dataclasses import dataclass, field
 
 from autoresearcher2.v3.world_model import WorldModel
 from autoresearcher2.v3.proposal import Proposal
@@ -37,8 +38,38 @@ PROPOSAL_SCHEMA = {
 }
 
 
-def build_generator_prompt(world_model: WorldModel, n_proposals: int = 5) -> str:
+@dataclass
+class DomainConfig:
+    """Domain description for the generator prompt."""
+    name: str = "NanoGPT training"
+    description: str = "We run NanoGPT training experiments."
+    intervention_types: str = "config_change (modify training hyperparameters) or probe (short training run to test hypothesis cheaply)"
+    parameters: str = "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size"
+    diversity_hint: str = "Mix of config_change (full run) and probe (short run, include \"run_steps\" in spec)"
+
+
+NANOGPT_DOMAIN = DomainConfig()
+
+ATARI_DOMAIN = DomainConfig(
+    name="Atari RL",
+    description="We optimize Atari game agents using reinforcement learning.",
+    intervention_types="config_change (modify RL hyperparameters) or probe (short training run)",
+    parameters="game, learning_rate, network_size, algorithm, n_envs, total_timesteps",
+    diversity_hint="Mix of config_change and probe. Try different games, algorithms (PPO, DQN), and network sizes",
+)
+
+GENERIC_DOMAIN = DomainConfig(
+    name="generic optimization",
+    description="We run experiments to optimize a target metric.",
+    intervention_types="config_change (modify parameters) or probe (cheap test)",
+    parameters="any key-value pairs relevant to the domain",
+    diversity_hint="Mix of config_change (full run) and probe (quick test)",
+)
+
+
+def build_generator_prompt(world_model: WorldModel, n_proposals: int = 5, domain: DomainConfig = None) -> str:
     """Build prompt for the generator LLM role."""
+    domain = domain or NANOGPT_DOMAIN
     wm_json = json.dumps(world_model.to_dict(), indent=2, default=str)
     schema_json = json.dumps(PROPOSAL_SCHEMA, indent=2)
 
@@ -54,7 +85,7 @@ Generate {n_proposals} diverse research proposals. You are the creative, diverge
 - Look for untested assumptions and shaky beliefs
 - Propose experiments that would resolve tensions
 - Consider cheap probes before expensive full experiments
-- We run NanoGPT training experiments. Available intervention types are ONLY: config_change (modify training hyperparameters) or probe (short training run to test hypothesis cheaply)
+- {domain.description} Available intervention types are ONLY: {domain.intervention_types}
 - Prioritize proposals that teach us something regardless of outcome
 
 ## COGNITIVE ORDER (follow this for each proposal)
@@ -81,8 +112,8 @@ Your {n_proposals} proposals should include:
 - At least one that challenges the highest-confidence belief
 - At least one cheap probe (lowest cost_to_test)
 - At least one that addresses an unresolved tension
-- Mix of config_change (full run) and probe (short run, include "run_steps" in spec)
-- intervention_spec must contain valid train.py hyperparameters like: DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size
+- {domain.diversity_hint}
+- intervention_spec must contain valid parameters like: {domain.parameters}
 
 ## OUTPUT FORMAT
 
@@ -95,6 +126,7 @@ def generate_proposals(
     world_model: WorldModel,
     n_proposals: int = 5,
     llm_call_fn=None,
+    domain: DomainConfig = None,
 ) -> list[Proposal]:
     """Generate research proposals from the world model.
 
@@ -102,11 +134,12 @@ def generate_proposals(
         world_model: Current epistemic state
         n_proposals: How many proposals to generate
         llm_call_fn: Function that takes prompt string and returns parsed JSON dict
+        domain: Domain configuration for prompt generation
 
     Returns:
         List of Proposal objects
     """
-    prompt = build_generator_prompt(world_model, n_proposals)
+    prompt = build_generator_prompt(world_model, n_proposals, domain=domain)
 
     try:
         response = llm_call_fn(prompt)

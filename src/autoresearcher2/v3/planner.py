@@ -28,12 +28,14 @@ class Planner:
         min_queue_size: int = 5,
         n_proposals: int = 5,
         n_select: int = 2,
+        domain=None,
     ):
         self.workspace = workspace
         self.llm_call_fn = llm_call_fn
         self.min_queue_size = min_queue_size
         self.n_proposals = n_proposals
         self.n_select = n_select
+        self.domain = domain
         self._processed_observations = set()
 
     def tick(self) -> dict:
@@ -63,7 +65,8 @@ class Planner:
         if backlog_count + todo_count < self.min_queue_size:
             wm = self.workspace.load_world_model()
             proposals = generate_proposals(
-                wm, n_proposals=self.n_proposals, llm_call_fn=self.llm_call_fn
+                wm, n_proposals=self.n_proposals, llm_call_fn=self.llm_call_fn,
+                domain=self.domain,
             )
             for p in proposals:
                 self.workspace.save_proposal(p)
