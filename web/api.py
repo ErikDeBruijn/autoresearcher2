@@ -672,16 +672,22 @@ Domains: nanogpt, atari-rl, generic. When creating a project, ask the user what 
     for msg in req.messages:
         conversation.append({"role": msg["role"], "content": msg["content"]})
 
-    # Call LLM via claude CLI
-    # Note: skills with Bash tools require non-root user. For now, use
-    # command parsing as fallback. The skill bin tools can be used when
-    # the service runs as a non-root user.
+    # Call LLM via claude CLI with research management tools
     prompt_json = json.dumps(conversation)
+    repo_dir = str(Path(__file__).resolve().parent.parent)
+    skill_bin = f"{repo_dir}/.claude/skills/research-management/bin"
+    env = {**__import__("os").environ, "PATH": f"{skill_bin}:{__import__('os').environ.get('PATH', '')}"}
     try:
         result = subprocess.run(
-            ["claude", "-p", "--output-format", "text"],
+            [
+                "claude", "-p",
+                "--output-format", "text",
+                "--dangerously-skip-permissions",
+                "--allowedTools", "Bash(research-*)",
+            ],
             input=prompt_json,
             capture_output=True, text=True, timeout=120,
+            env=env,
         )
         if result.returncode != 0:
             return {"role": "assistant", "content": f"LLM error: {result.stderr[:200]}"}
