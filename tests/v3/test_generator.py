@@ -126,7 +126,7 @@ def test_domain_config_changes_prompt():
     assert "DEPTH" in default_prompt
 
     atari_prompt = build_generator_prompt(wm, n_proposals=3, domain=ATARI_DOMAIN)
-    assert "Atari" in atari_prompt
+    assert "CartPole" in atari_prompt
     assert "learning_rate" in atari_prompt
     assert "NanoGPT" not in atari_prompt
 
@@ -155,7 +155,7 @@ def test_generate_proposals_with_domain():
     wm = make_rich_world_model()
 
     def mock_llm(prompt):
-        assert "Atari" in prompt
+        assert "CartPole" in prompt
         return {
             "proposals": [
                 {
