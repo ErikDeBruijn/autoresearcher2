@@ -32,7 +32,7 @@ def seed():
     wm.add_belief("DEPTH > 8 has diminishing returns for val_bpb", 0.45, ["obs_005"])
     wm.add_belief("WEIGHT_DECAY has minimal effect on outcome", 0.30, ["obs_002"], ["obs_006"])
     wm.add_belief("Batch size 64 is optimal for current GPU memory", 0.60, ["obs_004"])
-    wm.add_tension(belief_ids=["B1", "B2"], nature="DEPTH=10 with optimal LR untested — could challenge B2")
+    wm.add_tension(belief_ids=["B1", "B2"], nature="DEPTH=10 with optimal LR untested — could challenge B2", salience=0.8)
     wm.cost_beliefs = {
         "config_change": {"wall_time_s": 300, "compute_cost": 0.5},
         "probe": {"wall_time_s": 60, "compute_cost": 0.1},
