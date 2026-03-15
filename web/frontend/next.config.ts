@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "export",
+  distDir: "dist",
+  // Allow dev server to work normally (export only affects build)
 };
 
 export default nextConfig;

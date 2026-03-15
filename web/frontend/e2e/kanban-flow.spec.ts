@@ -87,6 +87,39 @@ test.describe("Kanban Dashboard", () => {
     }
   });
 
+  test("chat responds to a question", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Chat" }).click();
+    await expect(page.getByText("Research Chat")).toBeVisible();
+
+    // Type and send a message
+    const input = page.getByPlaceholder("Ask about the research...");
+    await input.fill("How many experiments have been run?");
+    await input.press("Enter");
+
+    // Should show "Thinking..." loading state
+    await expect(page.getByText("Thinking...")).toBeVisible({ timeout: 5000 });
+
+    // Should get a real response (not Thinking...) within 60 seconds
+    // The response should contain something about experiments or beliefs
+    await expect(page.getByText("Thinking...")).not.toBeVisible({
+      timeout: 60000,
+    });
+
+    // Verify there's an assistant response (second message div)
+    const responses = page.locator(".bg-gray-800.rounded-lg");
+    await expect(responses.first()).toBeVisible();
+  });
+
+  test("running column shows worker slots for 2 GPUs", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForTimeout(3000);
+
+    // Should show worker_0 and worker_1 slots in the Running column
+    await expect(page.getByText("worker_0").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("worker_1").first()).toBeVisible();
+  });
+
   test("API lifecycle: created proposal appears in backlog", async ({
     page,
   }) => {

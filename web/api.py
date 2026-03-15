@@ -84,13 +84,23 @@ class ChatMessage(BaseModel):
 
 @app.get("/api/queue")
 def get_queue():
-    """Get all proposals grouped by stage."""
+    """Get all proposals grouped by stage, with worker_id for running."""
     store = get_store()
     try:
-        stages = {}
+        stages: dict[str, list] = {}
         for stage in ("backlog", "todo", "running", "done", "reviewed"):
             proposals = store.list_proposals(stage)
-            stages[stage] = [p.to_dict() for p in proposals]
+            items = []
+            for p in proposals:
+                d = p.to_dict()
+                # Add worker_id from DB for running proposals
+                if stage == "running":
+                    row = store.conn.execute(
+                        "SELECT worker_id FROM queue WHERE id = ?", (p.id,)
+                    ).fetchone()
+                    d["worker_id"] = row["worker_id"] if row else None
+                items.append(d)
+            stages[stage] = items
         return stages
     finally:
         store.close()
@@ -258,6 +268,94 @@ async def promote_proposal(proposal_id: str, target_stage: str = "todo"):
         raise HTTPException(status_code=404, detail=f"Proposal {proposal_id} not found")
     finally:
         store.close()
+
+
+# --- Chat endpoint ---
+
+class ChatRequest(BaseModel):
+    messages: list[dict]  # [{"role": "user", "content": "..."}, ...]
+
+
+@app.post("/api/chat")
+async def chat(req: ChatRequest):
+    """Chat with LLM about the research, grounded in current Store data."""
+    import subprocess
+
+    # Build context from Store
+    store = get_store()
+    try:
+        wm = store.load_world_model()
+        observations = store.list_observations()
+        counts = {
+            stage: store.count_proposals(stage)
+            for stage in ("backlog", "todo", "running", "done", "reviewed")
+        }
+    finally:
+        store.close()
+
+    def fmt_num(val):
+        try:
+            return f"{float(val):.2f}"
+        except (ValueError, TypeError):
+            return str(val)
+
+    beliefs_text = "\n".join(
+        f"  - [{fmt_num(b['confidence'])}] {b['claim']}"
+        for b in wm.beliefs
+    )
+    tensions_text = "\n".join(
+        f"  - [{fmt_num(t['salience'])}] {t['nature']}"
+        for t in wm.tensions
+    ) or "  None"
+    recent_obs = observations[-5:]
+    obs_lines = []
+    for o in recent_obs:
+        line = f"  - {o.intervention_type}: {json.dumps(o.intervention_spec)} → "
+        line += "success" if o.outcome_success else "FAIL"
+        if o.outcome_metrics:
+            line += f" val_bpb={o.outcome_metrics.get('val_bpb', '?')}"
+        obs_lines.append(line)
+    obs_text = "\n".join(obs_lines) or "  None yet"
+    queue_text = ", ".join(f"{k}: {v}" for k, v in counts.items())
+
+    system = f"""You are a research assistant for AutoResearcher2, an autonomous NanoGPT training experiment system.
+
+Current state (World Model v{wm.version}):
+
+Beliefs:
+{beliefs_text}
+
+Tensions:
+{tensions_text}
+
+Recent observations (last 5):
+{obs_text}
+
+Queue: {queue_text}
+Total experiments: {len(observations)}, Success rate: {sum(1 for o in observations if o.outcome_success)}/{len(observations)}
+
+Be concise and direct. Lower val_bpb is better."""
+
+    # Build conversation for LLM
+    conversation = [{"role": "system", "content": system}]
+    for msg in req.messages:
+        conversation.append({"role": msg["role"], "content": msg["content"]})
+
+    # Call LLM via claude CLI
+    prompt_json = json.dumps(conversation)
+    try:
+        result = subprocess.run(
+            ["claude", "-p", "--output-format", "text"],
+            input=prompt_json,
+            capture_output=True, text=True, timeout=60,
+        )
+        if result.returncode != 0:
+            return {"role": "assistant", "content": f"LLM error: {result.stderr[:200]}"}
+        return {"role": "assistant", "content": result.stdout.strip()}
+    except FileNotFoundError:
+        return {"role": "assistant", "content": "Claude CLI not available on this machine. Chat requires the research agent to run on the VM."}
+    except Exception as e:
+        return {"role": "assistant", "content": f"Error: {str(e)}"}
 
 
 # --- Worker management ---
