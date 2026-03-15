@@ -857,7 +857,7 @@ async def generate_report():
     """Run generate_report.py --db ... --no-llm and return the PDF path."""
     try:
         result = _subprocess.run(
-            ["python", str(REPORT_SCRIPT), "--db", str(DB_PATH), "--no-llm"],
+            ["uv", "run", "python", str(REPORT_SCRIPT), "--db", str(DB_PATH), "--no-llm"],
             capture_output=True, text=True, timeout=120,
             cwd=str(Path(__file__).parent.parent),
         )
@@ -880,10 +880,10 @@ async def generate_report():
 
 
 def _find_latest_pdf() -> Path | None:
-    """Return the most recently modified PDF in REPORT_DIR."""
+    """Return the most recently modified PDF in REPORT_DIR (searches subdirectories)."""
     if not REPORT_DIR.exists():
         return None
-    pdfs = sorted(REPORT_DIR.glob("*.pdf"), key=lambda p: p.stat().st_mtime, reverse=True)
+    pdfs = sorted(REPORT_DIR.glob("**/*.pdf"), key=lambda p: p.stat().st_mtime, reverse=True)
     return pdfs[0] if pdfs else None
 
 
