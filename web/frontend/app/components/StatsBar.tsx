@@ -13,21 +13,47 @@ interface Stats {
   tension_count: number;
   queue_counts: Record<string, number>;
   workers: Record<string, { experiments: number; avg_time_s: number; total_time_s: number }>;
+  total_energy_kwh: number;
+  total_cost_eur: number;
+}
+
+interface GpuInfo {
+  utilization_pct: number;
+  power_w: number;
+}
+
+interface EnergyStatus {
+  shelly_total_w: number | null;
+  system_base_w: number | null;
+  price_eur_per_kwh: number | null;
+}
+
+interface WorkerStatus {
+  running: boolean;
+  gpus: GpuInfo[] | null;
+  energy: EnergyStatus | null;
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL || "";
 
 export default function StatsBar() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [workerStatus, setWorkerStatus] = useState<WorkerStatus | null>(null);
 
   useEffect(() => {
-    const fetch_ = () =>
+    const fetchStats = () =>
       fetch(`${API}/api/stats`)
         .then((r) => r.json())
         .then(setStats)
         .catch(() => {});
-    fetch_();
-    const id = setInterval(fetch_, 10000);
+    const fetchWorkers = () =>
+      fetch(`${API}/api/workers/status`)
+        .then((r) => r.json())
+        .then(setWorkerStatus)
+        .catch(() => {});
+    fetchStats();
+    fetchWorkers();
+    const id = setInterval(() => { fetchStats(); fetchWorkers(); }, 10000);
     return () => clearInterval(id);
   }, []);
 
@@ -77,19 +103,38 @@ export default function StatsBar() {
         <span className="font-mono">{(stats.total_wall_time_s / 60).toFixed(0)}min</span>
       </div>
 
-      <div className="flex items-center gap-2 ml-auto">
-        {workers.length > 0 ? (
+      {(stats.total_cost_eur > 0 || stats.total_energy_kwh > 0) && (
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400">Cost:</span>
+          <span className="font-mono text-emerald-400">{stats.total_cost_eur.toFixed(2)}€</span>
+          <span className="font-mono text-gray-500">{(stats.total_energy_kwh * 1000).toFixed(0)}Wh</span>
+        </div>
+      )}
+
+      <div className="flex items-center gap-3 ml-auto">
+        {workerStatus?.energy?.price_eur_per_kwh != null && (
+          <span className="text-xs text-gray-500 font-mono">{workerStatus.energy.price_eur_per_kwh.toFixed(3)}€/kWh</span>
+        )}
+        {workerStatus?.energy?.shelly_total_w != null && (
+          <span className="text-xs text-gray-400 font-mono">{Math.round(workerStatus.energy.shelly_total_w)}W total</span>
+        )}
+        {workerStatus?.gpus ? (
+          workerStatus.gpus.map((gpu, i) => (
+            <div key={i} className="flex items-center gap-1">
+              <span className={`w-2 h-2 rounded-full ${gpu.utilization_pct > 10 ? "bg-green-400 animate-pulse" : "bg-gray-600"}`} />
+              <span className="text-xs text-gray-400">GPU{i}</span>
+              <span className="text-xs font-mono">{Math.round(gpu.power_w)}W</span>
+            </div>
+          ))
+        ) : workers.length > 0 ? (
           workers.map(([wid, w]) => (
             <div key={wid} className="flex items-center gap-1">
               <span className={`w-2 h-2 rounded-full ${w.experiments > 0 ? "bg-green-400 animate-pulse" : "bg-gray-600"}`} />
-              <span className="text-xs text-gray-400">{wid}</span>
-              <span className="text-xs font-mono">{w.experiments}x</span>
+              <span className="text-xs text-gray-400">{wid.replace("worker_dllm-experiment_", "GPU")}</span>
             </div>
           ))
         ) : (
-          <span className={`text-xs ${anyIdle ? "text-red-400" : "text-gray-500"}`}>
-            {anyIdle ? "⚠ Workers idle" : "No workers"}
-          </span>
+          <span className="text-xs text-red-400">No workers</span>
         )}
       </div>
     </div>

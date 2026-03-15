@@ -7,14 +7,52 @@ Each executor takes a Proposal and returns a result dict with:
 
 These are passed as execute_fn to Worker.
 """
+import json
 import logging
 import re
 import subprocess
 import time
+import urllib.request
+import urllib.error
 
 from autoresearcher2.v3.proposal import Proposal
 
 logger = logging.getLogger(__name__)
+
+# gpu-cost-tracker service endpoint
+COST_TRACKER_URL = "http://pve03.local:8377"
+
+
+def _start_cost_job(gpu: int, label: str, client: str = "autoresearcher") -> str | None:
+    """Start a cost tracking job. Returns job_id or None on failure."""
+    try:
+        data = json.dumps({"gpu": gpu, "client": client, "label": label}).encode()
+        req = urllib.request.Request(
+            f"{COST_TRACKER_URL}/job/start",
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            result = json.loads(resp.read())
+            return result.get("job_id")
+    except Exception as e:
+        logger.warning("Cost tracker start failed: %s", e)
+        return None
+
+
+def _stop_cost_job(job_id: str) -> dict | None:
+    """Stop a cost tracking job. Returns cost data or None on failure."""
+    try:
+        req = urllib.request.Request(
+            f"{COST_TRACKER_URL}/job/{job_id}",
+            method="DELETE",
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read())
+    except Exception as e:
+        logger.warning("Cost tracker stop failed: %s", e)
+        return None
 
 
 def make_trainpy_executor(
@@ -81,12 +119,19 @@ def make_trainpy_executor(
             run_steps = spec["run_steps"]
             run_cmd(f"sed -i 's/^num_steps = .*/num_steps = {run_steps}/' {train_dir}/train.py")
 
+        # Start cost tracking
+        gpu_index = int(cuda_device) if cuda_device.isdigit() else 0
+        job_id = _start_cost_job(gpu=gpu_index, label=proposal.id)
+
         # Run training
         start = time.time()
         rc, out = run_cmd(
             f"cd {train_dir} && CUDA_VISIBLE_DEVICES={cuda_device} uv run train.py 2>&1"
         )
         wall_time = time.time() - start
+
+        # Stop cost tracking and collect data
+        cost_data = _stop_cost_job(job_id) if job_id else None
 
         if rc != 0:
             raise RuntimeError(f"train.py failed (exit {rc}): {out[-500:]}")
@@ -107,11 +152,18 @@ def make_trainpy_executor(
             if m:
                 metrics[key] = float(m.group(1))
 
-        return {
+        result = {
             "metrics": metrics,
             "compute_cost": wall_time / 3600,  # Rough: hours of GPU
             "raw_log": out[-2000:] if len(out) > 2000 else out,
         }
+
+        if cost_data:
+            result["energy_kwh"] = cost_data.get("energy_kwh")
+            result["cost_eur"] = cost_data.get("cost_eur")
+            result["avg_power_w"] = cost_data.get("avg_power_w")
+
+        return result
 
     return execute
 
@@ -122,6 +174,7 @@ def make_shell_executor(
     timeout: int = 900,
     ssh_host: str = None,
     ssh_key: str = None,
+    cuda_device: str = None,
 ):
     """Generic executor that runs a shell command with intervention_spec as env vars.
 
@@ -150,10 +203,18 @@ def make_shell_executor(
         else:
             run_args = ["bash", "-c", cmd]
 
+        # Start cost tracking if GPU specified
+        job_id = None
+        if cuda_device and cuda_device.isdigit():
+            job_id = _start_cost_job(gpu=int(cuda_device), label=proposal.id)
+
         start = time.time()
         result = subprocess.run(run_args, capture_output=True, text=True, timeout=timeout)
         wall_time = time.time() - start
         out = result.stdout + result.stderr
+
+        # Stop cost tracking
+        cost_data = _stop_cost_job(job_id) if job_id else None
 
         if result.returncode != 0:
             raise RuntimeError(f"Command failed (exit {result.returncode}): {out[-500:]}")
@@ -164,11 +225,18 @@ def make_shell_executor(
             if m:
                 metrics[name] = float(m.group(1))
 
-        return {
+        exec_result = {
             "metrics": metrics,
             "compute_cost": wall_time / 3600,
             "raw_log": out[-2000:] if len(out) > 2000 else out,
         }
+
+        if cost_data:
+            exec_result["energy_kwh"] = cost_data.get("energy_kwh")
+            exec_result["cost_eur"] = cost_data.get("cost_eur")
+            exec_result["avg_power_w"] = cost_data.get("avg_power_w")
+
+        return exec_result
 
     return execute
 

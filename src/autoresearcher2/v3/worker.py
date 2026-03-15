@@ -53,6 +53,9 @@ class Worker:
                 compute_cost=result.get("compute_cost"),
                 worker_id=self.worker_id,
                 raw_log=result.get("raw_log"),
+                energy_kwh=result.get("energy_kwh"),
+                cost_eur=result.get("cost_eur"),
+                avg_power_w=result.get("avg_power_w"),
             )
         except Exception as e:
             wall_time = time.time() - start

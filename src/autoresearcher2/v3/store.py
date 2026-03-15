@@ -42,7 +42,10 @@ CREATE TABLE IF NOT EXISTS observations (
     compute_cost       REAL,
     worker_id          TEXT,
     raw_log            TEXT,
-    project_id         TEXT REFERENCES projects(id)
+    project_id         TEXT REFERENCES projects(id),
+    energy_kwh         REAL,
+    cost_eur           REAL,
+    avg_power_w        REAL
 );
 
 CREATE TABLE IF NOT EXISTS world_model (
@@ -98,6 +101,10 @@ MIGRATIONS = [
     "CREATE INDEX IF NOT EXISTS idx_queue_project ON queue(project_id);",
     "CREATE INDEX IF NOT EXISTS idx_obs_project ON observations(project_id);",
     "CREATE INDEX IF NOT EXISTS idx_wm_project ON world_model(project_id);",
+    # v4.5: Cost tracking fields on observations
+    "ALTER TABLE observations ADD COLUMN energy_kwh REAL;",
+    "ALTER TABLE observations ADD COLUMN cost_eur REAL;",
+    "ALTER TABLE observations ADD COLUMN avg_power_w REAL;",
 ]
 
 
@@ -217,8 +224,9 @@ class Store:
             """INSERT INTO observations
                (id, created_at, intervention_type, intervention_spec,
                 outcome_metrics, outcome_success, error, wall_time_s,
-                compute_cost, worker_id, raw_log, project_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                compute_cost, worker_id, raw_log, project_id,
+                energy_kwh, cost_eur, avg_power_w)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 obs.id, obs.created_at, obs.intervention_type,
                 json.dumps(obs.intervention_spec),
@@ -227,6 +235,7 @@ class Store:
                 obs.error, obs.wall_time_s, obs.compute_cost,
                 obs.worker_id, obs.raw_log,
                 project_id,
+                obs.energy_kwh, obs.cost_eur, obs.avg_power_w,
             ),
         )
         self.conn.commit()
@@ -266,6 +275,10 @@ class Store:
         obs.id = row["id"]
         obs.created_at = row["created_at"]
         obs.project_id = row["project_id"] if "project_id" in row.keys() else None
+        if "energy_kwh" in row.keys():
+            obs.energy_kwh = row["energy_kwh"]
+            obs.cost_eur = row["cost_eur"]
+            obs.avg_power_w = row["avg_power_w"]
         return obs
 
     # --- Layer 2: World Model (versioned) ---

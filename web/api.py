@@ -206,6 +206,9 @@ def get_queue():
                             "outcome_metrics": obs.outcome_metrics,
                             "wall_time_s": obs.wall_time_s,
                             "error": obs.error,
+                            "energy_kwh": obs.energy_kwh,
+                            "cost_eur": obs.cost_eur,
+                            "avg_power_w": obs.avg_power_w,
                         }
                     # Find the world model update triggered by this observation
                     wm_update = delta_by_obs.get(p.observation_id)
@@ -247,11 +250,24 @@ def get_observations():
 
 
 @app.get("/api/world-model")
-def get_world_model():
-    """Get current world model state."""
+def get_world_model(project_id: str = None):
+    """Get current world model state. If no project_id, returns the first active project's WM."""
     store = get_store()
     try:
-        wm = store.load_world_model()
+        if project_id:
+            wm = store.load_world_model(project_id=project_id)
+        else:
+            # Find the first active project with a world model
+            projects = store.list_projects(active_only=True)
+            wm = None
+            for p in projects:
+                candidate = store.load_world_model(project_id=p["id"])
+                if candidate.version > 0:
+                    if wm is None or candidate.version > wm.version:
+                        wm = candidate
+            if wm is None:
+                # Fallback to default (no project)
+                wm = store.load_world_model()
         return wm.to_dict()
     finally:
         store.close()
@@ -273,14 +289,24 @@ def get_stats():
     store = get_store()
     try:
         observations = store.list_observations()
-        wm = store.load_world_model()
         history = store.get_world_model_history()
+
+        # Find the best world model across all active projects
+        wm = store.load_world_model()  # default (no project)
+        projects = store.list_projects(active_only=True)
+        for p in projects:
+            candidate = store.load_world_model(project_id=p["id"])
+            if candidate.version > wm.version:
+                wm = candidate
 
         # Worker stats
         worker_times: dict[str, list[float]] = {}
         success_count = 0
         failure_count = 0
         total_wall_time = 0.0
+
+        total_energy_kwh = 0.0
+        total_cost_eur = 0.0
 
         for obs in observations:
             if obs.outcome_success:
@@ -291,6 +317,10 @@ def get_stats():
                 total_wall_time += obs.wall_time_s
                 wid = obs.worker_id or "unknown"
                 worker_times.setdefault(wid, []).append(obs.wall_time_s)
+            if obs.energy_kwh:
+                total_energy_kwh += obs.energy_kwh
+            if obs.cost_eur:
+                total_cost_eur += obs.cost_eur
 
         # Per-worker stats
         workers = {}
@@ -339,6 +369,8 @@ def get_stats():
             "workers": workers,
             "learntropy_trace": learntropy_trace,
             "intervention_types": type_counts,
+            "total_energy_kwh": round(total_energy_kwh, 4),
+            "total_cost_eur": round(total_cost_eur, 4),
         }
     finally:
         store.close()
@@ -491,10 +523,14 @@ Be concise and direct. Lower val_bpb is better."""
 
 # --- Worker management ---
 
+COST_TRACKER_URL = "http://pve03.local:8377"
+
+
 @app.get("/api/workers/status")
 def get_worker_status():
-    """Check if the research loop systemd service is running."""
+    """Check research loop status and GPU power from gpu-cost-tracker service."""
     import subprocess
+    import urllib.request
     try:
         result = subprocess.run(
             ["systemctl", "is-active", "autoresearcher"],
@@ -502,33 +538,35 @@ def get_worker_status():
         )
         active = result.stdout.strip() == "active"
 
-        # Get GPU utilization if available
+        # Get GPU and energy data from gpu-cost-tracker service
         gpu_info = None
+        energy_status = None
         try:
-            gpu_result = subprocess.run(
-                ["/usr/local/bin/nvidia-smi", "--query-gpu=utilization.gpu,power.draw,memory.used,memory.total",
-                 "--format=csv,noheader,nounits"],
-                capture_output=True, text=True, timeout=5,
-            )
-            if gpu_result.returncode == 0:
-                gpus = []
-                for line in gpu_result.stdout.strip().split("\n"):
-                    parts = [p.strip() for p in line.split(",")]
-                    if len(parts) == 4:
-                        gpus.append({
-                            "utilization_pct": int(parts[0]),
-                            "power_w": float(parts[1]),
-                            "memory_used_mb": int(parts[2]),
-                            "memory_total_mb": int(parts[3]),
-                        })
-                gpu_info = gpus
-        except FileNotFoundError:
+            req = urllib.request.Request(f"{COST_TRACKER_URL}/status", method="GET")
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                data = json.loads(resp.read())
+                gpu_powers = data.get("gpu_powers_w", {})
+                gpu_utils = data.get("gpu_utilizations_pct", {})
+                gpu_info = []
+                for gpu_id in sorted(gpu_powers.keys(), key=int):
+                    gpu_info.append({
+                        "utilization_pct": gpu_utils.get(str(gpu_id), gpu_utils.get(int(gpu_id), 0)),
+                        "power_w": gpu_powers[gpu_id],
+                    })
+                energy_status = {
+                    "shelly_total_w": data.get("shelly_total_w"),
+                    "system_base_w": data.get("system_base_w"),
+                    "price_eur_per_kwh": data.get("price_eur_per_kwh"),
+                    "active_jobs": data.get("active_jobs", {}),
+                }
+        except Exception:
             pass
 
         return {
             "running": active,
             "service": "autoresearcher.service",
             "gpus": gpu_info,
+            "energy": energy_status,
         }
     except FileNotFoundError:
         return {"running": False, "error": "systemctl not available"}

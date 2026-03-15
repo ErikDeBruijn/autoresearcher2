@@ -25,6 +25,9 @@ class Observation:
         worker_id=None,
         raw_log=None,
         id=None,
+        energy_kwh=None,
+        cost_eur=None,
+        avg_power_w=None,
     ):
         self.id = id or f"obs_{uuid.uuid4().hex[:8]}"
         self.created_at = time.time()
@@ -38,6 +41,9 @@ class Observation:
         self.worker_id = worker_id
         self.raw_log = raw_log
         self.project_id = None
+        self.energy_kwh = energy_kwh
+        self.cost_eur = cost_eur
+        self.avg_power_w = avg_power_w
 
     def to_dict(self):
         """Serialize to dict."""
@@ -53,6 +59,9 @@ class Observation:
             "compute_cost": self.compute_cost,
             "worker_id": self.worker_id,
             "raw_log": self.raw_log,
+            "energy_kwh": self.energy_kwh,
+            "cost_eur": self.cost_eur,
+            "avg_power_w": self.avg_power_w,
         }
 
     @classmethod
@@ -69,6 +78,9 @@ class Observation:
             compute_cost=data.get("compute_cost"),
             worker_id=data.get("worker_id"),
             raw_log=data.get("raw_log"),
+            energy_kwh=data.get("energy_kwh"),
+            cost_eur=data.get("cost_eur"),
+            avg_power_w=data.get("avg_power_w"),
         )
         obs.created_at = data.get("created_at", time.time())
         return obs

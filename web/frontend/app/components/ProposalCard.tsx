@@ -7,6 +7,9 @@ interface ObservationData {
   outcome_metrics: Record<string, number> | null;
   wall_time_s: number | null;
   error: string | null;
+  energy_kwh: number | null;
+  cost_eur: number | null;
+  avg_power_w: number | null;
 }
 
 interface WorldModelUpdate {
@@ -82,6 +85,9 @@ export default function ProposalCard({ proposal }: { proposal: Proposal }) {
         {proposal.observation_id && (
           <span className="text-xs text-green-400">✓ observed</span>
         )}
+        {proposal.observation?.cost_eur != null && (
+          <span className="text-xs text-emerald-400">{proposal.observation.cost_eur.toFixed(3)}€</span>
+        )}
       </div>
 
       {expanded && (
@@ -112,6 +118,15 @@ export default function ProposalCard({ proposal }: { proposal: Proposal }) {
                 </span>
                 {proposal.observation.wall_time_s && (
                   <span className="text-gray-500">{Math.round(proposal.observation.wall_time_s)}s</span>
+                )}
+                {proposal.observation.cost_eur != null && (
+                  <span className="text-emerald-400">{proposal.observation.cost_eur.toFixed(3)}€</span>
+                )}
+                {proposal.observation.energy_kwh != null && (
+                  <span className="text-gray-500">{(proposal.observation.energy_kwh * 1000).toFixed(0)}Wh</span>
+                )}
+                {proposal.observation.avg_power_w != null && (
+                  <span className="text-gray-500">{Math.round(proposal.observation.avg_power_w)}W</span>
                 )}
               </div>
               {proposal.observation.outcome_metrics && (
