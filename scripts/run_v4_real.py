@@ -83,6 +83,8 @@ def main():
     parser.add_argument("--planner-interval", type=float, default=30.0)
     parser.add_argument("--worker-poll", type=float, default=5.0,
                         help="Seconds workers wait before rechecking for todo items")
+    parser.add_argument("--stale-timeout", type=float, default=1800,
+                        help="Seconds before a running proposal is considered stale (default: 30min)")
     parser.add_argument("--min-queue", type=int, default=5)
     parser.add_argument("--n-proposals", type=int, default=5)
     parser.add_argument("--n-select", type=int, default=2)
@@ -102,10 +104,11 @@ def main():
         seed_world_model(store)
         logger.info("Initialized database at %s", args.database)
 
-    # Reclaim proposals stuck in 'running' from previous service runs
-    reclaimed = store.reclaim_stale_running(timeout_s=600)
+    # On startup, ALL running proposals are orphaned (no live workers yet).
+    # Use timeout_s=0 to reclaim them unconditionally.
+    reclaimed = store.reclaim_stale_running(timeout_s=0)
     if reclaimed > 0:
-        logger.info("Reclaimed %d stale running proposals back to todo", reclaimed)
+        logger.info("Reclaimed %d orphaned running proposals back to todo", reclaimed)
 
     # LLM call function (for planner)
     def llm_fn(prompt):
@@ -148,8 +151,8 @@ def main():
         while not stop.is_set():
             cycle += 1
             try:
-                # Reclaim proposals stuck in 'running' from crashed workers
-                reclaimed = planner_store.reclaim_stale_running(timeout_s=600)
+                # Reclaim proposals stuck in 'running' longer than stale_timeout
+                reclaimed = planner_store.reclaim_stale_running(timeout_s=args.stale_timeout)
                 if reclaimed > 0:
                     logger.info("Reclaimed %d stale running proposals", reclaimed)
 
