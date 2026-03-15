@@ -130,10 +130,42 @@ def health():
 
 @app.get("/api/projects")
 def get_projects():
-    """Get all projects."""
+    """Get all projects with energy stats."""
     store = get_store()
     try:
-        return store.list_projects()
+        projects = store.list_projects()
+        observations = store.list_observations()
+
+        # Compute per-project energy stats
+        avg_power_samples = []
+        for obs in observations:
+            if obs.avg_power_w:
+                avg_power_samples.append(obs.avg_power_w)
+        fallback_power_w = (sum(avg_power_samples) / len(avg_power_samples)) if avg_power_samples else 400.0
+
+        for proj in projects:
+            pid = proj["id"]
+            proj_obs = [o for o in observations if o.project_id == pid]
+            energy = 0.0
+            cost = 0.0
+            wall_time = 0.0
+            for o in proj_obs:
+                if o.wall_time_s:
+                    wall_time += o.wall_time_s
+                if o.energy_kwh:
+                    energy += o.energy_kwh
+                elif o.wall_time_s:
+                    energy += (fallback_power_w * o.wall_time_s) / 3_600_000
+                if o.cost_eur:
+                    cost += o.cost_eur
+                elif o.wall_time_s:
+                    cost += (fallback_power_w * o.wall_time_s) / 3_600_000 * 0.23
+            proj["energy_kwh"] = round(energy, 4)
+            proj["cost_eur"] = round(cost, 4)
+            proj["wall_time_s"] = round(wall_time, 1)
+            proj["experiment_count"] = len(proj_obs)
+
+        return projects
     finally:
         store.close()
 

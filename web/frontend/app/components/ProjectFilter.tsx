@@ -8,6 +8,10 @@ interface Project {
   description: string;
   active: boolean;
   domain_config?: { target_metric?: string } | null;
+  energy_kwh?: number;
+  cost_eur?: number;
+  wall_time_s?: number;
+  experiment_count?: number;
 }
 
 interface Observation {
@@ -352,8 +356,14 @@ export default function ProjectFilter({
                   <span className="text-xs text-gray-500">)</span>
                 </>
               )}
-              {projObs.length > 0 && (
-                <span className="text-xs text-gray-600">{projObs.filter((o) => o.outcome_success).length} runs</span>
+              {(p.experiment_count ?? projObs.length) > 0 && (
+                <span className="text-xs text-gray-600">{p.experiment_count ?? projObs.filter((o) => o.outcome_success).length} runs</span>
+              )}
+              {p.cost_eur != null && p.cost_eur > 0 && (
+                <span className="text-xs font-mono text-emerald-400">{p.cost_eur.toFixed(2)}€</span>
+              )}
+              {p.energy_kwh != null && p.energy_kwh > 0 && (
+                <span className="text-xs font-mono text-gray-500">{(p.energy_kwh * 1000).toFixed(0)}Wh</span>
               )}
 
               <span className="text-xs text-gray-600 ml-auto">{expanded ? "▼" : "▶"}</span>
