@@ -128,6 +128,11 @@ export default function ProposalCard({ proposal }: { proposal: Proposal }) {
             <div className="border-t border-gray-700 pt-2">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-purple-400 font-medium">WM v{proposal.world_model_update.version}</span>
+                {proposal.world_model_update.delta?.learntropy != null && (
+                  <span className="text-xs text-gray-500">
+                    learntropy: {(proposal.world_model_update.delta.learntropy as number).toFixed(3)}
+                  </span>
+                )}
               </div>
               {proposal.world_model_update.reasoning && (
                 <div className="text-gray-400">{proposal.world_model_update.reasoning}</div>
