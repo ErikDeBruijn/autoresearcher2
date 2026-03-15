@@ -111,8 +111,10 @@ def main():
     def llm_fn(prompt):
         return call_llm_json(prompt, ssh_host=args.ssh_host, local=args.local_llm)
 
+    # Planner gets its own Store connection for thread safety
+    planner_store = Store(args.database)
     planner = Planner(
-        store, llm_call_fn=llm_fn,
+        planner_store, llm_call_fn=llm_fn,
         min_queue_size=args.min_queue,
         n_proposals=args.n_proposals,
         n_select=args.n_select,
@@ -150,7 +152,7 @@ def main():
                 if any(v > 0 for v in summary.values()):
                     logger.info("Planner cycle %d: %s", cycle, summary)
 
-                wm = store.load_world_model()
+                wm = planner_store.load_world_model()
                 logger.info("WM v%d: %d beliefs, %d tensions",
                            wm.version, len(wm.beliefs), len(wm.tensions))
             except Exception:
@@ -223,6 +225,7 @@ def main():
     for b in wm.beliefs:
         logger.info("  [%.2f] %s", b["confidence"], b["claim"])
 
+    planner_store.close()
     store.close()
 
 
