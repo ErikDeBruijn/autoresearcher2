@@ -119,9 +119,18 @@ def make_trainpy_executor(
     # Per-GPU working directory to avoid concurrent sed-patching of same train.py
     train_dir = f"{base_dir}_gpu{cuda_device}"
 
-    # Create per-worker copy if it doesn't exist
+    # Create lightweight per-worker dir: symlink venv/data/config, copy only train.py
     rc, out = run_cmd(
-        f"test -d {train_dir} || cp -r {base_dir} {train_dir}"
+        f"test -d {train_dir} || ("
+        f"mkdir -p {train_dir} && "
+        f"ln -sf {base_dir}/.venv {train_dir}/.venv && "
+        f"ln -sf {base_dir}/data {train_dir}/data && "
+        f"ln -sf {base_dir}/pyproject.toml {train_dir}/pyproject.toml && "
+        f"ln -sf {base_dir}/uv.lock {train_dir}/uv.lock && "
+        f"ln -sf {base_dir}/.python-version {train_dir}/.python-version && "
+        f"cp {base_dir}/train.py {train_dir}/train.py && "
+        f"cp {base_dir}/prepare.py {train_dir}/prepare.py"
+        f")"
     )
     if rc != 0:
         logger.warning("Failed to create per-GPU dir %s: %s", train_dir, out)
