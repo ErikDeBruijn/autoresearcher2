@@ -29,6 +29,9 @@ def make_trainpy_executor(
 
     Handles config_change (patches train.py knobs) and probe (limited steps).
     Set local=True when running on the VM itself to skip SSH.
+
+    Each executor gets its own working copy of train.py to avoid race
+    conditions when multiple workers run concurrently.
     """
     def run_cmd(cmd: str) -> tuple[int, str]:
         if local:
@@ -44,7 +47,17 @@ def make_trainpy_executor(
         return result.returncode, result.stdout + result.stderr
 
     # Expand ~ for local execution
-    train_dir = remote_dir.replace("~", "/root") if local else remote_dir
+    base_dir = remote_dir.replace("~", "/root") if local else remote_dir
+    # Per-GPU working directory to avoid concurrent sed-patching of same train.py
+    train_dir = f"{base_dir}_gpu{cuda_device}"
+
+    # Create per-worker copy if it doesn't exist
+    rc, out = run_cmd(
+        f"test -d {train_dir} || cp -r {base_dir} {train_dir}"
+    )
+    if rc != 0:
+        logger.warning("Failed to create per-GPU dir %s: %s", train_dir, out)
+        train_dir = base_dir  # Fallback to shared dir
 
     def execute(proposal: Proposal) -> dict:
         spec = proposal.intervention_spec
@@ -54,8 +67,8 @@ def make_trainpy_executor(
             logger.warning("trainpy executor: unsupported type %s, dry-run", itype)
             return {"metrics": {"unsupported": True}, "raw_log": f"dry-run for {itype}"}
 
-        # Reset train.py
-        run_cmd(f"cd {train_dir} && git checkout train.py")
+        # Reset train.py from base dir (working copy may not be a git repo)
+        run_cmd(f"cp {base_dir}/train.py {train_dir}/train.py")
 
         # Patch knobs from intervention_spec
         for knob, value in spec.items():
@@ -74,9 +87,6 @@ def make_trainpy_executor(
             f"cd {train_dir} && CUDA_VISIBLE_DEVICES={cuda_device} uv run train.py 2>&1"
         )
         wall_time = time.time() - start
-
-        # Reset
-        run_cmd(f"cd {train_dir} && git checkout train.py")
 
         if rc != 0:
             raise RuntimeError(f"train.py failed (exit {rc}): {out[-500:]}")
