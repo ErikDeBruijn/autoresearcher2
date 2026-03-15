@@ -55,6 +55,15 @@ test.describe("Kanban Dashboard", () => {
     // Wait for kanban refresh
     await page.waitForTimeout(6000);
     await expect(page.getByText(intent)).toBeVisible({ timeout: 10000 });
+
+    // Cleanup: find and delete the test proposal
+    const queueResp = await page.request.get(`${API_URL}/api/queue`);
+    const queue = await queueResp.json();
+    for (const p of queue.backlog || []) {
+      if (p.intent === intent) {
+        await page.request.delete(`${API_URL}/api/proposals/${p.id}`);
+      }
+    }
   });
 
   test("can open world model panel", async ({ page }) => {
@@ -136,5 +145,129 @@ test.describe("Kanban Dashboard", () => {
 
     await page.goto("/");
     await expect(page.getByText(intent)).toBeVisible({ timeout: 10000 });
+
+    // Cleanup: delete the test proposal
+    const body = await resp.json();
+    await page.request.delete(`${API_URL}/api/proposals/${body.id}`);
+  });
+
+  test("drag proposal from backlog to todo", async ({ page }) => {
+    // Create a test proposal via API
+    const intent = `Drag test ${Date.now()}`;
+    const resp = await page.request.post(`${API_URL}/api/proposals`, {
+      data: {
+        intent,
+        rationale: "Test drag",
+        expected_learning: "Drag works",
+        intervention_type: "probe",
+        intervention_spec: { DEPTH: "8" },
+      },
+    });
+    const body = await resp.json();
+
+    await page.goto("/");
+    await page.waitForTimeout(6000);
+    await expect(page.getByText(intent)).toBeVisible({ timeout: 10000 });
+
+    // Find the draggable card and the todo column drop target
+    const card = page.locator(`[data-proposal-id="${body.id}"]`);
+    const todoColumn = page.locator('[data-drop-stage="todo"]');
+
+    await card.dragTo(todoColumn);
+
+    // Wait for refresh and verify it moved
+    await page.waitForTimeout(6000);
+    // The card should now be inside the todo column
+    const todoCards = todoColumn.getByText(intent);
+    await expect(todoCards).toBeVisible({ timeout: 10000 });
+
+    // Cleanup: delete
+    await page.request.delete(`${API_URL}/api/proposals/${body.id}`);
+  });
+
+  test("drag proposal from todo back to backlog", async ({ page }) => {
+    // Create and promote a test proposal
+    const intent = `Drag back test ${Date.now()}`;
+    const resp = await page.request.post(`${API_URL}/api/proposals`, {
+      data: {
+        intent,
+        rationale: "Test drag back",
+        expected_learning: "Drag back works",
+        intervention_type: "probe",
+        intervention_spec: { DEPTH: "8" },
+      },
+    });
+    const body = await resp.json();
+    // Promote to todo
+    await page.request.post(
+      `${API_URL}/api/proposals/${body.id}/promote?target_stage=todo`
+    );
+
+    await page.goto("/");
+    await page.waitForTimeout(6000);
+
+    const card = page.locator(`[data-proposal-id="${body.id}"]`);
+    const backlogColumn = page.locator('[data-drop-stage="backlog"]');
+
+    await card.dragTo(backlogColumn);
+
+    await page.waitForTimeout(6000);
+    const backlogCards = backlogColumn.getByText(intent);
+    await expect(backlogCards).toBeVisible({ timeout: 10000 });
+
+    // Cleanup
+    await page.request.delete(`${API_URL}/api/proposals/${body.id}`);
+  });
+
+  test("drag proposal to trash deletes it", async ({ page }) => {
+    // Create a test proposal
+    const intent = `Trash test ${Date.now()}`;
+    const resp = await page.request.post(`${API_URL}/api/proposals`, {
+      data: {
+        intent,
+        rationale: "Test trash",
+        expected_learning: "Trash works",
+        intervention_type: "probe",
+        intervention_spec: { DEPTH: "8" },
+      },
+    });
+    const body = await resp.json();
+
+    await page.goto("/");
+    await page.waitForTimeout(6000);
+    await expect(page.getByText(intent)).toBeVisible({ timeout: 10000 });
+
+    const card = page.locator(`[data-proposal-id="${body.id}"]`);
+    const trashZone = page.locator('[data-drop-stage="trash"]');
+    await card.dragTo(trashZone);
+
+    // Wait for refresh — card should be gone
+    await page.waitForTimeout(6000);
+    await expect(page.getByText(intent)).not.toBeVisible({ timeout: 10000 });
+  });
+
+  test("delete proposal via API", async ({ page }) => {
+    const intent = `Delete API test ${Date.now()}`;
+    const resp = await page.request.post(`${API_URL}/api/proposals`, {
+      data: {
+        intent,
+        rationale: "Test delete",
+        expected_learning: "Delete works",
+        intervention_type: "probe",
+        intervention_spec: { DEPTH: "8" },
+      },
+    });
+    const body = await resp.json();
+
+    const delResp = await page.request.delete(
+      `${API_URL}/api/proposals/${body.id}`
+    );
+    expect(delResp.ok()).toBeTruthy();
+
+    // Verify it's gone
+    const checkResp = await page.request.delete(
+      `${API_URL}/api/proposals/${body.id}`
+    );
+    expect(checkResp.status()).toBe(404);
   });
 });

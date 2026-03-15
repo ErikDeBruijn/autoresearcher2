@@ -270,6 +270,21 @@ async def promote_proposal(proposal_id: str, target_stage: str = "todo"):
         store.close()
 
 
+@app.delete("/api/proposals/{proposal_id}")
+async def delete_proposal(proposal_id: str):
+    """Delete a proposal from any stage."""
+    store = get_store()
+    try:
+        result = store.conn.execute("DELETE FROM queue WHERE id = ?", (proposal_id,))
+        store.conn.commit()
+        if result.rowcount == 0:
+            raise HTTPException(status_code=404, detail=f"Proposal {proposal_id} not found")
+        await manager.broadcast({"type": "proposal_deleted", "proposal_id": proposal_id})
+        return {"status": "ok", "proposal_id": proposal_id}
+    finally:
+        store.close()
+
+
 # --- Chat endpoint ---
 
 class ChatRequest(BaseModel):
