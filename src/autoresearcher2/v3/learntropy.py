@@ -45,7 +45,12 @@ def compute_learntropy(wm_before: WorldModel, wm_after: WorldModel, delta: dict)
     for revision in delta.get("beliefs_revised", []):
         old_conf = _find_belief_confidence(wm_before, revision.get("id", ""))
         new_conf = revision.get("new_confidence", old_conf)
-        if old_conf is not None:
+        try:
+            old_conf = float(old_conf) if old_conf is not None else None
+            new_conf = float(new_conf) if new_conf is not None else None
+        except (ValueError, TypeError):
+            continue
+        if old_conf is not None and new_conf is not None:
             confidence_shift += abs(new_conf - old_conf)
     if beliefs_revised > 0:
         avg_shift = confidence_shift / beliefs_revised
@@ -74,5 +79,9 @@ def _find_belief_confidence(wm: WorldModel, belief_id: str) -> float | None:
     """Find a belief's confidence by ID."""
     for b in wm.beliefs:
         if b.get("id") == belief_id:
-            return b.get("confidence")
+            val = b.get("confidence")
+            try:
+                return float(val) if val is not None else None
+            except (ValueError, TypeError):
+                return None
     return None
