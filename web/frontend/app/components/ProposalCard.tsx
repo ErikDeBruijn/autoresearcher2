@@ -137,7 +137,7 @@ export default function ProposalCard({
           {Object.keys(proposal.intervention_spec).length > 0 && (
             <div className="font-mono bg-gray-900 p-2 rounded">
               {Object.entries(proposal.intervention_spec).map(([k, v]) => (
-                <div key={k}>{k}: {v}</div>
+                <div key={k} className="truncate">{k}: {typeof v === "string" ? v : JSON.stringify(v).slice(0, 200)}</div>
               ))}
             </div>
           )}

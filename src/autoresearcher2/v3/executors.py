@@ -158,9 +158,11 @@ def make_trainpy_executor(
                 for filename, content in file_changes.items():
                     safe_name = filename.replace("/", "_").replace("..", "_")
                     b64 = base64.b64encode(content.encode()).decode()
-                    run_cmd(
+                    rc, out = run_cmd(
                         f"python3 -c \"import base64; open('{train_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
                     )
+                    if rc != 0:
+                        raise RuntimeError(f"Failed to write {safe_name}: {out[-300:]}")
                     logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
         else:
             # Patch knobs from intervention_spec
@@ -295,9 +297,11 @@ def make_shell_executor(
                 for filename, content in file_changes.items():
                     safe_name = filename.replace("/", "_").replace("..", "_")
                     b64 = b64mod.b64encode(content.encode()).decode()
-                    run_cmd(
+                    rc, out = run_cmd(
                         f"python3 -c \"import base64; open('{work_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
                     )
+                    if rc != 0:
+                        raise RuntimeError(f"Failed to write {safe_name}: {out[-300:]}")
                     logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
 
         # Build env vars from spec (skip file_changes and non-shell-safe values)

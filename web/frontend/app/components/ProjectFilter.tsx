@@ -8,7 +8,7 @@ interface Project {
   name: string;
   description: string;
   active: boolean;
-  domain_config?: { target_metric?: string } | null;
+  domain_config?: { target_metric?: string; optimize?: string } | null;
   energy_kwh?: number;
   cost_eur?: number;
   wall_time_s?: number;
@@ -60,11 +60,12 @@ interface ProgressChartProps {
   observations: Observation[];
   metric: string;
   color: string;
+  optimize?: string;
   selectedObservationId?: string;
   onSelectObservation?: (obsId: string) => void;
 }
 
-function ProgressChart({ observations, metric, color, selectedObservationId, onSelectObservation }: ProgressChartProps) {
+function ProgressChart({ observations, metric, color, optimize = "minimize", selectedObservationId, onSelectObservation }: ProgressChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [tooltip, setTooltip] = useState<{
     x: number;
@@ -100,12 +101,13 @@ function ProgressChart({ observations, metric, color, selectedObservationId, onS
   const xScale = (i: number) => pad.left + (i / Math.max(sorted.length - 1, 1)) * plotW;
   const yScale = (v: number) => pad.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
 
-  // Compute records (cumulative minimum for minimize)
-  let bestSoFar = Infinity;
+  // Compute records (cumulative best based on optimize direction)
+  const maximizing = optimize === "maximize";
+  let bestSoFar = maximizing ? -Infinity : Infinity;
   const records: { run: number; value: number }[] = [];
   const points = sorted.map((o, i) => {
     const v = values[i];
-    const isRecord = v < bestSoFar;
+    const isRecord = maximizing ? v > bestSoFar : v < bestSoFar;
     if (isRecord) {
       bestSoFar = v;
       records.push({ run: i, value: v });
@@ -258,7 +260,7 @@ function ProgressChart({ observations, metric, color, selectedObservationId, onS
           {Object.keys(tooltip.spec).length > 0 && (
             <div className="text-gray-500 mt-0.5">
               {Object.entries(tooltip.spec).slice(0, 3).map(([k, v]) => (
-                <span key={k} className="mr-2">{k}={v}</span>
+                <span key={k} className="mr-2">{k}={typeof v === "string" ? v : "..."}</span>
               ))}
             </div>
           )}
@@ -293,14 +295,18 @@ export default function ProjectFilter({
         .then((r) => r.json())
         .then((obs: Observation[]) => {
           setObservations(obs);
-          // Compute best val_bpb per project
+          // Compute best metric per project (respects target_metric and optimize direction)
           const best: Record<string, number> = {};
-          for (const o of obs) {
-            const pid = o.project_id || "__none__";
-            const val = o.outcome_metrics?.val_bpb;
-            if (val != null && o.outcome_success) {
-              if (best[pid] === undefined || val < best[pid]) {
-                best[pid] = val;
+          for (const p of projects) {
+            const metric = p.domain_config?.target_metric || "val_bpb";
+            const maximize = p.domain_config?.optimize === "maximize";
+            const projObs = obs.filter((o) => o.project_id === p.id && o.outcome_success);
+            for (const o of projObs) {
+              const val = o.outcome_metrics?.[metric];
+              if (val != null) {
+                if (best[p.id] === undefined || (maximize ? val > best[p.id] : val < best[p.id])) {
+                  best[p.id] = val;
+                }
               }
             }
           }
@@ -349,11 +355,11 @@ export default function ProjectFilter({
               </span>
 
               {/* Target metric + best value */}
-              <span className="text-xs text-gray-500">minimize</span>
+              <span className="text-xs text-gray-500">{p.domain_config?.optimize === "maximize" ? "maximize" : "minimize"}</span>
               <span className="text-xs font-mono text-cyan-300">{metric}</span>
               {best != null && (
                 <>
-                  <span className="text-xs text-gray-500">(lowest</span>
+                  <span className="text-xs text-gray-500">({p.domain_config?.optimize === "maximize" ? "best" : "lowest"}</span>
                   <span className="text-xs font-mono font-bold text-green-400">{best.toFixed(4)}</span>
                   <span className="text-xs text-gray-500">)</span>
                 </>
@@ -389,6 +395,7 @@ export default function ProjectFilter({
                   observations={projObs}
                   metric={metric}
                   color={hex}
+                  optimize={p.domain_config?.optimize}
                   selectedObservationId={selectedObservationId}
                   onSelectObservation={onSelectObservation}
                 />
