@@ -108,6 +108,16 @@ MIGRATIONS = [
     "ALTER TABLE observations ADD COLUMN energy_kwh REAL;",
     "ALTER TABLE observations ADD COLUMN cost_eur REAL;",
     "ALTER TABLE observations ADD COLUMN avg_power_w REAL;",
+    # v4.7: Pipeline activity tracking
+    """CREATE TABLE IF NOT EXISTS pipeline_activity (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        phase TEXT,
+        project_id TEXT,
+        proposal_id TEXT,
+        started_at REAL,
+        updated_at REAL
+    );""",
+    "INSERT OR IGNORE INTO pipeline_activity (id) VALUES (1);",
 ]
 
 
@@ -191,6 +201,39 @@ class Store:
         if self._conn:
             self._conn.close()
             self._conn = None
+
+    # --- Pipeline Activity ---
+
+    def set_pipeline_activity(self, phase: str = None, project_id: str = None, proposal_id: str = None):
+        """Update pipeline activity (what the planner is currently doing)."""
+        import time
+        self.conn.execute(
+            "UPDATE pipeline_activity SET phase=?, project_id=?, proposal_id=?, started_at=COALESCE(started_at, ?), updated_at=? WHERE id=1",
+            (phase, project_id, proposal_id, time.time(), time.time()),
+        )
+        self.conn.commit()
+
+    def clear_pipeline_activity(self):
+        """Clear pipeline activity (planner is idle)."""
+        import time
+        self.conn.execute(
+            "UPDATE pipeline_activity SET phase=NULL, project_id=NULL, proposal_id=NULL, started_at=NULL, updated_at=? WHERE id=1",
+            (time.time(),),
+        )
+        self.conn.commit()
+
+    def get_pipeline_activity(self) -> dict:
+        """Get current pipeline activity."""
+        row = self.conn.execute("SELECT * FROM pipeline_activity WHERE id=1").fetchone()
+        if row is None:
+            return {}
+        return {
+            "phase": row["phase"],
+            "project_id": row["project_id"],
+            "proposal_id": row["proposal_id"],
+            "started_at": row["started_at"],
+            "updated_at": row["updated_at"],
+        }
 
     # --- Projects ---
 
