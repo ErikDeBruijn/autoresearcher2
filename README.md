@@ -32,21 +32,22 @@ recursive self-improvement should not only increase power, but deepen judgment, 
 
 ## Current Status
 
-**v1 validates the core architecture on synthetic environments.** The controller, Bayesian model, appraisal module, and memory integrate correctly and outperform random and greedy baselines across 3 synthetic environments × 20 seeds. Factor structure is learned, epistemic uncertainty decreases, and learntropy marks belief-changing events. See `artifacts/v1_validation/results.json` for full results.
+![AutoResearcher2 Dashboard — v4.8](docs/images/dashboard-v4.8.png)
 
-The first practical proving ground is the same target family as [Karpathy's autoresearch](https://github.com/karpathy/autoresearch): optimizing a single-file GPT training pipeline (`train.py`) against validation bits-per-byte (val_bpb) on the [ClimbMix](https://huggingface.co/datasets/karpathy/climbmix-400b-shuffle) dataset, with ~5-minute experiments per trial. **`train.py` integration is implemented and running** — pilot runs confirmed end-to-end operation on RTX PRO 6000 Blackwell, and an evidence-quality comparison run (4 approaches × 20 experiments each) is in progress.
+**v4.8 is running in production** on 2× NVIDIA RTX PRO 6000 Blackwell GPUs (96GB VRAM each), autonomously running research across multiple domains simultaneously:
 
-## Environments
+- **NanoGPT** — optimizing a GPT training pipeline against val_bpb on [ClimbMix](https://huggingface.co/datasets/karpathy/climbmix-400b-shuffle). 61 experiments completed, best val_bpb: 1.0399, total cost: 0.30EUR in electricity.
+- **Atari Breakout** — training RL agents via code_change proposals where the LLM rewrites the training script (not just hyperparameter tuning).
 
-Three distinct environments exist (or are planned) in this project:
+The system maintains per-project world models (beliefs + tensions), generates rationale-first proposals through a generator-critic pipeline, and tracks real energy costs via GPU power monitoring. Both projects run concurrently on separate GPUs with a dispatch executor routing proposals to domain-specific executors.
 
-| Environment | What it is | Status |
-|---|---|---|
-| **Toy validation** | Synthetic 27-cell POMDP | Implemented, validated |
-| **Synthetic environment** | Controlled factorial simulation with known ground-truth effects | Implemented, validated — v1 exit criteria pass |
-| **GPT training pipeline** | Real `train.py` edits, real val_bpb measurements | **Implemented** — SSH-based runner, tested on 2× RTX PRO 6000 |
+## Research Domains
 
-The toy validates the theory. The synthetic validates the plumbing. The GPT pipeline is where it counts — and initial integration is working.
+| Domain | Target metric | Optimize | Status |
+|---|---|---|---|
+| **NanoGPT training** | val_bpb | minimize | Running — 35 beliefs, 11 tensions |
+| **Atari Breakout RL** | mean_reward | maximize | Running — code_change proposals rewriting training scripts |
+| **Synthetic validation** | controlled POMDP | minimize | Complete — v1 exit criteria pass |
 
 ## The Problem
 
