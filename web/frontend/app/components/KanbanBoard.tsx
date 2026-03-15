@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import ProposalCard from "./ProposalCard";
 import type { Proposal } from "./ProposalCard";
 import ProjectFilter, { getProjectColor } from "./ProjectFilter";
@@ -90,14 +90,39 @@ export default function KanbanBoard() {
   // Build project lookup for enriching proposals with name/color
   const projectMap = new Map(projects.map((p, i) => [p.id, { ...p, color: getProjectColor(i) }]));
 
+  // Compute which proposals set a new record (running minimum val_bpb per project)
+  const recordIds = useMemo(() => {
+    const allProposals: ProposalWithWorker[] = [];
+    for (const stage of Object.values(queue)) {
+      if (Array.isArray(stage)) allProposals.push(...stage);
+    }
+    // Sort by created_at ascending
+    const sorted = allProposals
+      .filter((p) => p.observation?.outcome_success && p.observation?.outcome_metrics?.val_bpb != null)
+      .sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
+
+    const records = new Set<string>();
+    const bestByProject: Record<string, number> = {};
+    for (const p of sorted) {
+      const pid = p.project_id || "__none__";
+      const val = p.observation!.outcome_metrics!.val_bpb;
+      if (bestByProject[pid] === undefined || val < bestByProject[pid]) {
+        bestByProject[pid] = val;
+        records.add(p.id);
+      }
+    }
+    return records;
+  }, [queue]);
+
   const enrichProposal = useCallback((p: ProposalWithWorker): ProposalWithWorker => {
     const proj = p.project_id ? projectMap.get(p.project_id) : null;
     return {
       ...p,
       project_name: proj?.name,
       project_color: proj?.color,
+      is_record: recordIds.has(p.id),
     };
-  }, [projectMap]);
+  }, [projectMap, recordIds]);
 
   const isVisible = useCallback((p: ProposalWithWorker): boolean => {
     if (visibleProjects.size === 0) return true; // No filter = show all

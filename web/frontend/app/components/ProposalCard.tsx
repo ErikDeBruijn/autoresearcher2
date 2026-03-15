@@ -35,6 +35,7 @@ interface Proposal {
   project_id?: string | null;
   project_name?: string;
   project_color?: string;
+  is_record?: boolean;
 }
 
 const typeColors: Record<string, string> = {
@@ -108,8 +109,8 @@ export default function ProposalCard({
           {proposal.intervention_type}
         </span>
         <span className="text-xs text-gray-500">{timeAgo(proposal.created_at)}</span>
-        {proposal.observation_id && (
-          <span className="text-xs text-green-400">✓ observed</span>
+        {proposal.is_record && (
+          <span className="text-xs text-amber-400">🥇 New best</span>
         )}
         {proposal.observation?.outcome_metrics?.val_bpb != null && (
           <span className="text-xs font-mono font-bold text-cyan-300">
