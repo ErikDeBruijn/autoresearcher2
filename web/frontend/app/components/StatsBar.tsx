@@ -124,7 +124,13 @@ export default function StatsBar() {
               alert(err.detail || "Report generation failed");
               return;
             }
-            window.open(`${API}/api/report/download`, "_blank");
+            // Use anchor click for reliable download (window.open is flaky in some browsers)
+            const a = document.createElement("a");
+            a.href = `${API}/api/report/download`;
+            a.download = "report.pdf";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
           } catch {
             alert("Could not reach API");
           } finally {
