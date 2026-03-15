@@ -243,6 +243,8 @@ def make_shell_executor(
     cuda_device: str = None,
     work_dir: str = None,
     base_script: str = None,
+    max_timesteps: int = None,
+    max_n_envs: int = None,
 ):
     """Generic executor that runs a shell command with intervention_spec as env vars.
 
@@ -259,6 +261,8 @@ def make_shell_executor(
         ssh_key: SSH key path (only used with ssh_host).
         work_dir: Working directory for code_change file writes. Required for code_change.
         base_script: Path to the base training script to reset before each run.
+        max_timesteps: If set, cap total_timesteps in code_change Python files to this value.
+        max_n_envs: If set, cap n_envs in code_change Python files to this value.
     """
     import base64 as b64mod
 
@@ -326,6 +330,26 @@ def make_shell_executor(
                             lines.insert(insert_idx, timeout_guard)
                             content = "\n".join(lines)
                             logger.info("code_change: injected %ds wall-time guard into %s", timeout - 30, safe_name)
+                    # Cap total_timesteps and n_envs if limits are set
+                    if safe_name.endswith(".py"):
+                        if max_timesteps:
+                            capped = re.sub(
+                                r'(total_timesteps\s*=\s*)(\d[\d_]*)',
+                                lambda m: m.group(1) + str(max_timesteps) if int(m.group(2).replace('_', '')) > max_timesteps else m.group(0),
+                                content,
+                            )
+                            if capped != content:
+                                logger.info("code_change: capped total_timesteps to %d in %s", max_timesteps, safe_name)
+                                content = capped
+                        if max_n_envs:
+                            capped = re.sub(
+                                r'(n_envs\s*=\s*)(\d+)',
+                                lambda m: m.group(1) + str(max_n_envs) if int(m.group(2)) > max_n_envs else m.group(0),
+                                content,
+                            )
+                            if capped != content:
+                                logger.info("code_change: capped n_envs to %d in %s", max_n_envs, safe_name)
+                                content = capped
                     b64 = b64mod.b64encode(content.encode()).decode()
                     rc, out = run_cmd(
                         f"python3 -c \"import base64; open('{work_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""

@@ -126,7 +126,7 @@ def main():
     cpu_project_ids = []
     gpu_project_ids = []
     for proj in store.list_projects(active_only=False):
-        if "atari" in proj["name"].lower():
+        if "atari" in proj["name"].lower() or "cartpole" in proj["name"].lower() or "rl " in proj["name"].lower():
             cpu_project_ids.append(proj["id"])
         else:
             gpu_project_ids.append(proj["id"])
@@ -216,19 +216,22 @@ def main():
             )
             execute_fn = make_shell_executor(
                 command_template=(
+                    f"taskset -c 14,15 bash -c '"
                     f"cd {atari_dir} && "
                     "source .venv/bin/activate && "
-                    "CUDA_VISIBLE_DEVICES= python train_atari.py 2>&1"
+                    "CUDA_VISIBLE_DEVICES= python train_atari.py 2>&1'"
                 ),
                 metric_patterns={
                     "mean_reward": r"mean_reward:\s+([\d.]+)",
                     "std_reward": r"std_reward:\s+([\d.]+)",
                     "fps": r"fps:\s+([\d.]+)",
                 },
-                timeout=600,
+                timeout=120,
                 cuda_device="",
                 work_dir=atari_dir,
                 base_script=f"{atari_base}/train_atari.py",
+                max_timesteps=50_000,
+                max_n_envs=4,
             )
 
         worker_configs.append((worker_id, execute_fn, cpu_project_ids, atari_post_complete))

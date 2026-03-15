@@ -56,11 +56,12 @@ NANOGPT_DOMAIN = DomainConfig(
 )
 
 ATARI_DOMAIN = DomainConfig(
-    name="Atari RL",
-    description="We train RL agents to play Atari Breakout. The base script uses SB3 PPO as boilerplate. The real research is in code_change proposals that rewrite the training script with structural improvements: custom reward shaping, novel network architectures, different algorithms, preprocessing tricks, curriculum learning, etc. IMPORTANT: Your train_atari.py MUST save the trained model to /tmp/atari_model_latest.zip (e.g. model.save('/tmp/atari_model_latest.zip')). A separate video recording script runs automatically after training to capture gameplay footage.",
-    intervention_types="config_change (tweak hyperparameters — LEAST interesting), probe (quick diagnostic run), or code_change (MOST VALUABLE: rewrite train_atari.py with structural changes via file_changes key). PREFER code_change — parameter tuning alone won't achieve breakthroughs.",
-    parameters="For config_change: learning_rate, n_envs, total_timesteps, gamma, clip_range. For code_change: {\"file_changes\": {\"train_atari.py\": \"full file content\"}} — you can completely rewrite the training script.",
-    diversity_hint="STRONGLY prefer code_change proposals. The training script is boilerplate SB3 — real progress comes from structural code changes: reward shaping, custom networks, preprocessing, action masking, curriculum learning, exploration strategies. config_change is only useful for establishing baselines.",
+    name="RL CartPole",
+    description="We train RL agents on CartPole-v1 (fast CPU benchmark). The base script uses SB3 PPO with MlpPolicy. Max reward is 500 (solved). Experiments run on CPU only — must complete in <60 seconds. HARD LIMITS: total_timesteps <= 50_000, n_envs <= 4. IMPORTANT: Your train_atari.py MUST save the trained model to /tmp/rl_model_latest.zip. Output must include 'mean_reward: <float>'.",
+    intervention_types="config_change (tweak hyperparameters), probe (quick diagnostic run), or code_change (rewrite train_atari.py with structural changes via file_changes key — e.g. different algorithms, custom wrappers, learning rate schedules).",
+    parameters="For config_change: learning_rate, n_envs, total_timesteps, gamma, clip_range, n_steps, batch_size, n_epochs. For code_change: {\"file_changes\": {\"train_atari.py\": \"full file content\"}} — you can rewrite the training script. HARD LIMITS: total_timesteps <= 50_000, n_envs <= 4.",
+    diversity_hint="Mix config_change (hyperparameter search) and code_change (algorithm changes, reward shaping, custom networks). CartPole is solvable with good hyperparameters — the research question is finding the optimal config efficiently.",
+    base_script_name="train_atari.py",
 )
 
 GENERIC_DOMAIN = DomainConfig(
