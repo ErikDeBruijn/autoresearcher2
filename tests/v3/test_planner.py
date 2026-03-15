@@ -102,11 +102,12 @@ def test_planner_orients_on_new_results(ws):
     assert wm.version > 0
 
 
-def test_planner_doesnt_regenerate_when_queue_full(ws):
+def test_planner_doesnt_regenerate_when_backlog_full(ws):
     mock = PlannerMockLLM()
-    planner = Planner(ws, llm_call_fn=mock, min_queue_size=2, n_proposals=5)
+    # min_todo=0 so critic doesn't drain backlog, making this a pure generator test
+    planner = Planner(ws, llm_call_fn=mock, min_queue_size=2, min_todo=0, n_proposals=5)
 
-    # Pre-fill backlog
+    # Pre-fill backlog with enough items
     for i in range(3):
         p = Proposal(
             intent=f"existing {i}", rationale="test", expected_learning="test",
@@ -116,10 +117,9 @@ def test_planner_doesnt_regenerate_when_queue_full(ws):
 
     summary = planner.tick()
 
-    # Should NOT generate (3 >= min_queue_size of 2)
+    # Should NOT generate (backlog=3 >= min_queue_size=2)
     assert summary["generated"] == 0
-    # But should still critique existing backlog
-    assert ws.count_proposals("backlog") + ws.count_proposals("todo") == 3
+    assert ws.count_proposals("backlog") == 3
 
 
 def test_planner_doesnt_reprocess_observations(ws):
@@ -147,3 +147,35 @@ def test_planner_doesnt_reprocess_observations(ws):
     planner.tick()
     # The call count should only increase by generator+critic calls, not orientation
     # (orientation would add 1 more call for the same observation)
+
+
+def test_pull_based_todo_always_stocked(ws):
+    """When todo empties, critic promotes from backlog. When backlog empties, generator fires."""
+    mock = PlannerMockLLM()
+    planner = Planner(ws, llm_call_fn=mock, min_queue_size=3, min_todo=2, n_proposals=5, n_select=2)
+
+    # Start with empty queue — should generate AND promote in one tick
+    summary = planner.tick()
+    assert summary["generated"] > 0
+    assert summary["promoted"] > 0
+    assert ws.count_proposals("todo") >= 2
+
+
+def test_critic_runs_before_generator(ws):
+    """If backlog has items and todo is empty, critic promotes before generator runs."""
+    mock = PlannerMockLLM()
+    planner = Planner(ws, llm_call_fn=mock, min_queue_size=10, min_todo=2, n_proposals=5, n_select=2)
+
+    # Pre-fill backlog with plenty of items
+    for i in range(5):
+        p = Proposal(
+            intent=f"ready {i}", rationale="test", expected_learning="test",
+            intervention_type="config_change", intervention_spec={"x": str(i)},
+        )
+        ws.save_proposal(p)
+
+    summary = planner.tick()
+
+    # Critic should have promoted items to todo
+    assert summary["promoted"] >= 2
+    assert ws.count_proposals("todo") >= 2
