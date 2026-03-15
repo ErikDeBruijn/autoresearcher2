@@ -101,23 +101,39 @@ def make_trainpy_executor(
         spec = proposal.intervention_spec
         itype = proposal.intervention_type
 
-        if itype not in ("config_change", "probe"):
+        if itype not in ("config_change", "probe", "code_change"):
             logger.warning("trainpy executor: unsupported type %s, dry-run", itype)
             return {"metrics": {"unsupported": True}, "raw_log": f"dry-run for {itype}"}
 
         # Reset train.py from base dir (working copy may not be a git repo)
         run_cmd(f"cp {base_dir}/train.py {train_dir}/train.py")
 
-        # Patch knobs from intervention_spec
-        for knob, value in spec.items():
-            if knob == "run_steps":
-                continue  # Not a train.py knob
-            run_cmd(f"sed -i 's/^{knob} = .*/{knob} = {value}/' {train_dir}/train.py")
+        if itype == "code_change":
+            # LLM provides file contents directly via file_changes key
+            file_changes = spec.get("file_changes", {})
+            if not file_changes:
+                raise ValueError("code_change requires 'file_changes' in intervention_spec")
+            for filename, content in file_changes.items():
+                # Sanitize filename: only allow simple filenames within train_dir
+                safe_name = filename.replace("/", "_").replace("..", "_")
+                # Write via python -c to avoid shell quoting issues
+                import base64
+                b64 = base64.b64encode(content.encode()).decode()
+                run_cmd(
+                    f"python3 -c \"import base64; open('{train_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
+                )
+                logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
+        else:
+            # Patch knobs from intervention_spec
+            for knob, value in spec.items():
+                if knob == "run_steps":
+                    continue  # Not a train.py knob
+                run_cmd(f"sed -i 's/^{knob} = .*/{knob} = {value}/' {train_dir}/train.py")
 
-        # For probes, limit steps
-        if itype == "probe" and "run_steps" in spec:
-            run_steps = spec["run_steps"]
-            run_cmd(f"sed -i 's/^num_steps = .*/num_steps = {run_steps}/' {train_dir}/train.py")
+            # For probes, limit steps
+            if itype == "probe" and "run_steps" in spec:
+                run_steps = spec["run_steps"]
+                run_cmd(f"sed -i 's/^num_steps = .*/num_steps = {run_steps}/' {train_dir}/train.py")
 
         # Start cost tracking
         gpu_index = int(cuda_device) if cuda_device.isdigit() else 0

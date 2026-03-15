@@ -27,7 +27,7 @@ PROPOSAL_SCHEMA = {
             "intent": "which belief/tension/question does this address",
             "rationale": "why is this valuable now",
             "expected_learning": "what we learn regardless of outcome",
-            "intervention_type": "config_change|probe",
+            "intervention_type": "config_change|probe|code_change",
             "intervention_spec": {"key": "value"},
             "estimated_cost": {
                 "cost_to_test": "description of compute cost",
@@ -43,9 +43,9 @@ class DomainConfig:
     """Domain description for the generator prompt."""
     name: str = "NanoGPT training"
     description: str = "We run NanoGPT training experiments."
-    intervention_types: str = "config_change (modify training hyperparameters) or probe (short training run to test hypothesis cheaply)"
-    parameters: str = "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size"
-    diversity_hint: str = "Mix of config_change (full run) and probe (short run, include \"run_steps\" in spec)"
+    intervention_types: str = "config_change (modify training hyperparameters), probe (short training run to test hypothesis cheaply), or code_change (rewrite train.py with structural changes — use file_changes key in intervention_spec)"
+    parameters: str = "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size. For code_change: {\"file_changes\": {\"train.py\": \"full file content\"}}"
+    diversity_hint: str = "Mix of config_change (full run), probe (short run, include \"run_steps\" in spec), and code_change (when the hypothesis requires structural code changes, not just parameter tweaks)"
     hardware: str = ""
 
 
@@ -56,9 +56,9 @@ NANOGPT_DOMAIN = DomainConfig(
 ATARI_DOMAIN = DomainConfig(
     name="Atari RL",
     description="We optimize Atari game agents using reinforcement learning.",
-    intervention_types="config_change (modify RL hyperparameters) or probe (short training run)",
-    parameters="game, learning_rate, network_size, algorithm, n_envs, total_timesteps",
-    diversity_hint="Mix of config_change and probe. Try different games, algorithms (PPO, DQN), and network sizes",
+    intervention_types="config_change (modify RL hyperparameters), probe (short training run), or code_change (rewrite training script with structural changes — use file_changes key)",
+    parameters="game, learning_rate, network_size, algorithm, n_envs, total_timesteps. For code_change: {\"file_changes\": {\"train.py\": \"full file content\"}}",
+    diversity_hint="Mix of config_change, probe, and code_change. Try different games, algorithms (PPO, DQN), and network sizes",
 )
 
 GENERIC_DOMAIN = DomainConfig(
