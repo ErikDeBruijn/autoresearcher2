@@ -72,6 +72,7 @@ async def lifespan(app: FastAPI):
     store = get_store()
     store.init()
     store.close()
+    app.state.start_time = time.time()
     # Start background poller for live updates
     task = asyncio.create_task(poll_store_changes())
     yield
@@ -105,6 +106,27 @@ class ChatMessage(BaseModel):
 
 
 # --- REST endpoints ---
+
+@app.get("/api/health")
+def health():
+    """Health check: service uptime, DB accessible, last experiment time."""
+    import os
+    store = get_store()
+    try:
+        obs = store.list_observations()
+        last_obs_time = max((o.created_at for o in obs), default=None)
+        return {
+            "status": "ok",
+            "uptime_s": time.time() - app.state.start_time if hasattr(app.state, "start_time") else None,
+            "db_observations": len(obs),
+            "last_experiment_at": last_obs_time,
+            "seconds_since_last": round(time.time() - last_obs_time, 1) if last_obs_time else None,
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+    finally:
+        store.close()
+
 
 @app.get("/api/projects")
 def get_projects():
