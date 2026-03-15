@@ -348,14 +348,23 @@ export default function ProjectFilter({
               className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-800/50 transition-colors"
               onClick={() => setExpandedProject(expanded ? null : p.id)}
             >
-              {/* Active toggle (pause/play) */}
-              <button
-                onClick={(e) => { e.stopPropagation(); onToggleActive(p.id, !p.active); }}
-                className={`text-sm transition-opacity ${p.active ? "opacity-80 hover:opacity-100" : "opacity-50 hover:opacity-80"}`}
-                title={p.active ? "Pause project (finish active runs, stop generating)" : "Resume project"}
-              >
-                {p.active ? "⏸" : "▶"}
-              </button>
+              {/* Active toggle (play/pause as state indicators) */}
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (!p.active) onToggleActive(p.id, true); }}
+                  className={`text-sm transition-all ${p.active ? "text-blue-400 opacity-100" : "text-gray-600 opacity-50 hover:opacity-80"}`}
+                  title="Run project"
+                >
+                  ▶
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); if (p.active) onToggleActive(p.id, false); }}
+                  className={`text-sm transition-all ${!p.active ? "text-yellow-400 opacity-100" : "text-gray-600 opacity-50 hover:opacity-80"}`}
+                  title="Pause project (finish active runs, stop generating)"
+                >
+                  ⏸
+                </button>
+              </div>
 
               {/* Visibility toggle (eye icon) */}
               <button
@@ -404,7 +413,6 @@ export default function ProjectFilter({
 
               <span className="text-xs text-gray-600">{expanded ? "▼" : "▶"}</span>
 
-              {!p.active && <span className="text-xs text-yellow-600">(paused)</span>}
             </div>
 
             {/* Collapsible chart */}
