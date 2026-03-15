@@ -131,7 +131,7 @@ def main():
         else:
             gpu_project_ids.append(proj["id"])
 
-    worker_configs = []  # (worker_id, execute_fn, project_ids)
+    worker_configs = []  # (worker_id, execute_fn, project_ids, post_complete_fn)
 
     # --- GPU workers: one per CUDA device, NanoGPT only ---
     for i, cuda_dev in enumerate(cuda_devices):
@@ -150,13 +150,56 @@ def main():
                 executors[pid] = nanogpt_exec
             execute_fn = make_dispatch_executor(executors)
 
-        worker_configs.append((worker_id, execute_fn, gpu_project_ids))
+        worker_configs.append((worker_id, execute_fn, gpu_project_ids, None))
 
     # --- CPU workers: Atari only, no GPU required ---
     # Each CPU worker runs one Atari experiment at a time (~1.5 cores each).
     # With --cpu-workers 4, that's 4 parallel Atari experiments using ~6 cores.
     # Workers share the base venv (7.5GB) via symlink, only the script is copied.
     atari_base = "/root/github.com/atari-research"
+    record_script = "/root/github.com/erikdebruijn/autoresearcher2/scripts/record_video.py"
+
+    # Track best mean_reward per project for conditional video recording
+    atari_best_reward: dict[str | None, float] = {}
+
+    def atari_post_complete(proposal, obs):
+        """Record gameplay video only when a new best reward is achieved."""
+        metrics = obs.outcome_metrics or {}
+        reward = metrics.get("mean_reward")
+        if reward is None:
+            return
+        pid = getattr(proposal, "project_id", None)
+        prev_best = atari_best_reward.get(pid)
+        if prev_best is not None and reward <= prev_best:
+            logger.info("Atari reward %.1f <= best %.1f, skipping video", reward, prev_best)
+            return
+        atari_best_reward[pid] = reward
+        logger.info("New Atari record! reward=%.1f (prev=%.1f), recording video...",
+                    reward, prev_best or 0)
+        try:
+            result = subprocess.run(
+                ["bash", "-c",
+                 f"cd {atari_base} && source .venv/bin/activate && "
+                 f"python {record_script} 2>&1"],
+                capture_output=True, text=True, timeout=120,
+            )
+            if result.returncode == 0:
+                logger.info("Video recorded: %s", result.stdout[-200:])
+                import re as _re
+                m = _re.search(r"artifact_video:\s+(.+)", result.stdout)
+                if m:
+                    video_path = m.group(1).strip()
+                    artifact_paths = dict(obs.artifact_paths or {})
+                    artifact_paths["video"] = video_path
+                    # Update in DB (observation already saved by worker)
+                    video_store = Store(args.database)
+                    video_store.update_observation_artifacts(obs.id, artifact_paths)
+                    video_store.close()
+            else:
+                logger.warning("Video recording failed: %s", result.stderr[-200:])
+        except Exception:
+            logger.warning("Video recording error", exc_info=True)
+
     for i in range(args.cpu_workers):
         worker_id = f"{hostname}_CPU{i}"
         if args.dry_run:
@@ -188,9 +231,9 @@ def main():
                 base_script=f"{atari_base}/train_atari.py",
             )
 
-        worker_configs.append((worker_id, execute_fn, cpu_project_ids))
+        worker_configs.append((worker_id, execute_fn, cpu_project_ids, atari_post_complete))
 
-    worker_ids = [wid for wid, _, _ in worker_configs]
+    worker_ids = [wid for wid, _, _, _ in worker_configs]
     logger.info("Starting v4 research loop (dry_run=%s, gpus=%s, cpu_workers=%d, workers=%s)",
                 args.dry_run, cuda_devices, args.cpu_workers, worker_ids)
 
@@ -289,11 +332,11 @@ def main():
             # Wait before next planning cycle, but wake up early if stopped
             stop.wait(timeout=args.planner_interval)
 
-    def run_worker(worker_id, execute_fn, project_ids=None):
+    def run_worker(worker_id, execute_fn, project_ids=None, post_complete_fn=None):
         """Worker thread: continuously claim and execute experiments."""
         worker_store = Store(args.database)
         worker = Worker(worker_store, execute_fn=execute_fn, worker_id=worker_id,
-                        project_ids=project_ids)
+                        project_ids=project_ids, post_complete_fn=post_complete_fn)
         executed = 0
         try:
             while not stop.is_set():
@@ -320,8 +363,8 @@ def main():
         threads.append(planner_thread)
         planner_thread.start()
 
-        for wid, exe_fn, proj_ids in worker_configs:
-            t = threading.Thread(target=run_worker, args=(wid, exe_fn, proj_ids), name=wid, daemon=True)
+        for wid, exe_fn, proj_ids, post_fn in worker_configs:
+            t = threading.Thread(target=run_worker, args=(wid, exe_fn, proj_ids, post_fn), name=wid, daemon=True)
             threads.append(t)
             t.start()
 

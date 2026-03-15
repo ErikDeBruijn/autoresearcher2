@@ -27,11 +27,13 @@ class Worker:
         execute_fn=None,
         worker_id: str = "worker_0",
         project_ids: list[str] | None = None,
+        post_complete_fn=None,
     ):
         self.workspace = workspace
         self.execute_fn = execute_fn
         self.worker_id = worker_id
         self.project_ids = project_ids
+        self.post_complete_fn = post_complete_fn
 
     def tick(self) -> dict | None:
         """Try to claim and execute one todo item. Returns observation dict or None."""
@@ -76,6 +78,12 @@ class Worker:
         self.workspace.complete_proposal(proposal, obs)
         logger.info("[%s] Completed %s: success=%s, %.1fs",
                     self.worker_id, proposal.id, obs.outcome_success, wall_time)
+
+        if self.post_complete_fn and obs.outcome_success:
+            try:
+                self.post_complete_fn(proposal, obs)
+            except Exception:
+                logger.warning("[%s] post_complete_fn failed", self.worker_id, exc_info=True)
 
         return obs.to_dict()
 

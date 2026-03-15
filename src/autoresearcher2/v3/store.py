@@ -370,6 +370,14 @@ class Store:
             obs.artifact_paths = json.loads(row["artifact_paths"])
         return obs
 
+    def update_observation_artifacts(self, obs_id: str, artifact_paths: dict):
+        """Update artifact_paths on an existing observation."""
+        self.conn.execute(
+            "UPDATE observations SET artifact_paths = ? WHERE id = ?",
+            (json.dumps(artifact_paths), obs_id),
+        )
+        self.conn.commit()
+
     # --- Layer 2: World Model (versioned) ---
 
     def load_world_model(self, project_id: str = None) -> WorldModel:
