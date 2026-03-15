@@ -191,8 +191,13 @@ def make_shell_executor(
     ssh_host: str = None,
     ssh_key: str = None,
     cuda_device: str = None,
+    work_dir: str = None,
+    base_script: str = None,
 ):
     """Generic executor that runs a shell command with intervention_spec as env vars.
+
+    Supports code_change proposals: writes file_changes to work_dir before running.
+    Resets base_script before each run to ensure clean state.
 
     Args:
         command_template: Shell command to run. intervention_spec keys are
@@ -202,22 +207,56 @@ def make_shell_executor(
         timeout: Max seconds for the command.
         ssh_host: If set, run via SSH (e.g. "root@host"). None = run locally.
         ssh_key: SSH key path (only used with ssh_host).
+        work_dir: Working directory for code_change file writes. Required for code_change.
+        base_script: Path to the base training script to reset before each run.
     """
+    import base64 as b64mod
+
     metric_patterns = metric_patterns or {}
 
-    def execute(proposal: Proposal) -> dict:
-        spec = proposal.intervention_spec
-        env_str = " ".join(f"{k}={v}" for k, v in spec.items())
-        cmd = f"{env_str} {command_template}"
-
+    def run_cmd(cmd: str) -> tuple[int, str]:
         if ssh_host:
             ssh_cmd = ["ssh"]
             if ssh_key:
                 ssh_cmd += ["-i", ssh_key]
             ssh_cmd += ["-o", "ConnectTimeout=10", ssh_host, cmd]
-            run_args = ssh_cmd
+            result = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=timeout)
         else:
-            run_args = ["bash", "-c", cmd]
+            result = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True, timeout=timeout)
+        return result.returncode, result.stdout + result.stderr
+
+    def execute(proposal: Proposal) -> dict:
+        spec = proposal.intervention_spec
+        itype = proposal.intervention_type
+
+        # Handle code_change: write file_changes before running
+        if itype == "code_change" and work_dir:
+            file_changes = spec.get("file_changes", {})
+            if not file_changes:
+                raise ValueError("code_change requires 'file_changes' in intervention_spec")
+            # Reset base script if configured
+            if base_script:
+                run_cmd(f"cp {base_script} {work_dir}/$(basename {base_script})")
+            for filename, content in file_changes.items():
+                safe_name = filename.replace("/", "_").replace("..", "_")
+                b64 = b64mod.b64encode(content.encode()).decode()
+                run_cmd(
+                    f"python3 -c \"import base64; open('{work_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
+                )
+                logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
+
+        # Build env vars from spec (skip file_changes and non-shell-safe values)
+        safe_pairs = []
+        for k, v in spec.items():
+            if k == "file_changes":
+                continue
+            sv = str(v)
+            if re.match(r'^[\w.+\-]+$', k) and re.match(r'^[\w.+\-]+$', sv):
+                safe_pairs.append(f"{k}={sv}")
+            else:
+                logger.debug("Skipping non-shell-safe spec: %s=%s", k, sv[:50])
+        env_str = " ".join(safe_pairs)
+        cmd = f"{env_str} {command_template}" if env_str else command_template
 
         # Start cost tracking if GPU specified
         job_id = None
@@ -225,15 +264,14 @@ def make_shell_executor(
             job_id = _start_cost_job(gpu=int(cuda_device), label=proposal.id)
 
         start = time.time()
-        result = subprocess.run(run_args, capture_output=True, text=True, timeout=timeout)
+        rc, out = run_cmd(cmd)
         wall_time = time.time() - start
-        out = result.stdout + result.stderr
 
         # Stop cost tracking
         cost_data = _stop_cost_job(job_id) if job_id else None
 
-        if result.returncode != 0:
-            raise RuntimeError(f"Command failed (exit {result.returncode}): {out[-500:]}")
+        if rc != 0:
+            raise RuntimeError(f"Command failed (exit {rc}): {out[-500:]}")
 
         metrics = {}
         for name, pattern in metric_patterns.items():

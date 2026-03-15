@@ -14,6 +14,7 @@ Usage:
 import argparse
 import logging
 import socket
+import subprocess
 import sys
 import time
 import threading
@@ -143,9 +144,16 @@ def main():
 
             # Atari executor (if project exists)
             if atari_project_id:
+                atari_dir = f"/root/github.com/atari-research_gpu{cuda_dev}"
+                atari_base = "/root/github.com/atari-research"
+                # Create per-GPU working dir if needed
+                subprocess.run(
+                    ["bash", "-c", f"test -d {atari_dir} || cp -r {atari_base} {atari_dir}"],
+                    capture_output=True, text=True, timeout=30,
+                )
                 atari_exec = make_shell_executor(
                     command_template=(
-                        "cd /root/github.com/atari-research && "
+                        f"cd {atari_dir} && "
                         "source .venv/bin/activate && "
                         f"CUDA_VISIBLE_DEVICES={cuda_dev} python train_atari.py 2>&1"
                     ),
@@ -156,6 +164,8 @@ def main():
                     },
                     timeout=600,
                     cuda_device=cuda_dev,
+                    work_dir=atari_dir,
+                    base_script=f"{atari_base}/train_atari.py",
                 )
                 executors[atari_project_id] = atari_exec
 
