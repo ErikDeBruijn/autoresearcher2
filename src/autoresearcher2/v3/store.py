@@ -512,6 +512,8 @@ class Store:
         """
         for _attempt in range(3):
             if project_ids is not None:
+                if len(project_ids) == 0:
+                    return None  # No projects to claim from
                 placeholders = ",".join("?" for _ in project_ids)
                 cursor = self.conn.execute(
                     f"""SELECT q.* FROM queue q

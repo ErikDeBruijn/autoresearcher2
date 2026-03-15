@@ -120,10 +120,12 @@ def main():
     # Planner gets its own Store connection for thread safety
     planner_store = Store(args.database)
 
-    # Categorize projects by type: CPU-bound (Atari) vs GPU-bound (NanoGPT)
+    # Categorize ALL projects by type: CPU-bound (Atari) vs GPU-bound (NanoGPT)
+    # Uses all projects (not just active) so workers stay restricted even when
+    # projects are paused. Workers idle when their project list is all-paused.
     cpu_project_ids = []
     gpu_project_ids = []
-    for proj in store.list_projects(active_only=True):
+    for proj in store.list_projects(active_only=False):
         if "atari" in proj["name"].lower():
             cpu_project_ids.append(proj["id"])
         else:
@@ -148,11 +150,12 @@ def main():
                 executors[pid] = nanogpt_exec
             execute_fn = make_dispatch_executor(executors)
 
-        worker_configs.append((worker_id, execute_fn, gpu_project_ids or None))
+        worker_configs.append((worker_id, execute_fn, gpu_project_ids))
 
     # --- CPU workers: Atari only, no GPU required ---
     # Each CPU worker runs one Atari experiment at a time (~1.5 cores each).
     # With --cpu-workers 4, that's 4 parallel Atari experiments using ~6 cores.
+    # Workers share the base venv (7.5GB) via symlink, only the script is copied.
     atari_base = "/root/github.com/atari-research"
     for i in range(args.cpu_workers):
         worker_id = f"{hostname}_CPU{i}"
@@ -160,9 +163,12 @@ def main():
             execute_fn = make_dry_run_executor()
         else:
             atari_dir = f"{atari_base}_cpu{i}"
-            # Create per-worker working dir if needed
+            # Create lightweight per-worker dir: symlink venv, copy script
             subprocess.run(
-                ["bash", "-c", f"test -d {atari_dir} || cp -r {atari_base} {atari_dir}"],
+                ["bash", "-c",
+                 f"mkdir -p {atari_dir} && "
+                 f"test -L {atari_dir}/.venv || ln -s {atari_base}/.venv {atari_dir}/.venv && "
+                 f"cp {atari_base}/train_atari.py {atari_dir}/train_atari.py"],
                 capture_output=True, text=True, timeout=30,
             )
             execute_fn = make_shell_executor(
@@ -182,7 +188,7 @@ def main():
                 base_script=f"{atari_base}/train_atari.py",
             )
 
-        worker_configs.append((worker_id, execute_fn, cpu_project_ids or None))
+        worker_configs.append((worker_id, execute_fn, cpu_project_ids))
 
     worker_ids = [wid for wid, _, _ in worker_configs]
     logger.info("Starting v4 research loop (dry_run=%s, gpus=%s, cpu_workers=%d, workers=%s)",

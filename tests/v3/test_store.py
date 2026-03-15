@@ -349,6 +349,21 @@ def test_claim_next_todo_with_project_filter(store):
     assert store.claim_next_todo("gpu_worker", project_ids=["proj_gpt"]) is None
 
 
+def test_claim_next_todo_empty_project_ids_returns_none(store):
+    """Empty project_ids list means no projects to claim from."""
+    p = Proposal(
+        intent="orphan", rationale="test", expected_learning="test",
+        intervention_type="probe", intervention_spec={"x": "1"},
+    )
+    p.set_critic_decision("accept", rank=1, rationale="ok")
+    p.promote("todo")
+    store.save_proposal(p)
+
+    assert store.claim_next_todo("idle_worker", project_ids=[]) is None
+    # Proposal still in todo (not claimed)
+    assert store.count_proposals("todo") == 1
+
+
 def test_claim_next_todo_without_filter_gets_all(store):
     """Without project_ids filter, workers claim any project."""
     store.conn.execute(
