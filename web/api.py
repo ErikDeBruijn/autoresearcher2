@@ -425,6 +425,9 @@ def get_stats():
             itype = obs.intervention_type or "unknown"
             type_counts[itype] = type_counts.get(itype, 0) + 1
 
+        # Pipeline activity (what the planner is currently doing)
+        pipeline_activity = store.get_pipeline_activity()
+
         return {
             "total_observations": len(observations),
             "success_count": success_count,
@@ -440,6 +443,7 @@ def get_stats():
             "intervention_types": type_counts,
             "total_energy_kwh": round(total_energy_kwh, 4),
             "total_cost_eur": round(total_cost_eur, 4),
+            "pipeline_activity": pipeline_activity,
         }
     finally:
         store.close()

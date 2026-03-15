@@ -74,6 +74,7 @@ export default function KanbanBoard() {
   const [dragging, setDragging] = useState(false);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [trashOver, setTrashOver] = useState(false);
+  const [pipelineActivity, setPipelineActivity] = useState<{ phase?: string; proposal_id?: string } | null>(null);
 
   const toggleProject = useCallback((projectId: string) => {
     setVisibleProjects((prev) => {
@@ -139,6 +140,7 @@ export default function KanbanBoard() {
       ]);
       setQueue(queueRes);
       setWorkers(statsRes.workers || {});
+      setPipelineActivity(statsRes.pipeline_activity || null);
       setProjects(projectsRes);
       setLoading(false);
     } catch {
@@ -262,6 +264,12 @@ export default function KanbanBoard() {
           ).sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
           const dropHighlight = dragOverStage === stage.key;
 
+          // Pipeline activity: show which column has an active LLM process
+          const phase = pipelineActivity?.phase;
+          const stageActive =
+            (stage.key === "done" && phase === "orienting") ||
+            (stage.key === "backlog" && (phase === "critiquing" || phase === "generating"));
+
           // Running column gets special worker-slot treatment
           if (stage.key === "running") {
             return (
@@ -317,8 +325,13 @@ export default function KanbanBoard() {
             >
               <div className="px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${stage.dot}`} />
+                  <span className={`w-2 h-2 rounded-full ${stageActive ? "bg-yellow-400 animate-pulse" : stage.dot}`} />
                   <h3 className="font-semibold text-sm">{stage.label}</h3>
+                  {stageActive && (
+                    <span className="text-xs text-yellow-400 animate-pulse">
+                      {phase === "orienting" ? "reviewing..." : phase === "critiquing" ? "evaluating..." : "generating..."}
+                    </span>
+                  )}
                 </div>
                 <span className="text-xs font-mono bg-gray-800 px-2 py-0.5 rounded-full text-gray-400">
                   {proposals.length}

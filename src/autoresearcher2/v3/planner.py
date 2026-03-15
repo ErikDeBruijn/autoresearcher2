@@ -58,6 +58,7 @@ class Planner:
             if p.observation_id and p.observation_id not in self._processed_observations:
                 obs = self.workspace.load_observation(p.observation_id)
                 if obs is not None:
+                    self._set_activity("orienting", p.id)
                     wm = self._load_world_model()
                     delta = orient(wm, obs, self.llm_call_fn)
                     if delta:
@@ -66,12 +67,14 @@ class Planner:
                     if hasattr(self.workspace, 'mark_reviewed'):
                         self.workspace.mark_reviewed(p.id)
                     self._processed_observations.add(p.observation_id)
+                    self._clear_activity()
 
         # Phase 2: Critique — if todo is low, promote from backlog
         todo_count = self._count_proposals("todo")
         if todo_count < self.min_todo:
             backlog = self._list_proposals("backlog")
             if backlog:
+                self._set_activity("critiquing")
                 wm = self._load_world_model()
                 accepted = critique_proposals(
                     wm, backlog, n_select=self.n_select, llm_call_fn=self.llm_call_fn
@@ -79,10 +82,12 @@ class Planner:
                 for p in accepted:
                     self.workspace.move_proposal(p, "todo")
                     summary["promoted"] += 1
+                self._clear_activity()
 
         # Phase 3: Generate — if backlog is low, produce new proposals
         backlog_count = self._count_proposals("backlog")
         if backlog_count < self.min_queue_size:
+            self._set_activity("generating")
             wm = self._load_world_model()
             proposals = generate_proposals(
                 wm, n_proposals=self.n_proposals, llm_call_fn=self.llm_call_fn,
@@ -91,6 +96,7 @@ class Planner:
             for p in proposals:
                 self._save_proposal(p)
             summary["generated"] = len(proposals)
+            self._clear_activity()
 
         # Phase 4: Critique again — if generation just restocked backlog, promote immediately
         if summary["generated"] > 0 and summary["promoted"] == 0:
@@ -98,6 +104,7 @@ class Planner:
             if todo_count < self.min_todo:
                 backlog = self._list_proposals("backlog")
                 if backlog:
+                    self._set_activity("critiquing")
                     wm = self._load_world_model()
                     accepted = critique_proposals(
                         wm, backlog, n_select=self.n_select, llm_call_fn=self.llm_call_fn
@@ -105,6 +112,7 @@ class Planner:
                     for p in accepted:
                         self.workspace.move_proposal(p, "todo")
                         summary["promoted"] += 1
+                    self._clear_activity()
 
         return summary
 
@@ -135,6 +143,22 @@ class Planner:
             self.workspace.save_proposal(proposal, project_id=self.project_id)
         except TypeError:
             self.workspace.save_proposal(proposal)
+
+    def _set_activity(self, phase: str, proposal_id: str = None):
+        """Broadcast what the planner is doing (for UI indicators)."""
+        if hasattr(self.workspace, 'set_pipeline_activity'):
+            try:
+                self.workspace.set_pipeline_activity(phase, self.project_id, proposal_id)
+            except Exception:
+                pass
+
+    def _clear_activity(self):
+        """Clear planner activity indicator."""
+        if hasattr(self.workspace, 'clear_pipeline_activity'):
+            try:
+                self.workspace.clear_pipeline_activity()
+            except Exception:
+                pass
 
     def _save_world_model(self, wm, trigger_obs_id=None, delta=None):
         """Save world model, passing delta info if the backend supports it (Store)."""

@@ -122,6 +122,10 @@ export default function ProposalCard({
         )}
       </div>
 
+      {proposal.status === "todo" && proposal.critic?.rationale && (
+        <div className="mt-1.5 text-xs text-blue-300 leading-tight">{proposal.critic.rationale}</div>
+      )}
+
       {expanded && (
         <div className="mt-3 space-y-2 text-xs text-gray-400">
           <div>
