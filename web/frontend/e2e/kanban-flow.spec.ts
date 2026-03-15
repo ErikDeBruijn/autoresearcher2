@@ -111,13 +111,12 @@ test.describe("Kanban Dashboard", () => {
     await expect(responses.first()).toBeVisible();
   });
 
-  test("running column shows worker slots for 2 GPUs", async ({ page }) => {
+  test("running column shows worker slots", async ({ page }) => {
     await page.goto("/");
     await page.waitForTimeout(3000);
 
-    // Should show worker_0 and worker_1 slots in the Running column
-    await expect(page.getByText("worker_0").first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("worker_1").first()).toBeVisible();
+    // Should show at least one worker slot (name includes 'worker_')
+    await expect(page.getByText(/worker_/).first()).toBeVisible({ timeout: 10000 });
   });
 
   test("API lifecycle: created proposal appears in backlog", async ({

@@ -251,24 +251,30 @@ class Store:
         self.conn.commit()
 
     def claim_next_todo(self, worker_id: str) -> Proposal | None:
-        """Atomically claim highest-ranked todo item."""
-        # Use a transaction for atomicity
-        cursor = self.conn.execute(
-            "SELECT * FROM queue WHERE stage = 'todo' ORDER BY rank ASC NULLS LAST, created_at ASC LIMIT 1"
-        )
-        row = cursor.fetchone()
-        if row is None:
+        """Atomically claim highest-ranked todo item.
+
+        Retries up to 3 times in case of concurrent claims by other workers.
+        """
+        for _attempt in range(3):
+            cursor = self.conn.execute(
+                "SELECT * FROM queue WHERE stage = 'todo' ORDER BY rank ASC NULLS LAST, created_at ASC LIMIT 1"
+            )
+            row = cursor.fetchone()
+            if row is None:
+                return None
+
+            now = time.time()
+            updated = self.conn.execute(
+                "UPDATE queue SET stage = 'running', worker_id = ?, started_at = ? WHERE id = ? AND stage = 'todo'",
+                (worker_id, now, row["id"]),
+            )
+            self.conn.commit()
+
+            if updated.rowcount > 0:
+                break  # Successfully claimed
+            # Another worker claimed it, retry with next item
+        else:
             return None
-
-        now = time.time()
-        updated = self.conn.execute(
-            "UPDATE queue SET stage = 'running', worker_id = ?, started_at = ? WHERE id = ? AND stage = 'todo'",
-            (worker_id, now, row["id"]),
-        )
-        self.conn.commit()
-
-        if updated.rowcount == 0:
-            return None  # Another worker claimed it
 
         proposal = self._row_to_proposal(row)
         proposal.promote("running")

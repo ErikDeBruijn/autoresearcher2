@@ -100,15 +100,6 @@ export default function KanbanBoard() {
   runningProposals.forEach((p) => {
     if (p.worker_id) workerIds.add(p.worker_id);
   });
-  // If no workers known at all, show at least worker_0 and worker_1 (2 GPUs)
-  if (workerIds.size === 0) {
-    workerIds.add("worker_0");
-    workerIds.add("worker_1");
-  }
-  // Always ensure we show at least 2 slots (2 GPUs)
-  if (!workerIds.has("worker_1") && workerIds.size < 2) {
-    workerIds.add("worker_1");
-  }
 
   const sortedWorkerIds = Array.from(workerIds).sort();
   const proposalsByWorker: Record<string, ProposalWithWorker[]> = {};

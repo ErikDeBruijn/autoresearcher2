@@ -2,22 +2,21 @@
 """Run v4 generator-critic loop on real GPT training (dllm-experiment VM).
 
 Usage:
-    # Initialize and run (first time)
-    python scripts/run_v4_real.py --init --ssh-host root@dllm-experiment.home
+    # Initialize and run with 2 GPUs (first time)
+    python scripts/run_v4_real.py --init --local-llm --cuda-devices 0,1
 
-    # Resume existing research
-    python scripts/run_v4_real.py --ssh-host root@dllm-experiment.home
+    # Resume existing research on 1 GPU
+    python scripts/run_v4_real.py --local-llm --cuda-devices 1
 
     # Dry run (no real execution)
     python scripts/run_v4_real.py --dry-run
-
-This runs both planner and worker in a single process for simplicity.
-For multi-GPU: run separate run_v4_worker.py instances per GPU.
 """
 import argparse
 import logging
+import socket
 import sys
 import time
+import threading
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
@@ -73,7 +72,10 @@ def main():
     parser.add_argument("--database", type=Path, default="research_v4.db")
     parser.add_argument("--ssh-host", type=str, default="root@dllm-experiment.home")
     parser.add_argument("--ssh-key", type=str, default="~/.ssh/pve03_key")
-    parser.add_argument("--cuda-device", type=str, default="1")
+    parser.add_argument("--cuda-device", type=str, default="1",
+                        help="DEPRECATED: use --cuda-devices instead")
+    parser.add_argument("--cuda-devices", type=str, default=None,
+                        help="Comma-separated CUDA device IDs (e.g. '0,1')")
     parser.add_argument("--init", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--local-llm", action="store_true", help="Call claude locally instead of via SSH")
@@ -83,6 +85,14 @@ def main():
     parser.add_argument("--n-proposals", type=int, default=5)
     parser.add_argument("--n-select", type=int, default=2)
     args = parser.parse_args()
+
+    # Determine GPU devices
+    if args.cuda_devices:
+        cuda_devices = [d.strip() for d in args.cuda_devices.split(",")]
+    else:
+        cuda_devices = [args.cuda_device]
+
+    hostname = socket.gethostname()
 
     store = Store(args.database)
     if args.init:
@@ -94,26 +104,51 @@ def main():
     def llm_fn(prompt):
         return call_llm_json(prompt, ssh_host=args.ssh_host, local=args.local_llm)
 
-    # Executor (for worker)
-    if args.dry_run:
-        execute_fn = make_dry_run_executor()
-    else:
-        execute_fn = make_trainpy_executor(
-            ssh_host=args.ssh_host,
-            ssh_key=args.ssh_key,
-            cuda_device=args.cuda_device,
-            local=args.local_llm,
-        )
-
     planner = Planner(
         store, llm_call_fn=llm_fn,
         min_queue_size=args.min_queue,
         n_proposals=args.n_proposals,
         n_select=args.n_select,
     )
-    worker = Worker(store, execute_fn=execute_fn)
 
-    logger.info("Starting v4 research loop (dry_run=%s, cuda=%s)", args.dry_run, args.cuda_device)
+    # Worker configs (each worker gets its own Store connection for thread safety)
+    worker_configs = []
+    for i, cuda_dev in enumerate(cuda_devices):
+        worker_id = f"worker_{hostname}_{i}"
+        if args.dry_run:
+            execute_fn = make_dry_run_executor()
+        else:
+            execute_fn = make_trainpy_executor(
+                ssh_host=args.ssh_host,
+                ssh_key=args.ssh_key,
+                cuda_device=cuda_dev,
+                local=args.local_llm,
+            )
+        worker_configs.append((worker_id, execute_fn))
+
+    worker_ids = [wid for wid, _ in worker_configs]
+    logger.info("Starting v4 research loop (dry_run=%s, gpus=%s, workers=%s)",
+                args.dry_run, cuda_devices, worker_ids)
+
+    def run_worker(worker_id, execute_fn):
+        """Run a single worker with its own DB connection."""
+        worker_store = Store(args.database)
+        worker = Worker(worker_store, execute_fn=execute_fn, worker_id=worker_id)
+        executed = 0
+        try:
+            while True:
+                result = worker.tick()
+                if result is None:
+                    break
+                executed += 1
+                metrics = result.get("outcome_metrics") or {}
+                logger.info("[%s] success=%s val_bpb=%s",
+                           worker_id,
+                           result.get("outcome_success"),
+                           metrics.get("val_bpb", "n/a"))
+        finally:
+            worker_store.close()
+        return executed
 
     cycle = 0
     try:
@@ -121,23 +156,29 @@ def main():
             cycle += 1
             logger.info("=== Cycle %d ===", cycle)
 
-            # Plan
+            # Plan — ensure enough work in the queue
             summary = planner.tick()
             logger.info("Planner: %s", summary)
 
-            # Execute all available work
-            executed = 0
-            while True:
-                result = worker.tick()
-                if result is None:
-                    break
-                executed += 1
-                metrics = result.get("outcome_metrics") or {}
-                logger.info("Worker: success=%s val_bpb=%s",
-                           result.get("outcome_success"),
-                           metrics.get("val_bpb", "n/a"))
+            # Run all workers in parallel threads
+            if len(worker_configs) == 1:
+                wid, exe_fn = worker_configs[0]
+                total_executed = run_worker(wid, exe_fn)
+            else:
+                results = {}
+                threads = []
+                for wid, exe_fn in worker_configs:
+                    def _run(w=wid, e=exe_fn):
+                        results[w] = run_worker(w, e)
+                    t = threading.Thread(target=_run)
+                    threads.append(t)
+                    t.start()
+                for t in threads:
+                    t.join()
+                total_executed = sum(results.values())
+                logger.info("Workers: %s", results)
 
-            logger.info("Executed %d experiments this cycle", executed)
+            logger.info("Executed %d experiments this cycle", total_executed)
 
             # Status
             wm = store.load_world_model()
@@ -145,7 +186,7 @@ def main():
                        wm.version, len(wm.beliefs), len(wm.tensions))
 
             if args.max_cycles is None or cycle < args.max_cycles:
-                if executed == 0:
+                if total_executed == 0:
                     time.sleep(args.planner_interval)
                 # If we executed something, immediately loop (no sleep)
 
