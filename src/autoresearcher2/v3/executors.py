@@ -106,6 +106,63 @@ def make_trainpy_executor(
     return execute
 
 
+def make_shell_executor(
+    command_template: str,
+    metric_patterns: dict[str, str] = None,
+    timeout: int = 900,
+    ssh_host: str = None,
+    ssh_key: str = None,
+):
+    """Generic executor that runs a shell command with intervention_spec as env vars.
+
+    Args:
+        command_template: Shell command to run. intervention_spec keys are
+            available as env vars (e.g. DEPTH=8, MATRIX_LR=0.04).
+        metric_patterns: Dict of {metric_name: regex_pattern} to extract from output.
+            Each pattern should have one capture group for the numeric value.
+        timeout: Max seconds for the command.
+        ssh_host: If set, run via SSH (e.g. "root@host"). None = run locally.
+        ssh_key: SSH key path (only used with ssh_host).
+    """
+    metric_patterns = metric_patterns or {}
+
+    def execute(proposal: Proposal) -> dict:
+        spec = proposal.intervention_spec
+        env_str = " ".join(f"{k}={v}" for k, v in spec.items())
+        cmd = f"{env_str} {command_template}"
+
+        if ssh_host:
+            ssh_cmd = ["ssh"]
+            if ssh_key:
+                ssh_cmd += ["-i", ssh_key]
+            ssh_cmd += ["-o", "ConnectTimeout=10", ssh_host, cmd]
+            run_args = ssh_cmd
+        else:
+            run_args = ["bash", "-c", cmd]
+
+        start = time.time()
+        result = subprocess.run(run_args, capture_output=True, text=True, timeout=timeout)
+        wall_time = time.time() - start
+        out = result.stdout + result.stderr
+
+        if result.returncode != 0:
+            raise RuntimeError(f"Command failed (exit {result.returncode}): {out[-500:]}")
+
+        metrics = {}
+        for name, pattern in metric_patterns.items():
+            m = re.search(pattern, out)
+            if m:
+                metrics[name] = float(m.group(1))
+
+        return {
+            "metrics": metrics,
+            "compute_cost": wall_time / 3600,
+            "raw_log": out[-2000:] if len(out) > 2000 else out,
+        }
+
+    return execute
+
+
 def make_dry_run_executor():
     """Executor that logs but doesn't execute. For testing."""
     def execute(proposal: Proposal) -> dict:
