@@ -116,12 +116,6 @@ def main():
 
     # Planner gets its own Store connection for thread safety
     planner_store = Store(args.database)
-    planner = Planner(
-        planner_store, llm_call_fn=llm_fn,
-        min_queue_size=args.min_queue,
-        n_proposals=args.n_proposals,
-        n_select=args.n_select,
-    )
 
     # Worker configs (each worker gets its own Store connection for thread safety)
     worker_configs = []
@@ -146,8 +140,28 @@ def main():
     stop = threading.Event()
 
     def run_planner():
-        """Planner thread: continuously stock the queue."""
+        """Planner thread: continuously stock the queue for all active projects.
+
+        Maintains a Planner instance per project. On each cycle, iterates
+        all active projects and ticks their planner. Also ticks a default
+        planner for proposals without a project (backwards compat).
+        """
+        from autoresearcher2.v3.generator import DomainConfig
+        planners: dict[str | None, Planner] = {}
         cycle = 0
+
+        def get_or_create_planner(project_id, domain=None):
+            if project_id not in planners:
+                planners[project_id] = Planner(
+                    planner_store, llm_call_fn=llm_fn,
+                    min_queue_size=args.min_queue,
+                    n_proposals=args.n_proposals,
+                    n_select=args.n_select,
+                    project_id=project_id,
+                    domain=domain,
+                )
+            return planners[project_id]
+
         while not stop.is_set():
             cycle += 1
             try:
@@ -156,13 +170,43 @@ def main():
                 if reclaimed > 0:
                     logger.info("Reclaimed %d stale running proposals", reclaimed)
 
-                summary = planner.tick()
-                if any(v > 0 for v in summary.values()):
-                    logger.info("Planner cycle %d: %s", cycle, summary)
+                # Tick planner for each active project
+                active_projects = planner_store.list_projects(active_only=True)
+                for proj in active_projects:
+                    domain = None
+                    if proj.get("domain_config"):
+                        dc = proj["domain_config"]
+                        domain = DomainConfig(
+                            name=dc.get("name", proj["name"]),
+                            description=dc.get("description", proj.get("description", "")),
+                            intervention_types=dc.get("intervention_types", "config_change or probe"),
+                            parameters=dc.get("parameters", ""),
+                            diversity_hint=dc.get("diversity_hint", ""),
+                        )
+                    planner = get_or_create_planner(proj["id"], domain)
+                    summary = planner.tick()
+                    if any(v > 0 for v in summary.values()):
+                        logger.info("Planner [%s] cycle %d: %s", proj["name"], cycle, summary)
 
+                # Also tick default planner for unassigned proposals (backwards compat)
+                default_planner = get_or_create_planner(None)
+                summary = default_planner.tick()
+                if any(v > 0 for v in summary.values()):
+                    logger.info("Planner [default] cycle %d: %s", cycle, summary)
+
+                # Log world model status for each project
+                for proj in active_projects:
+                    wm = planner_store.load_world_model(project_id=proj["id"])
+                    if wm.version > 0 and len(wm.beliefs) > 0:
+                        logger.info("[%s] WM v%d: %d beliefs, %d tensions",
+                                   proj["name"], wm.version, len(wm.beliefs), len(wm.tensions))
+
+                # Log default world model
                 wm = planner_store.load_world_model()
-                logger.info("WM v%d: %d beliefs, %d tensions",
-                           wm.version, len(wm.beliefs), len(wm.tensions))
+                if wm.version > 0:
+                    logger.info("WM v%d: %d beliefs, %d tensions",
+                               wm.version, len(wm.beliefs), len(wm.tensions))
+
             except Exception:
                 logger.error("Planner cycle %d failed", cycle, exc_info=True)
 
