@@ -120,8 +120,8 @@ class Store:
     def init(self):
         """Create tables and seed initial world model."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.conn.executescript(SCHEMA)
         self._migrate()
+        self.conn.executescript(SCHEMA)
         # Seed empty world model if none exists
         if self.conn.execute("SELECT COUNT(*) FROM world_model").fetchone()[0] == 0:
             wm = WorldModel()
@@ -133,17 +133,11 @@ class Store:
 
     def _migrate(self):
         """Apply migrations for existing databases (idempotent)."""
-        # Check if projects table exists
-        has_projects = self.conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='projects'"
-        ).fetchone()
-        if has_projects:
-            return  # Already migrated
         for sql in MIGRATIONS:
             try:
                 self.conn.execute(sql)
             except sqlite3.OperationalError:
-                pass  # Column/table already exists
+                pass  # Column/table/index already exists
         self.conn.commit()
 
     def close(self):
