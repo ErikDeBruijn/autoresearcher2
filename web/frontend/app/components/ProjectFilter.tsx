@@ -347,7 +347,7 @@ export default function ProjectFilter({
                 className={`text-sm transition-opacity ${p.active ? "opacity-80 hover:opacity-100" : "opacity-50 hover:opacity-80"}`}
                 title={p.active ? "Pause project (finish active runs, stop generating)" : "Resume project"}
               >
-                {p.active ? "▶" : "⏸"}
+                {p.active ? "⏸" : "▶"}
               </button>
 
               {/* Visibility toggle (eye icon) */}
