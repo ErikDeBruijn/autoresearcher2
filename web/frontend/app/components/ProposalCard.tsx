@@ -29,6 +29,9 @@ interface Proposal {
   observation_id: string | null;
   observation?: ObservationData;
   world_model_update?: WorldModelUpdate;
+  project_id?: string | null;
+  project_name?: string;
+  project_color?: string;
 }
 
 const typeColors: Record<string, string> = {
@@ -65,7 +68,13 @@ export default function ProposalCard({ proposal }: { proposal: Proposal }) {
         )}
       </div>
 
-      <div className="flex items-center gap-2 mt-2">
+      <div className="flex items-center gap-2 mt-2 flex-wrap">
+        {proposal.project_name && (
+          <span className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">
+            <span className={`w-1.5 h-1.5 rounded-full ${proposal.project_color || "bg-gray-400"}`} />
+            {proposal.project_name}
+          </span>
+        )}
         <span className={`text-xs px-1.5 py-0.5 rounded border ${typeColors[proposal.intervention_type] || "bg-gray-800 text-gray-400 border-gray-600"}`}>
           {proposal.intervention_type}
         </span>

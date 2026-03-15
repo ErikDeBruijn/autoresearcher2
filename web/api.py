@@ -106,6 +106,75 @@ class ChatMessage(BaseModel):
 
 # --- REST endpoints ---
 
+@app.get("/api/projects")
+def get_projects():
+    """Get all projects."""
+    store = get_store()
+    try:
+        return store.list_projects()
+    finally:
+        store.close()
+
+
+@app.get("/api/projects/{project_id}")
+def get_project(project_id: str):
+    """Get a single project."""
+    store = get_store()
+    try:
+        project = store.get_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail=f"Project {project_id} not found")
+        return project
+    finally:
+        store.close()
+
+
+class ProjectCreate(BaseModel):
+    name: str
+    description: str = ""
+    domain_config: dict | None = None
+
+
+@app.post("/api/projects")
+async def create_project(data: ProjectCreate):
+    """Create a new research project."""
+    store = get_store()
+    try:
+        pid = store.create_project(
+            name=data.name,
+            description=data.description,
+            domain_config=data.domain_config,
+        )
+        project = store.get_project(pid)
+        await manager.broadcast({"type": "project_created", "project": project})
+        return project
+    finally:
+        store.close()
+
+
+class ProjectUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    domain_config: dict | None = None
+
+
+@app.patch("/api/projects/{project_id}")
+async def update_project(project_id: str, data: ProjectUpdate):
+    """Update a project."""
+    store = get_store()
+    try:
+        updates = {k: v for k, v in data.model_dump().items() if v is not None}
+        if not updates:
+            raise HTTPException(status_code=400, detail="No fields to update")
+        store.update_project(project_id, **updates)
+        project = store.get_project(project_id)
+        await manager.broadcast({"type": "project_updated", "project": project})
+        return project
+    finally:
+        store.close()
+
+
 @app.get("/api/queue")
 def get_queue():
     """Get all proposals grouped by stage, with worker_id for running and observation data for done/reviewed."""
@@ -121,6 +190,7 @@ def get_queue():
             items = []
             for p in proposals:
                 d = p.to_dict()
+                d["project_id"] = p.project_id
                 # Add worker_id from DB for running proposals
                 if stage == "running":
                     row = store.conn.execute(

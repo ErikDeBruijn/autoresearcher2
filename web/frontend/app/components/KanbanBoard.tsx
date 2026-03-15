@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import ProposalCard from "./ProposalCard";
 import type { Proposal } from "./ProposalCard";
+import ProjectFilter, { getProjectColor } from "./ProjectFilter";
+import type { Project } from "./ProjectFilter";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -61,19 +63,53 @@ function WorkerSlot({
 export default function KanbanBoard() {
   const [queue, setQueue] = useState<Record<string, ProposalWithWorker[]>>({});
   const [workers, setWorkers] = useState<Record<string, WorkerInfo>>({});
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [visibleProjects, setVisibleProjects] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [dragging, setDragging] = useState(false);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [trashOver, setTrashOver] = useState(false);
 
+  const toggleProject = useCallback((projectId: string) => {
+    setVisibleProjects((prev) => {
+      const next = new Set(prev);
+      if (next.has(projectId)) {
+        next.delete(projectId);
+      } else {
+        next.add(projectId);
+      }
+      return next;
+    });
+  }, []);
+
+  // Build project lookup for enriching proposals with name/color
+  const projectMap = new Map(projects.map((p, i) => [p.id, { ...p, color: getProjectColor(i) }]));
+
+  const enrichProposal = useCallback((p: ProposalWithWorker): ProposalWithWorker => {
+    const proj = p.project_id ? projectMap.get(p.project_id) : null;
+    return {
+      ...p,
+      project_name: proj?.name,
+      project_color: proj?.color,
+    };
+  }, [projectMap]);
+
+  const isVisible = useCallback((p: ProposalWithWorker): boolean => {
+    if (visibleProjects.size === 0) return true; // No filter = show all
+    if (!p.project_id) return visibleProjects.has("__none__");
+    return visibleProjects.has(p.project_id);
+  }, [visibleProjects]);
+
   const fetchData = useCallback(async () => {
     try {
-      const [queueRes, statsRes] = await Promise.all([
+      const [queueRes, statsRes, projectsRes] = await Promise.all([
         fetch(`${API}/api/queue`).then((r) => r.json()),
         fetch(`${API}/api/stats`).then((r) => r.json()),
+        fetch(`${API}/api/projects`).then((r) => r.json()).catch(() => []),
       ]);
       setQueue(queueRes);
       setWorkers(statsRes.workers || {});
+      setProjects(projectsRes);
       setLoading(false);
     } catch {
       setLoading(false);
@@ -154,8 +190,8 @@ export default function KanbanBoard() {
     );
   }
 
-  // Build worker slots for the Running column
-  const runningProposals = (queue["running"] || []) as ProposalWithWorker[];
+  // Build worker slots for the Running column (always unfiltered)
+  const runningProposals = ((queue["running"] || []) as ProposalWithWorker[]).map(enrichProposal);
 
   // Determine worker IDs: known workers from stats + any from running proposals
   const workerIds = new Set<string>();
@@ -179,9 +215,18 @@ export default function KanbanBoard() {
 
   return (
     <div className="flex flex-col h-full relative">
+      <ProjectFilter
+        projects={projects}
+        visibleProjects={visibleProjects}
+        onToggle={toggleProject}
+      />
       <div className="flex gap-3 p-4 flex-1 min-h-0 overflow-x-auto">
         {STAGES.map((stage) => {
-          const proposals = queue[stage.key] || [];
+          const rawProposals = queue[stage.key] || [];
+          // Running column always shows all projects (never filtered)
+          const proposals = stage.key === "running"
+            ? rawProposals.map(enrichProposal)
+            : rawProposals.map(enrichProposal).filter(isVisible);
           const dropHighlight = dragOverStage === stage.key;
 
           // Running column gets special worker-slot treatment
