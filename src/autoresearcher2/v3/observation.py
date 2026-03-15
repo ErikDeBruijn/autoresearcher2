@@ -37,6 +37,7 @@ class Observation:
         self.compute_cost = compute_cost
         self.worker_id = worker_id
         self.raw_log = raw_log
+        self.project_id = None
 
     def to_dict(self):
         """Serialize to dict."""

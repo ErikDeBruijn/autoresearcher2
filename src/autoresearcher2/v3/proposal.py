@@ -46,6 +46,7 @@ class Proposal:
         self.started_at = None
         self.finished_at = None
         self.observation_id = None
+        self.project_id = None
 
     def set_critic_decision(self, decision, rank, rationale):
         """Set the critic's ordinal ranking and decision."""
