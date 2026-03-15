@@ -1,0 +1,293 @@
+{
+  "run_id": "53e5acec",
+  "version": "v2.0-steps",
+  "n_iterations": 3,
+  "schema": {
+    "DEPTH": [
+      "6",
+      "8",
+      "10"
+    ],
+    "MATRIX_LR": [
+      "0.02",
+      "0.04",
+      "0.08"
+    ],
+    "WEIGHT_DECAY": [
+      "0.1",
+      "0.2",
+      "0.4"
+    ]
+  },
+  "results": [
+    {
+      "cell": 11,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "outcome": 0.9633430000000001,
+      "appraisal": {
+        "surprise": 0.00770247514345912,
+        "theory_conflict": 0.00012627008431900197,
+        "prediction_impact_breadth": 19.0,
+        "learntropy": 0.00010592424785957135
+      }
+    },
+    {
+      "cell": 4,
+      "config": {
+        "DEPTH": "6",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "outcome": 0.9500090000000001,
+      "appraisal": {
+        "surprise": 0.00749152016895438,
+        "theory_conflict": 0.00012281180604843247,
+        "prediction_impact_breadth": 19.0,
+        "learntropy": 0.000103023200262472
+      }
+    },
+    {
+      "cell": 24,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "outcome": 0.938903,
+      "appraisal": {
+        "surprise": 0.0073180247731746695,
+        "theory_conflict": 0.00011996761923237164,
+        "prediction_impact_breadth": 19.0,
+        "learntropy": 0.00010063729586644543
+      }
+    },
+    {
+      "cell": 0,
+      "config": {
+        "DEPTH": "6",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "outcome": 0.9463760000000001,
+      "appraisal": {
+        "surprise": 0.0020149861238514255,
+        "theory_conflict": 3.598135972109919e-05,
+        "prediction_impact_breadth": 24.0,
+        "learntropy": 3.3923551273468986e-05
+      }
+    },
+    {
+      "cell": 19,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "outcome": 0.925106,
+      "appraisal": {
+        "surprise": 0.001516887944014833,
+        "theory_conflict": 2.7308569082965268e-05,
+        "prediction_impact_breadth": 21.0,
+        "learntropy": 2.4083894151517767e-05
+      }
+    }
+  ],
+  "step_log": [
+    {
+      "iteration": 0,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.4"
+          }
+        },
+        "reasoning": "Fallback: Thompson sampling (LLM unavailable)"
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 11: outcome=0.9633",
+        "payload": {
+          "cell": 11,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.9633430000000001
+        }
+      }
+    },
+    {
+      "iteration": 1,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.2"
+          }
+        },
+        "reasoning": "With only 1 experiment, we need data \u2014 this tests a shallow model with mid-range LR and weight decay, contrasting the initial deep/low-LR/high-decay run."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 4: outcome=0.9500",
+        "payload": {
+          "cell": 4,
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.9500090000000001
+        }
+      }
+    },
+    {
+      "iteration": 1,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.1"
+          }
+        },
+        "reasoning": "Tests the opposite corner of the design space (deepest model, highest LR, lowest decay) to maximally span the factor space and reveal main effects early."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 24: outcome=0.9389",
+        "payload": {
+          "cell": 24,
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.1"
+          },
+          "outcome": 0.938903
+        }
+      }
+    },
+    {
+      "iteration": 1,
+      "step": {
+        "type": "hypothesis",
+        "payload": {
+          "claim": "Shallower models (DEPTH=6) will achieve better outcomes than deeper models (DEPTH=10) because they process ~3x more tokens in the same wall-clock budget, and this token-volume advantage outweighs any capacity benefit from extra layers.",
+          "proposed_test": "import json\nshallow = [d['outcome'] for d in DATA if d['config']['DEPTH'] == '6']\ndeep = [d['outcome'] for d in DATA if d['config']['DEPTH'] == '10']\nif len(shallow) >= 2 and len(deep) >= 2:\n    from scipy.stats import mannwhitneyu\n    stat, p = mannwhitneyu(shallow, deep, alternative='greater')\n    result = {'testable': True, 'shallow_mean': sum(shallow)/len(shallow), 'deep_mean': sum(deep)/len(deep), 'p_value': p, 'accepted': p < 0.1}\nelse:\n    result = {'testable': False, 'shallow_n': len(shallow), 'deep_n': len(deep), 'reason': 'Need at least 2 observations per depth level'}\nprint(json.dumps(result))",
+          "acceptance_threshold": "Mann-Whitney U p < 0.1 for shallow > deep outcomes"
+        },
+        "reasoning": "Making the token-budget confound an explicit, testable hypothesis so we can distinguish capacity effects from training-volume effects as data accumulates."
+      },
+      "result": {
+        "success": true,
+        "summary": "Hypothesis tested: Shallower models (DEPTH=6) will achieve better outcomes than",
+        "payload": {
+          "claim": "Shallower models (DEPTH=6) will achieve better outcomes than deeper models (DEPTH=10) because they process ~3x more tokens in the same wall-clock budget, and this token-volume advantage outweighs any capacity benefit from extra layers.",
+          "threshold": "Mann-Whitney U p < 0.1 for shallow > deep outcomes",
+          "test_output": {
+            "testable": false,
+            "shallow_n": 1,
+            "deep_n": 1,
+            "reason": "Need at least 2 observations per depth level"
+          },
+          "code": "import json\nshallow = [d['outcome'] for d in DATA if d['config']['DEPTH'] == '6']\ndeep = [d['outcome'] for d in DATA if d['config']['DEPTH'] == '10']\nif len(shallow) >= 2 and len(deep) >= 2:\n    from scipy.stats import mannwhitneyu\n    stat, p = mannwhitneyu(shallow, deep, alternative='greater')\n    result = {'testable': True, 'shallow_mean': sum(shallow)/len(shallow), 'deep_mean': sum(deep)/len(deep), 'p_value': p, 'accepted': p < 0.1}\nelse:\n    result = {'testable': False, 'shallow_n': len(shallow), 'deep_n': len(deep), 'reason': 'Need at least 2 observations per depth level'}\nprint(json.dumps(result))"
+        }
+      }
+    },
+    {
+      "iteration": 2,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.1"
+          }
+        },
+        "reasoning": "With only 3 experiments so far, we need more data; this tests the shallowest depth with low LR and low weight decay to explore the opposite corner from exp 0."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 0: outcome=0.9464",
+        "payload": {
+          "cell": 0,
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.1"
+          },
+          "outcome": 0.9463760000000001
+        }
+      }
+    },
+    {
+      "iteration": 2,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.2"
+          }
+        },
+        "reasoning": "Tests whether the low MATRIX_LR that worked well at DEPTH=8 also performs well at DEPTH=10, helping isolate DEPTH vs LR effects."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 19: outcome=0.9251",
+        "payload": {
+          "cell": 19,
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.925106
+        }
+      }
+    },
+    {
+      "iteration": 2,
+      "step": {
+        "type": "hypothesis",
+        "payload": {
+          "claim": "Lower MATRIX_LR (0.02) yields better outcomes than higher MATRIX_LR (0.08) across depths, even after accounting for the token budget confound.",
+          "proposed_test": "import json\nresults = [d for d in DATA if d['config']['MATRIX_LR'] in ['0.02', '0.08']]\nlow_lr = [d['outcome'] for d in results if d['config']['MATRIX_LR'] == '0.02']\nhigh_lr = [d['outcome'] for d in results if d['config']['MATRIX_LR'] == '0.08']\nif len(low_lr) >= 2 and len(high_lr) >= 2:\n    from scipy.stats import mannwhitneyu\n    stat, p = mannwhitneyu(low_lr, high_lr, alternative='greater')\n    print(json.dumps({'supported': p < 0.1, 'p_value': p, 'mean_low_lr': sum(low_lr)/len(low_lr), 'mean_high_lr': sum(high_lr)/len(high_lr)}))\nelse:\n    print(json.dumps({'supported': False, 'reason': 'insufficient data', 'n_low': len(low_lr), 'n_high': len(high_lr)}))",
+          "acceptance_threshold": "p < 0.1 (one-sided Mann-Whitney U test)"
+        },
+        "reasoning": "Exp 0 (LR=0.02) scored 0.9633 vs exp 2 (LR=0.08) at 0.9389; making this pattern explicit as a testable hypothesis that the two new experiments can help evaluate."
+      },
+      "result": {
+        "success": true,
+        "summary": "Hypothesis tested: Lower MATRIX_LR (0.02) yields better outcomes than higher MA",
+        "payload": {
+          "claim": "Lower MATRIX_LR (0.02) yields better outcomes than higher MATRIX_LR (0.08) across depths, even after accounting for the token budget confound.",
+          "threshold": "p < 0.1 (one-sided Mann-Whitney U test)",
+          "test_output": {
+            "supported": false,
+            "reason": "insufficient data",
+            "n_low": 3,
+            "n_high": 1
+          },
+          "code": "import json\nresults = [d for d in DATA if d['config']['MATRIX_LR'] in ['0.02', '0.08']]\nlow_lr = [d['outcome'] for d in results if d['config']['MATRIX_LR'] == '0.02']\nhigh_lr = [d['outcome'] for d in results if d['config']['MATRIX_LR'] == '0.08']\nif len(low_lr) >= 2 and len(high_lr) >= 2:\n    from scipy.stats import mannwhitneyu\n    stat, p = mannwhitneyu(low_lr, high_lr, alternative='greater')\n    print(json.dumps({'supported': p < 0.1, 'p_value': p, 'mean_low_lr': sum(low_lr)/len(low_lr), 'mean_high_lr': sum(high_lr)/len(high_lr)}))\nelse:\n    print(json.dumps({'supported': False, 'reason': 'insufficient data', 'n_low': len(low_lr), 'n_high': len(high_lr)}))"
+        }
+      }
+    }
+  ],
+  "analysis_log": [],
+  "pending_schema_changes": [],
+  "wall_time_s": 3892.0444548130035
+}

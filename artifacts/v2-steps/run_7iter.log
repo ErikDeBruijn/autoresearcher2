@@ -1,0 +1,13 @@
+[04:55:54] Starting v2.0 research steps run 85f48ee5
+[04:55:54] Schema: 27 cells, iterations: 7
+LLM returned no steps, falling back to Thompson sampling
+[06:10:05] 
+=== v2.0 Run Complete ===
+[06:10:05] Iterations: 7
+[06:10:05] Experiments completed: 13
+[06:10:05] Total steps executed: 19
+[06:10:05] Wall time: 74.2 min
+[06:10:05] Best val_bpb: 1.033108
+[06:10:05] Mean val_bpb: 1.046093
+[06:10:05] Step breakdown: {'experiment': 13, 'hypothesis': 4, 'analysis': 2}
+[06:10:05] Saved to artifacts/v2-steps/85f48ee5.json

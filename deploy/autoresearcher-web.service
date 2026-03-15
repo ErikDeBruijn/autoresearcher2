@@ -1,0 +1,17 @@
+[Unit]
+Description=AutoResearcher2 Web API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/github.com/erikdebruijn/autoresearcher2
+ExecStart=/root/.local/bin/uv run uvicorn web.api:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/var/log/autoresearcher-web.log
+StandardError=append:/var/log/autoresearcher-web.log
+Environment=HOME=/root
+Environment=PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=multi-user.target

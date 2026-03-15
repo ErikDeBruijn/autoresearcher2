@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+"""Submit a new research proposal."""
+import argparse
+import json
+import sys
+import urllib.request
+
+API = "http://localhost:8000"
+
+def main():
+    parser = argparse.ArgumentParser(description="Submit a research proposal")
+    parser.add_argument("--project", default=None, help="Project ID (e.g. proj_abc123)")
+    parser.add_argument("--intent", required=True, help="What this experiment tests")
+    parser.add_argument("--rationale", default="", help="Why this is valuable now")
+    parser.add_argument("--expected-learning", default="", help="What we learn regardless of outcome")
+    parser.add_argument("--type", default="config_change", choices=["config_change", "probe", "code_change"], help="Intervention type")
+    parser.add_argument("--spec", required=True, help="JSON intervention spec (e.g. '{\"MATRIX_LR\": \"0.04\"}')")
+    args = parser.parse_args()
+
+    try:
+        spec = json.loads(args.spec)
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON in --spec: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    body = json.dumps({
+        "intent": args.intent,
+        "rationale": args.rationale,
+        "expected_learning": args.expected_learning,
+        "intervention_type": args.type,
+        "intervention_spec": spec,
+        "project_id": args.project,
+    }).encode()
+
+    req = urllib.request.Request(
+        f"{API}/api/proposals",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read())
+            print(f"Proposal created: {result.get('id', 'unknown')}")
+            print(json.dumps(result, indent=2))
+    except urllib.error.HTTPError as e:
+        print(f"Error {e.code}: {e.read().decode()}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

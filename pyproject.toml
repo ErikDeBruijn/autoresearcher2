@@ -4,8 +4,11 @@ version = "0.1.0"
 description = "Structured Bayesian research agent with learntropy-inspired appraisal"
 requires-python = ">=3.11"
 dependencies = [
+    "fastapi>=0.135.1",
     "numpy>=1.26",
     "scipy>=1.12",
+    "uvicorn[standard]>=0.41.0",
+    "websockets>=16.0",
 ]
 
 [project.optional-dependencies]

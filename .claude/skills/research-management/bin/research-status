@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+"""Show current research pipeline status."""
+import json
+import sys
+import urllib.request
+
+API = "http://localhost:8000"
+
+try:
+    stats = json.loads(urllib.request.urlopen(f"{API}/api/stats", timeout=10).read())
+    queue = json.loads(urllib.request.urlopen(f"{API}/api/queue", timeout=10).read())
+    projects = json.loads(urllib.request.urlopen(f"{API}/api/projects", timeout=10).read())
+
+    print("=== Pipeline Status ===")
+    print(f"Total experiments: {stats.get('total_experiments', 0)}")
+    print(f"Success rate: {stats.get('success_rate', 0):.0%}")
+    if stats.get("best_val_bpb"):
+        print(f"Best val_bpb: {stats['best_val_bpb']:.4f}")
+
+    print(f"\nQueue:")
+    for stage in ("backlog", "todo", "running", "done", "reviewed"):
+        count = len(queue.get(stage, []))
+        print(f"  {stage}: {count}")
+
+    activity = stats.get("pipeline_activity", {})
+    if activity and activity.get("phase"):
+        print(f"\nPlanner: {activity['phase']}")
+
+    if stats.get("workers"):
+        print(f"\nWorkers:")
+        for wid, info in stats["workers"].items():
+            print(f"  {wid}: {info.get('experiments', 0)} runs, avg {info.get('avg_time_s', 0):.0f}s")
+
+    if projects:
+        print(f"\nProjects:")
+        for p in projects:
+            energy = p.get("energy_kwh", 0) or 0
+            cost = p.get("cost_eur", 0) or 0
+            print(f"  {p['name']}: {p.get('experiment_count', 0)} experiments, {energy:.3f} kWh, €{cost:.3f}")
+
+except Exception as e:
+    print(f"Error: {e}", file=sys.stderr)
+    sys.exit(1)

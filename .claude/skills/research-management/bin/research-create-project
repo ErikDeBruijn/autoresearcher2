@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""Create a new research project via the AutoResearcher2 API."""
+import argparse
+import json
+import sys
+import urllib.request
+
+API = "http://localhost:8000"
+
+DOMAIN_CONFIGS = {
+    "nanogpt": {
+        "name": "NanoGPT training",
+        "description": "We run NanoGPT training experiments.",
+        "intervention_types": "config_change, probe, code_change",
+        "parameters": "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size",
+    },
+    "atari-rl": {
+        "name": "Atari RL",
+        "description": "We optimize Atari game agents using reinforcement learning.",
+        "intervention_types": "config_change, probe, code_change",
+        "parameters": "game, learning_rate, network_size, algorithm, n_envs, total_timesteps",
+    },
+    "generic": {
+        "name": "generic optimization",
+        "description": "We run experiments to optimize a target metric.",
+        "intervention_types": "config_change, probe, code_change",
+        "parameters": "any key-value pairs relevant to the domain",
+    },
+}
+
+def main():
+    parser = argparse.ArgumentParser(description="Create a research project")
+    parser.add_argument("--name", required=True, help="Project name")
+    parser.add_argument("--description", default="", help="Project description")
+    parser.add_argument("--domain", default="generic", choices=DOMAIN_CONFIGS.keys(), help="Domain type")
+    parser.add_argument("--parameters", default=None, help="Comma-separated parameter names (overrides domain default)")
+    args = parser.parse_args()
+
+    domain_cfg = dict(DOMAIN_CONFIGS[args.domain])
+    if args.parameters:
+        domain_cfg["parameters"] = args.parameters
+
+    body = json.dumps({
+        "name": args.name,
+        "description": args.description,
+        "domain_config": domain_cfg,
+    }).encode()
+
+    req = urllib.request.Request(
+        f"{API}/api/projects",
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read())
+            print(json.dumps(result, indent=2))
+    except urllib.error.HTTPError as e:
+        print(f"Error {e.code}: {e.read().decode()}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
