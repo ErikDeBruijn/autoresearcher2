@@ -62,6 +62,7 @@ class Observation:
             "energy_kwh": self.energy_kwh,
             "cost_eur": self.cost_eur,
             "avg_power_w": self.avg_power_w,
+            "project_id": self.project_id,
         }
 
     @classmethod
