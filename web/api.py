@@ -843,8 +843,69 @@ async def websocket_endpoint(ws: WebSocket):
         manager.disconnect(ws)
 
 
-# --- Artifact serving ---
+# --- Report generation ---
+import subprocess as _subprocess
 from starlette.responses import FileResponse
+
+
+REPORT_DIR = Path(__file__).parent.parent / "artifacts" / "reports"
+REPORT_SCRIPT = Path(__file__).parent.parent / "scripts" / "generate_report.py"
+
+
+@app.post("/api/report")
+async def generate_report():
+    """Run generate_report.py --db ... --no-llm and return the PDF path."""
+    try:
+        result = _subprocess.run(
+            ["python", str(REPORT_SCRIPT), "--db", str(DB_PATH), "--no-llm"],
+            capture_output=True, text=True, timeout=120,
+            cwd=str(Path(__file__).parent.parent),
+        )
+        if result.returncode != 0:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Report generation failed: {result.stderr[-500:]}",
+            )
+        # Find latest PDF in artifacts/reports/
+        pdf = _find_latest_pdf()
+        if not pdf:
+            raise HTTPException(status_code=500, detail="Report generated but no PDF found")
+        return {"status": "ok", "path": str(pdf)}
+    except _subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="Report generation timed out")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def _find_latest_pdf() -> Path | None:
+    """Return the most recently modified PDF in REPORT_DIR."""
+    if not REPORT_DIR.exists():
+        return None
+    pdfs = sorted(REPORT_DIR.glob("*.pdf"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return pdfs[0] if pdfs else None
+
+
+@app.get("/api/report/latest")
+def get_latest_report():
+    """Return metadata about the latest generated report."""
+    pdf = _find_latest_pdf()
+    if not pdf:
+        raise HTTPException(status_code=404, detail="No report found")
+    return {"path": str(pdf), "filename": pdf.name, "size_bytes": pdf.stat().st_size}
+
+
+@app.get("/api/report/download")
+def download_report():
+    """Serve the latest generated PDF file."""
+    pdf = _find_latest_pdf()
+    if not pdf:
+        raise HTTPException(status_code=404, detail="No report found")
+    return FileResponse(pdf, media_type="application/pdf", filename=pdf.name)
+
+
+# --- Artifact serving ---
 
 
 @app.get("/api/artifacts/{obs_id}/{artifact_name}")

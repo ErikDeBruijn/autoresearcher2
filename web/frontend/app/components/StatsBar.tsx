@@ -42,6 +42,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "";
 export default function StatsBar() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [workerStatus, setWorkerStatus] = useState<WorkerStatus | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     const fetchStats = () =>
@@ -111,6 +112,30 @@ export default function StatsBar() {
         <span className="font-mono text-emerald-400">{stats.total_cost_eur.toFixed(2)}€</span>
         <span className="font-mono text-gray-500">{(stats.total_energy_kwh * 1000).toFixed(0)}Wh</span>
       </div>
+
+      <button
+        disabled={reportLoading}
+        onClick={async () => {
+          setReportLoading(true);
+          try {
+            const res = await fetch(`${API}/api/report`, { method: "POST" });
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({ detail: "Report generation failed" }));
+              alert(err.detail || "Report generation failed");
+              return;
+            }
+            window.open(`${API}/api/report/download`, "_blank");
+          } catch {
+            alert("Could not reach API");
+          } finally {
+            setReportLoading(false);
+          }
+        }}
+        className="px-2 py-0.5 text-xs font-mono rounded border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-wait"
+        title="Generate and download PDF report"
+      >
+        {reportLoading ? "..." : "PDF"}
+      </button>
 
       <div className="flex items-center gap-3 ml-auto">
         {workerStatus?.energy?.price_eur_per_kwh != null && (
