@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API = process.env.NEXT_PUBLIC_API_URL || "";
 
 export default function WorkerControl({ onClose }: { onClose: () => void }) {
   const [running, setRunning] = useState<boolean | null>(null);

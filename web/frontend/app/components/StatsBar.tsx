@@ -15,7 +15,7 @@ interface Stats {
   workers: Record<string, { experiments: number; avg_time_s: number; total_time_s: number }>;
 }
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API = process.env.NEXT_PUBLIC_API_URL || "";
 
 export default function StatsBar() {
   const [stats, setStats] = useState<Stats | null>(null);

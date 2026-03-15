@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import ProposalCard from "./ProposalCard";
 import type { Proposal } from "./ProposalCard";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API = process.env.NEXT_PUBLIC_API_URL || "";
 
 const STAGES = [
   { key: "backlog", label: "Backlog", subtitle: "Generator output", color: "border-gray-600", dot: "bg-gray-400" },
