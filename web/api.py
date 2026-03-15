@@ -508,6 +508,76 @@ async def delete_proposal(proposal_id: str):
 
 # --- Chat endpoint ---
 
+# Domain type to DomainConfig mapping for project creation
+DOMAIN_CONFIGS = {
+    "nanogpt": {
+        "name": "NanoGPT training",
+        "description": "We run NanoGPT training experiments.",
+        "intervention_types": "config_change, probe, code_change",
+        "parameters": "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size",
+    },
+    "atari-rl": {
+        "name": "Atari RL",
+        "description": "We optimize Atari game agents using reinforcement learning.",
+        "intervention_types": "config_change, probe, code_change",
+        "parameters": "game, learning_rate, network_size, algorithm, n_envs, total_timesteps",
+    },
+    "generic": {
+        "name": "generic optimization",
+        "description": "We run experiments to optimize a target metric.",
+        "intervention_types": "config_change, probe, code_change",
+        "parameters": "any key-value pairs relevant to the domain",
+    },
+}
+
+
+import re as _re
+
+def _execute_chat_commands(response_text: str) -> str:
+    """Detect and execute structured commands in LLM chat response."""
+    # Look for CREATE_PROJECT command
+    pattern = r'```command\s*\n\s*CREATE_PROJECT\s+(\{.*?\})\s*\n\s*```'
+    match = _re.search(pattern, response_text, _re.DOTALL)
+    if not match:
+        # Also try without code fence (LLM might not wrap it)
+        pattern2 = r'CREATE_PROJECT\s+(\{.*?\})'
+        match = _re.search(pattern2, response_text)
+    if not match:
+        return response_text
+
+    try:
+        cmd = json.loads(match.group(1))
+        name = cmd.get("name", "Unnamed Project")
+        description = cmd.get("description", "")
+        domain_type = cmd.get("domain_type", "generic")
+        parameters = cmd.get("parameters", "")
+
+        # Build domain_config from type + custom parameters
+        domain_cfg = dict(DOMAIN_CONFIGS.get(domain_type, DOMAIN_CONFIGS["generic"]))
+        if parameters:
+            domain_cfg["parameters"] = parameters
+
+        store = get_store()
+        try:
+            pid = store.create_project(
+                name=name,
+                description=description,
+                domain_config=domain_cfg,
+            )
+        finally:
+            store.close()
+
+        # Replace command block with success message
+        success_msg = f"\n\n**Project created:** {name} (id: `{pid}`, domain: {domain_type})"
+        response_text = response_text[:match.start()] + success_msg + response_text[match.end():]
+    except json.JSONDecodeError as e:
+        response_text += f"\n\n(Failed to parse project command: {e})"
+    except Exception as e:
+        response_text += f"\n\n(Failed to create project: {e})"
+
+    return response_text
+
+
 class ChatRequest(BaseModel):
     messages: list[dict]  # [{"role": "user", "content": "..."}, ...]
 
@@ -554,7 +624,18 @@ async def chat(req: ChatRequest):
     obs_text = "\n".join(obs_lines) or "  None yet"
     queue_text = ", ".join(f"{k}: {v}" for k, v in counts.items())
 
-    system = f"""You are a research assistant for AutoResearcher2, an autonomous NanoGPT training experiment system.
+    # Existing projects for context
+    store2 = get_store()
+    try:
+        projects = store2.list_projects()
+        projects_text = "\n".join(
+            f"  - {p['name']} (id={p['id']}, active={p.get('active', True)})"
+            for p in projects
+        ) or "  No projects yet"
+    finally:
+        store2.close()
+
+    system = f"""You are a research assistant for AutoResearcher2, an autonomous experiment system.
 
 Current state (World Model v{wm.version}):
 
@@ -570,7 +651,31 @@ Recent observations (last 5):
 Queue: {queue_text}
 Total experiments: {len(observations)}, Success rate: {sum(1 for o in observations if o.outcome_success)}/{len(observations)}
 
-Be concise and direct. Lower val_bpb is better."""
+Existing projects:
+{projects_text}
+
+Be concise and direct. Lower val_bpb is better.
+
+## Project Management
+
+You can create research projects. When the user wants a new project, gather this info:
+- **name**: short project name (e.g. "Atari Breakout RL")
+- **description**: what we're optimizing
+- **domain_type**: one of "nanogpt", "atari-rl", or "generic"
+- **parameters**: comma-separated parameter names the system can vary
+
+Once you have enough info, emit a command block (the backend will detect and execute it):
+
+```command
+CREATE_PROJECT {{"name": "Project Name", "description": "What we optimize", "domain_type": "nanogpt|atari-rl|generic", "parameters": "param1,param2,param3"}}
+```
+
+Domain types:
+- **nanogpt**: NanoGPT training. Parameters: DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size
+- **atari-rl**: Atari RL agents. Parameters: game, learning_rate, network_size, algorithm, n_envs, total_timesteps
+- **generic**: Any optimization task. Parameters: whatever the user describes
+
+Ask the user clarifying questions first if the request is vague. Only emit the command when you have enough information."""
 
     # Build conversation for LLM
     conversation = [{"role": "system", "content": system}]
@@ -583,15 +688,20 @@ Be concise and direct. Lower val_bpb is better."""
         result = subprocess.run(
             ["claude", "-p", "--output-format", "text"],
             input=prompt_json,
-            capture_output=True, text=True, timeout=60,
+            capture_output=True, text=True, timeout=120,
         )
         if result.returncode != 0:
             return {"role": "assistant", "content": f"LLM error: {result.stderr[:200]}"}
-        return {"role": "assistant", "content": result.stdout.strip()}
+        response_text = result.stdout.strip()
     except FileNotFoundError:
         return {"role": "assistant", "content": "Claude CLI not available on this machine. Chat requires the research agent to run on the VM."}
     except Exception as e:
         return {"role": "assistant", "content": f"Error: {str(e)}"}
+
+    # Detect and execute commands in the response
+    response_text = _execute_chat_commands(response_text)
+
+    return {"role": "assistant", "content": response_text}
 
 
 # --- Worker management ---
