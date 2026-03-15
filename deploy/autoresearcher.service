@@ -1,0 +1,17 @@
+[Unit]
+Description=AutoResearcher2 Research Loop
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/github.com/erikdebruijn/autoresearcher2
+ExecStart=/root/.local/bin/uv run python scripts/run_v4_real.py --local-llm --cuda-devices 0,1 --database /root/github.com/erikdebruijn/autoresearcher2/research_v4.db
+Restart=on-failure
+RestartSec=30
+StandardOutput=append:/var/log/autoresearcher.log
+StandardError=append:/var/log/autoresearcher.log
+Environment=HOME=/root
+Environment=PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=multi-user.target
