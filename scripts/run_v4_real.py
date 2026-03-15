@@ -87,7 +87,7 @@ def main():
                         help="Seconds before a running proposal is considered stale (default: 30min)")
     parser.add_argument("--min-queue", type=int, default=5)
     parser.add_argument("--n-proposals", type=int, default=5)
-    parser.add_argument("--n-select", type=int, default=2)
+    parser.add_argument("--n-select", type=int, default=3)
     args = parser.parse_args()
 
     # Determine GPU devices
@@ -155,6 +155,7 @@ def main():
                 planners[project_id] = Planner(
                     planner_store, llm_call_fn=llm_fn,
                     min_queue_size=args.min_queue,
+                    min_todo=args.n_select + len(args.cuda_devices.split(",")),
                     n_proposals=args.n_proposals,
                     n_select=args.n_select,
                     project_id=project_id,

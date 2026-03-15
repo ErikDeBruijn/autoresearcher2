@@ -24,7 +24,7 @@ interface Observation {
 }
 
 const PROJECT_COLORS: Record<number, string> = {
-  0: "bg-blue-500",
+  0: "bg-green-500",
   1: "bg-green-500",
   2: "bg-purple-500",
   3: "bg-orange-500",
@@ -35,7 +35,7 @@ const PROJECT_COLORS: Record<number, string> = {
 };
 
 const PROJECT_HEX: Record<number, string> = {
-  0: "#3b82f6",
+  0: "#22c55e",
   1: "#22c55e",
   2: "#a855f7",
   3: "#f97316",
