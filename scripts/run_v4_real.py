@@ -131,9 +131,9 @@ def main():
                 if result is None:
                     break
                 executed += 1
-                metrics = result.get("outcome_metrics", {})
+                metrics = result.get("outcome_metrics") or {}
                 logger.info("Worker: success=%s val_bpb=%s",
-                           result["outcome_success"],
+                           result.get("outcome_success"),
                            metrics.get("val_bpb", "n/a"))
 
             logger.info("Executed %d experiments this cycle", executed)
