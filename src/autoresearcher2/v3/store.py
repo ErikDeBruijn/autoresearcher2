@@ -499,20 +499,37 @@ class Store:
         self.conn.execute(f"UPDATE queue SET {set_clause} WHERE id = ?", values)
         self.conn.commit()
 
-    def claim_next_todo(self, worker_id: str) -> Proposal | None:
+    def claim_next_todo(self, worker_id: str, project_ids: list[str] | None = None) -> Proposal | None:
         """Atomically claim highest-ranked todo item from active projects.
 
         Retries up to 3 times in case of concurrent claims by other workers.
         Skips proposals from paused (active=0) projects.
+
+        Args:
+            worker_id: Worker identifier for tracking.
+            project_ids: If set, only claim from these project IDs.
+                         Use to restrict CPU workers to Atari, GPU workers to NanoGPT, etc.
         """
         for _attempt in range(3):
-            cursor = self.conn.execute(
-                """SELECT q.* FROM queue q
-                   LEFT JOIN projects p ON q.project_id = p.id
-                   WHERE q.stage = 'todo'
-                     AND (q.project_id IS NULL OR p.active = 1)
-                   ORDER BY q.rank ASC NULLS LAST, q.created_at ASC LIMIT 1"""
-            )
+            if project_ids is not None:
+                placeholders = ",".join("?" for _ in project_ids)
+                cursor = self.conn.execute(
+                    f"""SELECT q.* FROM queue q
+                       LEFT JOIN projects p ON q.project_id = p.id
+                       WHERE q.stage = 'todo'
+                         AND (q.project_id IS NULL OR p.active = 1)
+                         AND q.project_id IN ({placeholders})
+                       ORDER BY q.rank ASC NULLS LAST, q.created_at ASC LIMIT 1""",
+                    project_ids,
+                )
+            else:
+                cursor = self.conn.execute(
+                    """SELECT q.* FROM queue q
+                       LEFT JOIN projects p ON q.project_id = p.id
+                       WHERE q.stage = 'todo'
+                         AND (q.project_id IS NULL OR p.active = 1)
+                       ORDER BY q.rank ASC NULLS LAST, q.created_at ASC LIMIT 1"""
+                )
             row = cursor.fetchone()
             if row is None:
                 return None

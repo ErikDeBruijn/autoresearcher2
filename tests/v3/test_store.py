@@ -301,3 +301,72 @@ def test_structured_data_queryable(store):
     assert row["intent"] == "Test lr effect"
     spec = json.loads(row["intervention_spec"])
     assert spec["MATRIX_LR"] == "0.08"
+
+
+def test_claim_next_todo_with_project_filter(store):
+    """CPU/GPU worker separation: claim only proposals for specific projects."""
+    # Create two projects
+    store.conn.execute(
+        "INSERT INTO projects (id, name, active, created_at) VALUES (?, ?, ?, ?)",
+        ("proj_atari", "Atari Breakout", 1, 1.0),
+    )
+    store.conn.execute(
+        "INSERT INTO projects (id, name, active, created_at) VALUES (?, ?, ?, ?)",
+        ("proj_gpt", "NanoGPT", 1, 1.0),
+    )
+    store.conn.commit()
+
+    p_atari = Proposal(
+        intent="Test Atari config", rationale="test", expected_learning="test",
+        intervention_type="config_change", intervention_spec={"game": "Breakout"},
+    )
+    p_atari.project_id = "proj_atari"
+    p_atari.set_critic_decision("accept", rank=1, rationale="good")
+    p_atari.promote("todo")
+    store.save_proposal(p_atari)
+
+    p_gpt = Proposal(
+        intent="Test GPT lr", rationale="test", expected_learning="test",
+        intervention_type="config_change", intervention_spec={"lr": "0.04"},
+    )
+    p_gpt.project_id = "proj_gpt"
+    p_gpt.set_critic_decision("accept", rank=1, rationale="good")
+    p_gpt.promote("todo")
+    store.save_proposal(p_gpt)
+
+    # CPU worker claims only Atari
+    claimed = store.claim_next_todo("cpu_worker", project_ids=["proj_atari"])
+    assert claimed is not None
+    assert claimed.id == p_atari.id
+
+    # GPU worker claims only NanoGPT
+    claimed = store.claim_next_todo("gpu_worker", project_ids=["proj_gpt"])
+    assert claimed is not None
+    assert claimed.id == p_gpt.id
+
+    # Both claimed — nothing left for either
+    assert store.claim_next_todo("cpu_worker", project_ids=["proj_atari"]) is None
+    assert store.claim_next_todo("gpu_worker", project_ids=["proj_gpt"]) is None
+
+
+def test_claim_next_todo_without_filter_gets_all(store):
+    """Without project_ids filter, workers claim any project."""
+    store.conn.execute(
+        "INSERT INTO projects (id, name, active, created_at) VALUES (?, ?, ?, ?)",
+        ("proj_any", "AnyProject", 1, 1.0),
+    )
+    store.conn.commit()
+
+    p = Proposal(
+        intent="generic", rationale="test", expected_learning="test",
+        intervention_type="probe", intervention_spec={"x": "1"},
+    )
+    p.project_id = "proj_any"
+    p.set_critic_decision("accept", rank=1, rationale="ok")
+    p.promote("todo")
+    store.save_proposal(p)
+
+    # No filter — claims anything
+    claimed = store.claim_next_todo("any_worker")
+    assert claimed is not None
+    assert claimed.id == p.id

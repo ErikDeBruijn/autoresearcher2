@@ -93,7 +93,7 @@ class Workspace:
         """Count proposals in a given stage."""
         return len(list(self._stage_dir(stage).glob("*.json")))
 
-    def claim_next_todo(self, worker_id: str) -> Proposal | None:
+    def claim_next_todo(self, worker_id: str, project_ids: list[str] | None = None) -> Proposal | None:
         """Atomically claim the highest-ranked todo item for a worker.
 
         Moves the file from todo/ to running/ as an atomic operation.

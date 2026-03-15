@@ -26,14 +26,16 @@ class Worker:
         workspace: Workspace,
         execute_fn=None,
         worker_id: str = "worker_0",
+        project_ids: list[str] | None = None,
     ):
         self.workspace = workspace
         self.execute_fn = execute_fn
         self.worker_id = worker_id
+        self.project_ids = project_ids
 
     def tick(self) -> dict | None:
         """Try to claim and execute one todo item. Returns observation dict or None."""
-        proposal = self.workspace.claim_next_todo(self.worker_id)
+        proposal = self.workspace.claim_next_todo(self.worker_id, project_ids=self.project_ids)
         if proposal is None:
             return None
 
