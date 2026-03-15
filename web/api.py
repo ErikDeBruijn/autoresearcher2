@@ -897,8 +897,19 @@ def get_latest_report():
 
 
 @app.get("/api/report/download")
-def download_report():
-    """Serve the latest generated PDF file."""
+def download_report(regenerate: bool = True):
+    """Generate (if needed) and serve the PDF report.
+
+    With regenerate=True (default), always regenerates for fresh data.
+    """
+    if regenerate:
+        result = _subprocess.run(
+            ["uv", "run", "python", str(REPORT_SCRIPT), "--db", str(DB_PATH), "--no-llm"],
+            capture_output=True, text=True, timeout=120,
+            cwd=str(Path(__file__).parent.parent),
+        )
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"Report generation failed: {result.stderr[-300:]}")
     pdf = _find_latest_pdf()
     if not pdf:
         raise HTTPException(status_code=404, detail="No report found")
