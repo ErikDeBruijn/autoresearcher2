@@ -198,9 +198,16 @@ export default function KanbanBoard() {
 
   // Update page title with active projects and their best scores
   useEffect(() => {
+    const getEmoji = (name: string) => {
+      const lower = name.toLowerCase();
+      if (lower.includes("atari") || lower.includes("breakout") || lower.includes("pong")) return "🕹️";
+      if (lower.includes("gpt") || lower.includes("llm") || lower.includes("nano")) return "💬";
+      return "🔬";
+    };
+
     const activeProjects = projects.filter((p) => p.active);
     if (activeProjects.length === 0) {
-      document.title = "AutoResearcher2";
+      document.title = "AR2";
       return;
     }
     // Compute best score per active project from queue data
@@ -219,10 +226,11 @@ export default function KanbanBoard() {
           if (best === null || (maximize ? val > best : val < best)) best = val;
         }
       }
-      const score = best != null ? ` ${best.toFixed(4)}` : "";
-      return `${proj.name}${score}`;
+      const emoji = getEmoji(proj.name);
+      const score = best != null ? best.toFixed(4) : "";
+      return `${emoji}${score}`;
     });
-    document.title = `${parts.join(" | ")} — AutoResearcher2`;
+    document.title = `AR2 ${parts.join(" ")}`;
   }, [projects, queue]);
 
   const moveProposal = async (proposalId: string, targetStage: string) => {
