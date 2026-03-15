@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface ObservationData {
   outcome_success: boolean;
@@ -52,15 +52,41 @@ function timeAgo(ts: number): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-export default function ProposalCard({ proposal }: { proposal: Proposal }) {
+export default function ProposalCard({
+  proposal,
+  isHighlighted,
+  onSelectObservation,
+}: {
+  proposal: Proposal;
+  isHighlighted?: boolean;
+  onSelectObservation?: (obsId: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isHighlighted) {
+      setExpanded(true);
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [isHighlighted]);
+
+  const handleClick = () => {
+    setExpanded(!expanded);
+    if (proposal.observation_id && onSelectObservation) {
+      onSelectObservation(expanded ? "" : proposal.observation_id);
+    }
+  };
 
   return (
     <div
+      ref={cardRef}
       className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-gray-500 ${
-        proposal.status === "running" ? "border-yellow-600 bg-yellow-950 animate-pulse" : "border-gray-700 bg-gray-800"
+        isHighlighted
+          ? "ring-2 ring-cyan-500 border-cyan-600 bg-cyan-950/30"
+          : proposal.status === "running" ? "border-yellow-600 bg-yellow-950 animate-pulse" : "border-gray-700 bg-gray-800"
       }`}
-      onClick={() => setExpanded(!expanded)}
+      onClick={handleClick}
     >
       <div className="flex items-start justify-between gap-2">
         <h4 className="text-sm font-medium leading-tight">{proposal.intent}</h4>

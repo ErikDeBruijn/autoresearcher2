@@ -55,9 +55,11 @@ interface ProgressChartProps {
   observations: Observation[];
   metric: string;
   color: string;
+  selectedObservationId?: string;
+  onSelectObservation?: (obsId: string) => void;
 }
 
-function ProgressChart({ observations, metric, color }: ProgressChartProps) {
+function ProgressChart({ observations, metric, color, selectedObservationId, onSelectObservation }: ProgressChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [tooltip, setTooltip] = useState<{
     x: number;
@@ -103,7 +105,7 @@ function ProgressChart({ observations, metric, color }: ProgressChartProps) {
       bestSoFar = v;
       records.push({ run: i, value: v });
     }
-    return { x: xScale(i), y: yScale(v), value: v, isRecord, spec: o.intervention_spec, run: i };
+    return { x: xScale(i), y: yScale(v), value: v, isRecord, spec: o.intervention_spec, run: i, obsId: o.id };
   });
 
   // Build step path for records
@@ -128,34 +130,38 @@ function ProgressChart({ observations, metric, color }: ProgressChartProps) {
   const nTicks = 5;
   const yTicks = Array.from({ length: nTicks }, (_, i) => yMin + ((yMax - yMin) * i) / (nTicks - 1));
 
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+  const findNearest = (e: React.MouseEvent<SVGSVGElement>) => {
     const svg = svgRef.current;
-    if (!svg) return;
+    if (!svg) return null;
     const rect = svg.getBoundingClientRect();
     const mx = ((e.clientX - rect.left) / rect.width) * width;
-    // Find nearest point
     let nearest = points[0];
     let minDist = Infinity;
     for (const p of points) {
       const d = Math.abs(p.x - mx);
-      if (d < minDist) {
-        minDist = d;
-        nearest = p;
-      }
+      if (d < minDist) { minDist = d; nearest = p; }
     }
-    if (minDist < 30) {
-      setTooltip({
-        x: nearest.x,
-        y: nearest.y,
-        run: nearest.run + 1,
-        value: nearest.value,
-        isRecord: nearest.isRecord,
-        spec: nearest.spec,
-      });
+    return minDist < 30 ? nearest : null;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const nearest = findNearest(e);
+    if (nearest) {
+      setTooltip({ x: nearest.x, y: nearest.y, run: nearest.run + 1, value: nearest.value, isRecord: nearest.isRecord, spec: nearest.spec });
     } else {
       setTooltip(null);
     }
   };
+
+  const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    const nearest = findNearest(e);
+    if (nearest && onSelectObservation) {
+      onSelectObservation(selectedObservationId === nearest.obsId ? "" : nearest.obsId);
+    }
+  };
+
+  // Find selected point for highlight
+  const selectedPoint = selectedObservationId ? points.find((p) => p.obsId === selectedObservationId) : null;
 
   return (
     <div className="relative">
@@ -165,6 +171,8 @@ function ProgressChart({ observations, metric, color }: ProgressChartProps) {
         className="w-full max-w-[600px] h-auto"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setTooltip(null)}
+        onClick={handleClick}
+        style={{ cursor: "crosshair" }}
       >
         {/* Grid lines */}
         {yTicks.map((v, i) => (
@@ -207,6 +215,14 @@ function ProgressChart({ observations, metric, color }: ProgressChartProps) {
             opacity={p.isRecord ? 1 : 0.6}
           />
         ))}
+
+        {/* Selected point highlight */}
+        {selectedPoint && (
+          <>
+            <circle cx={selectedPoint.x} cy={selectedPoint.y} r={8} fill="none" stroke="#06b6d4" strokeWidth={2} />
+            <line x1={selectedPoint.x} y1={pad.top} x2={selectedPoint.x} y2={pad.top + plotH} stroke="#06b6d4" strokeWidth={1} strokeDasharray="4 2" opacity={0.5} />
+          </>
+        )}
 
         {/* Tooltip crosshair */}
         {tooltip && (
@@ -251,10 +267,14 @@ export default function ProjectFilter({
   projects,
   visibleProjects,
   onToggle,
+  selectedObservationId,
+  onSelectObservation,
 }: {
   projects: Project[];
   visibleProjects: Set<string>;
   onToggle: (projectId: string) => void;
+  selectedObservationId?: string;
+  onSelectObservation?: (obsId: string) => void;
 }) {
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [observations, setObservations] = useState<Observation[]>([]);
@@ -303,19 +323,24 @@ export default function ProjectFilter({
 
         return (
           <div key={p.id}>
-            <div className="flex items-center gap-3 px-4 py-2">
-              {/* Filter toggle */}
+            <div
+              className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-800/50 transition-colors"
+              onClick={() => setExpandedProject(expanded ? null : p.id)}
+            >
+              {/* Visibility toggle (eye icon) */}
               <button
-                onClick={() => onToggle(p.id)}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-all ${
-                  visible
-                    ? "bg-gray-800 text-gray-200 border border-gray-600"
-                    : "bg-gray-900 text-gray-400 border border-gray-800"
-                }`}
+                onClick={(e) => { e.stopPropagation(); onToggle(p.id); }}
+                className="text-sm transition-opacity"
+                title={visible ? "Hide from kanban" : "Show in kanban"}
               >
-                <span className={`w-2 h-2 rounded-full ${visible ? color : "bg-gray-700"}`} />
-                {p.name}
+                {visible ? "👁" : "👁‍🗨"}
               </button>
+
+              {/* Project name */}
+              <span className={`flex items-center gap-1.5 text-xs font-medium ${visible ? "text-gray-200" : "text-gray-500"}`}>
+                <span className={`w-2 h-2 rounded-full ${color}`} />
+                {p.name}
+              </span>
 
               {/* Target metric + best value */}
               <span className="text-xs text-gray-500">minimize</span>
@@ -331,13 +356,7 @@ export default function ProjectFilter({
                 <span className="text-xs text-gray-600">{projObs.filter((o) => o.outcome_success).length} runs</span>
               )}
 
-              {/* Expand toggle */}
-              <button
-                onClick={() => setExpandedProject(expanded ? null : p.id)}
-                className="text-xs text-gray-500 hover:text-gray-300 ml-auto transition-colors"
-              >
-                {expanded ? "▼ hide chart" : "▶ progress"}
-              </button>
+              <span className="text-xs text-gray-600 ml-auto">{expanded ? "▼" : "▶"}</span>
 
               {!p.active && <span className="text-xs text-gray-600">(paused)</span>}
             </div>
@@ -345,7 +364,13 @@ export default function ProjectFilter({
             {/* Collapsible chart */}
             {expanded && (
               <div className="px-4 pb-3">
-                <ProgressChart observations={projObs} metric={metric} color={hex} />
+                <ProgressChart
+                  observations={projObs}
+                  metric={metric}
+                  color={hex}
+                  selectedObservationId={selectedObservationId}
+                  onSelectObservation={onSelectObservation}
+                />
               </div>
             )}
           </div>

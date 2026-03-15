@@ -32,10 +32,14 @@ function WorkerSlot({
   workerId,
   proposals,
   info,
+  selectedObservationId,
+  onSelectObservation,
 }: {
   workerId: string;
   proposals: ProposalWithWorker[];
   info?: WorkerInfo;
+  selectedObservationId?: string;
+  onSelectObservation?: (obsId: string) => void;
 }) {
   const active = proposals.length > 0;
   return (
@@ -50,7 +54,7 @@ function WorkerSlot({
       {proposals.length > 0 ? (
         <div className="space-y-2">
           {proposals.map((p) => (
-            <ProposalCard key={p.id} proposal={p} />
+            <ProposalCard key={p.id} proposal={p} isHighlighted={!!selectedObservationId && p.observation_id === selectedObservationId} onSelectObservation={onSelectObservation} />
           ))}
         </div>
       ) : (
@@ -65,6 +69,7 @@ export default function KanbanBoard() {
   const [workers, setWorkers] = useState<Record<string, WorkerInfo>>({});
   const [projects, setProjects] = useState<Project[]>([]);
   const [visibleProjects, setVisibleProjects] = useState<Set<string>>(new Set());
+  const [selectedObservationId, setSelectedObservationId] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [dragging, setDragging] = useState(false);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
@@ -219,14 +224,17 @@ export default function KanbanBoard() {
         projects={projects}
         visibleProjects={visibleProjects}
         onToggle={toggleProject}
+        selectedObservationId={selectedObservationId}
+        onSelectObservation={setSelectedObservationId}
       />
       <div className="flex gap-3 p-4 flex-1 min-h-0 overflow-x-auto">
         {STAGES.map((stage) => {
           const rawProposals = queue[stage.key] || [];
           // Running column always shows all projects (never filtered)
-          const proposals = stage.key === "running"
+          const proposals = (stage.key === "running"
             ? rawProposals.map(enrichProposal)
-            : rawProposals.map(enrichProposal).filter(isVisible);
+            : rawProposals.map(enrichProposal).filter(isVisible)
+          ).sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
           const dropHighlight = dragOverStage === stage.key;
 
           // Running column gets special worker-slot treatment
@@ -253,13 +261,15 @@ export default function KanbanBoard() {
                       workerId={wid}
                       proposals={proposalsByWorker[wid] || []}
                       info={workers[wid]}
+                      selectedObservationId={selectedObservationId}
+                      onSelectObservation={setSelectedObservationId}
                     />
                   ))}
                   {unassigned.length > 0 && (
                     <div className="border border-gray-700 rounded-lg p-2">
                       <div className="text-xs text-gray-500 mb-2">Unassigned</div>
                       {unassigned.map((p) => (
-                        <ProposalCard key={p.id} proposal={p} />
+                        <ProposalCard key={p.id} proposal={p} isHighlighted={!!selectedObservationId && p.observation_id === selectedObservationId} onSelectObservation={setSelectedObservationId} />
                       ))}
                     </div>
                   )}
@@ -300,7 +310,7 @@ export default function KanbanBoard() {
                     className={isDraggable(stage.key) ? "cursor-grab active:cursor-grabbing" : ""}
                     data-proposal-id={p.id}
                   >
-                    <ProposalCard proposal={p} />
+                    <ProposalCard proposal={p} isHighlighted={!!selectedObservationId && p.observation_id === selectedObservationId} onSelectObservation={setSelectedObservationId} />
                   </div>
                 ))}
                 {proposals.length === 0 && !dropHighlight && (
