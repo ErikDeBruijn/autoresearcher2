@@ -508,7 +508,26 @@ async def websocket_endpoint(ws: WebSocket):
         manager.disconnect(ws)
 
 
-# --- Serve frontend static files ---
+# --- Serve frontend static files with cache control ---
+from starlette.responses import Response
+from starlette.middleware.base import BaseHTTPMiddleware
+
+
+class CacheControlMiddleware(BaseHTTPMiddleware):
+    """Set cache headers: no-cache for HTML, long cache for hashed assets."""
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        if path.startswith("/_next/static/"):
+            # Hashed assets — cache forever
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif path == "/" or path.endswith(".html"):
+            # HTML — always revalidate
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        return response
+
+
 frontend_dist = Path(__file__).parent / "frontend" / "dist"
 if frontend_dist.exists():
+    app.add_middleware(CacheControlMiddleware)
     app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
