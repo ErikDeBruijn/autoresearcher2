@@ -4,13 +4,11 @@ import { useState } from "react";
 import StatsBar from "./components/StatsBar";
 import KanbanBoard from "./components/KanbanBoard";
 import ProposalForm from "./components/ProposalForm";
-import WorldModelPanel from "./components/WorldModelPanel";
 import ChatSidebar from "./components/ChatSidebar";
 import WorkerControl from "./components/WorkerControl";
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
-  const [showWorldModel, setShowWorldModel] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showWorker, setShowWorker] = useState(false);
 
@@ -39,12 +37,6 @@ export default function Dashboard() {
             Workers
           </button>
           <button
-            onClick={() => setShowWorldModel(true)}
-            className="px-3 py-1.5 text-xs bg-gray-800 hover:bg-gray-700 rounded border border-gray-700"
-          >
-            World Model
-          </button>
-          <button
             onClick={() => setShowForm(true)}
             className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 rounded font-medium"
           >
@@ -61,7 +53,6 @@ export default function Dashboard() {
       </div>
 
       {showForm && <ProposalForm onClose={() => setShowForm(false)} />}
-      {showWorldModel && <WorldModelPanel onClose={() => setShowWorldModel(false)} />}
       {showWorker && <WorkerControl onClose={() => setShowWorker(false)} />}
     </div>
   );

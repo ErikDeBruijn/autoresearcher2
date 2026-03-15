@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import WorldModelPanel from "./WorldModelPanel";
 
 interface Project {
   id: string;
@@ -283,6 +284,7 @@ export default function ProjectFilter({
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [observations, setObservations] = useState<Observation[]>([]);
   const [projectBest, setProjectBest] = useState<Record<string, number>>({});
+  const [worldModelProject, setWorldModelProject] = useState<{ id: string; name: string } | null>(null);
 
   // Fetch observations for chart data
   useEffect(() => {
@@ -366,7 +368,16 @@ export default function ProjectFilter({
                 <span className="text-xs font-mono text-gray-500">{(p.energy_kwh * 1000).toFixed(0)}Wh</span>
               )}
 
-              <span className="text-xs text-gray-600 ml-auto">{expanded ? "▼" : "▶"}</span>
+              {/* World Model button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setWorldModelProject({ id: p.id, name: p.name }); }}
+                className="ml-auto px-1.5 py-0.5 text-xs rounded border border-gray-700 bg-gray-800 hover:bg-gray-700 text-purple-400 hover:text-purple-300 transition-colors"
+                title={`World Model for ${p.name}`}
+              >
+                WM
+              </button>
+
+              <span className="text-xs text-gray-600">{expanded ? "▼" : "▶"}</span>
 
               {!p.active && <span className="text-xs text-gray-600">(paused)</span>}
             </div>
@@ -401,6 +412,14 @@ export default function ProjectFilter({
           No project
         </button>
       </div>
+
+      {worldModelProject && (
+        <WorldModelPanel
+          projectId={worldModelProject.id}
+          projectName={worldModelProject.name}
+          onClose={() => setWorldModelProject(null)}
+        />
+      )}
     </div>
   );
 }

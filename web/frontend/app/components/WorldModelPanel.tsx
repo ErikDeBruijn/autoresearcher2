@@ -26,15 +26,18 @@ interface WorldModelData {
   cost_beliefs: Record<string, Record<string, number>>;
 }
 
-export default function WorldModelPanel({ onClose }: { onClose: () => void }) {
+export default function WorldModelPanel({ onClose, projectId, projectName }: { onClose: () => void; projectId?: string; projectName?: string }) {
   const [wm, setWm] = useState<WorldModelData | null>(null);
 
   useEffect(() => {
-    fetch(`${API}/api/world-model`)
+    const url = projectId
+      ? `${API}/api/world-model?project_id=${encodeURIComponent(projectId)}`
+      : `${API}/api/world-model`;
+    fetch(url)
       .then((r) => r.json())
       .then(setWm)
       .catch(() => {});
-  }, []);
+  }, [projectId]);
 
   if (!wm) return null;
 
@@ -45,7 +48,7 @@ export default function WorldModelPanel({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">World Model v{wm.version}</h2>
+          <h2 className="text-lg font-semibold">World Model v{wm.version}{projectName ? ` — ${projectName}` : ""}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-300">✕</button>
         </div>
 
