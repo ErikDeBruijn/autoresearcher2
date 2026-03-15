@@ -20,6 +20,9 @@ interface Stats {
 interface GpuInfo {
   utilization_pct: number;
   power_w: number;
+  temperature_c?: number | null;
+  vram_used_gb?: number | null;
+  vram_total_gb?: number | null;
 }
 
 interface EnergyStatus {
@@ -117,13 +120,24 @@ export default function StatsBar() {
           <a href="http://pve03.home:8377/" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 font-mono hover:text-emerald-400 transition-colors">{Math.round(workerStatus.energy.shelly_total_w)}W total</a>
         )}
         {workerStatus?.gpus ? (
-          workerStatus.gpus.map((gpu, i) => (
-            <div key={i} className="flex items-center gap-1">
-              <span className={`w-2 h-2 rounded-full ${gpu.utilization_pct > 10 ? "bg-green-400 animate-pulse" : "bg-gray-600"}`} />
-              <span className="text-xs text-gray-400">GPU{i}</span>
-              <span className="text-xs font-mono">{Math.round(gpu.power_w)}W</span>
-            </div>
-          ))
+          workerStatus.gpus.map((gpu, i) => {
+            const tempColor = gpu.temperature_c != null
+              ? gpu.temperature_c > 85 ? "text-red-400" : gpu.temperature_c > 75 ? "text-yellow-400" : "text-gray-400"
+              : "";
+            return (
+              <div key={i} className="flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${gpu.utilization_pct > 10 ? "bg-green-400 animate-pulse" : "bg-gray-600"}`} />
+                <span className="text-xs font-mono text-gray-300">GPU{i}: {gpu.utilization_pct}%</span>
+                {gpu.vram_used_gb != null && gpu.vram_total_gb != null && (
+                  <span className="text-xs font-mono text-gray-500">{gpu.vram_used_gb.toFixed(1)}/{gpu.vram_total_gb.toFixed(0)}GB</span>
+                )}
+                {gpu.temperature_c != null && (
+                  <span className={`text-xs font-mono ${tempColor}`}>{gpu.temperature_c}°C</span>
+                )}
+                <span className="text-xs font-mono text-gray-600">{Math.round(gpu.power_w)}W</span>
+              </div>
+            );
+          })
         ) : workers.length > 0 ? (
           workers.map(([wid, w]) => (
             <div key={wid} className="flex items-center gap-1">

@@ -569,12 +569,20 @@ def get_worker_status():
                 data = json.loads(resp.read())
                 gpu_powers = data.get("gpu_powers_w", {})
                 gpu_utils = data.get("gpu_utilizations_pct", {})
+                gpu_temps = data.get("gpu_temperatures_c", {})
+                gpu_vram = data.get("gpu_vram_gb", {})
                 gpu_info = []
                 for gpu_id in sorted(gpu_powers.keys(), key=int):
-                    gpu_info.append({
+                    info = {
                         "utilization_pct": gpu_utils.get(str(gpu_id), gpu_utils.get(int(gpu_id), 0)),
                         "power_w": gpu_powers[gpu_id],
-                    })
+                        "temperature_c": gpu_temps.get(str(gpu_id), gpu_temps.get(int(gpu_id), None)),
+                    }
+                    vram = gpu_vram.get(str(gpu_id), gpu_vram.get(int(gpu_id), None))
+                    if vram:
+                        info["vram_used_gb"] = vram.get("used_gb")
+                        info["vram_total_gb"] = vram.get("total_gb")
+                    gpu_info.append(info)
                 energy_status = {
                     "shelly_total_w": data.get("shelly_total_w"),
                     "system_base_w": data.get("system_base_w"),
