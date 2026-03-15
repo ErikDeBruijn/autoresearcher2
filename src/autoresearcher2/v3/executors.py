@@ -24,7 +24,10 @@ COST_TRACKER_URL = "http://pve03.local:8377"
 
 
 def _start_cost_job(gpu: int, label: str, client: str = "autoresearcher") -> str | None:
-    """Start a cost tracking job. Returns job_id or None on failure."""
+    """Start a cost tracking job. Returns job_id or None on failure.
+
+    If a stale job exists on this GPU, stops it first to avoid 409 conflicts.
+    """
     try:
         data = json.dumps({"gpu": gpu, "client": client, "label": label}).encode()
         req = urllib.request.Request(
@@ -36,6 +39,33 @@ def _start_cost_job(gpu: int, label: str, client: str = "autoresearcher") -> str
         with urllib.request.urlopen(req, timeout=5) as resp:
             result = json.loads(resp.read())
             return result.get("job_id")
+    except urllib.error.HTTPError as e:
+        if e.code == 409:
+            # Conflict: stale job on this GPU. Find and stop it, then retry.
+            logger.info("Cost tracker 409 on GPU %d — clearing stale job", gpu)
+            try:
+                status_req = urllib.request.Request(f"{COST_TRACKER_URL}/status")
+                with urllib.request.urlopen(status_req, timeout=5) as resp:
+                    status = json.loads(resp.read())
+                for job_id, job in status.get("active_jobs", {}).items():
+                    if job.get("gpu") == gpu:
+                        _stop_cost_job(job_id)
+                        logger.info("Stopped stale job %s on GPU %d", job_id, gpu)
+                # Retry start
+                req2 = urllib.request.Request(
+                    f"{COST_TRACKER_URL}/job/start",
+                    data=data,
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req2, timeout=5) as resp:
+                    result = json.loads(resp.read())
+                    return result.get("job_id")
+            except Exception as retry_err:
+                logger.warning("Cost tracker retry failed: %s", retry_err)
+                return None
+        logger.warning("Cost tracker start failed: %s", e)
+        return None
     except Exception as e:
         logger.warning("Cost tracker start failed: %s", e)
         return None
