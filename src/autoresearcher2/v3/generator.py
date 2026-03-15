@@ -46,9 +46,12 @@ class DomainConfig:
     intervention_types: str = "config_change (modify training hyperparameters) or probe (short training run to test hypothesis cheaply)"
     parameters: str = "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size"
     diversity_hint: str = "Mix of config_change (full run) and probe (short run, include \"run_steps\" in spec)"
+    hardware: str = ""
 
 
-NANOGPT_DOMAIN = DomainConfig()
+NANOGPT_DOMAIN = DomainConfig(
+    hardware="2x NVIDIA RTX PRO 6000 Blackwell Max-Q (96GB VRAM each). Experiments run on one GPU at a time. VRAM is NOT a bottleneck — 96GB is enormous for NanoGPT scale models. Focus on compute efficiency (wall time, val_bpb per GPU-hour) rather than memory constraints."
+)
 
 ATARI_DOMAIN = DomainConfig(
     name="Atari RL",
@@ -86,6 +89,7 @@ Generate {n_proposals} diverse research proposals. You are the creative, diverge
 - Propose experiments that would resolve tensions
 - Consider cheap probes before expensive full experiments
 - {domain.description} Available intervention types are ONLY: {domain.intervention_types}
+{f"- Hardware: {domain.hardware}" if domain.hardware else ""}
 - Prioritize proposals that teach us something regardless of outcome
 
 ## COGNITIVE ORDER (follow this for each proposal)
