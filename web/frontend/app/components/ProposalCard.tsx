@@ -85,6 +85,11 @@ export default function ProposalCard({ proposal }: { proposal: Proposal }) {
         {proposal.observation_id && (
           <span className="text-xs text-green-400">✓ observed</span>
         )}
+        {proposal.observation?.outcome_metrics?.val_bpb != null && (
+          <span className="text-xs font-mono font-bold text-cyan-300">
+            val_bpb: {proposal.observation.outcome_metrics.val_bpb.toFixed(4)}
+          </span>
+        )}
         {proposal.observation?.cost_eur != null && (
           <span className="text-xs text-emerald-400">{proposal.observation.cost_eur.toFixed(3)}€</span>
         )}
