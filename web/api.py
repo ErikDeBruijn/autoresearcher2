@@ -469,6 +469,24 @@ async def create_proposal(data: ProposalCreate):
         store.close()
 
 
+@app.post("/api/proposals/{proposal_id}/cancel")
+async def cancel_proposal(proposal_id: str):
+    """Cancel a running proposal: move it back to backlog."""
+    store = get_store()
+    try:
+        if store.cancel_proposal(proposal_id):
+            await manager.broadcast({
+                "type": "proposal_moved",
+                "proposal_id": proposal_id,
+                "from_stage": "running",
+                "to_stage": "backlog",
+            })
+            return {"status": "ok", "proposal_id": proposal_id}
+        raise HTTPException(status_code=404, detail=f"Proposal {proposal_id} not found in running stage")
+    finally:
+        store.close()
+
+
 @app.post("/api/proposals/{proposal_id}/promote")
 async def promote_proposal(proposal_id: str, target_stage: str = "todo"):
     """Move a proposal to a different stage."""

@@ -217,3 +217,36 @@ def test_count_proposals_by_project(store):
 
     assert store.count_proposals("backlog", project_id=pid) == 3
     assert store.count_proposals("backlog") == 3  # all
+
+
+def test_cancel_running_proposal(store):
+    """Cancel a running proposal: moves it back to backlog."""
+    p = Proposal(
+        intent="test cancel", rationale="test", expected_learning="test",
+        intervention_type="config_change", intervention_spec={"x": "1"},
+    )
+    p.promote("todo")
+    store.save_proposal(p)
+
+    # Claim it (moves to running)
+    claimed = store.claim_next_todo("worker_0")
+    assert claimed is not None
+    assert store.count_proposals("running") == 1
+
+    # Cancel it
+    assert store.cancel_proposal(claimed.id) is True
+    assert store.count_proposals("running") == 0
+    assert store.count_proposals("backlog") == 1
+
+    # Can't cancel again
+    assert store.cancel_proposal(claimed.id) is False
+
+
+def test_cancel_non_running_proposal_fails(store):
+    """Cancel only works on running proposals."""
+    p = Proposal(
+        intent="test", rationale="test", expected_learning="test",
+        intervention_type="config_change", intervention_spec={"x": "1"},
+    )
+    store.save_proposal(p)  # in backlog
+    assert store.cancel_proposal(p.id) is False

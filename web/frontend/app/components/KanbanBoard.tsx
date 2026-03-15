@@ -34,12 +34,16 @@ function WorkerSlot({
   info,
   selectedObservationId,
   onSelectObservation,
+  onDragStart,
+  onDragEnd,
 }: {
   workerId: string;
   proposals: ProposalWithWorker[];
   info?: WorkerInfo;
   selectedObservationId?: string;
   onSelectObservation?: (obsId: string) => void;
+  onDragStart?: (e: React.DragEvent, proposalId: string) => void;
+  onDragEnd?: () => void;
 }) {
   const active = proposals.length > 0;
   return (
@@ -54,7 +58,15 @@ function WorkerSlot({
       {proposals.length > 0 ? (
         <div className="space-y-2">
           {proposals.map((p) => (
-            <ProposalCard key={p.id} proposal={p} isHighlighted={!!selectedObservationId && p.observation_id === selectedObservationId} onSelectObservation={onSelectObservation} />
+            <div
+              key={p.id}
+              draggable
+              onDragStart={(e) => onDragStart?.(e, p.id)}
+              onDragEnd={onDragEnd}
+              className="cursor-grab active:cursor-grabbing"
+            >
+              <ProposalCard proposal={p} isHighlighted={!!selectedObservationId && p.observation_id === selectedObservationId} onSelectObservation={onSelectObservation} />
+            </div>
           ))}
         </div>
       ) : (
@@ -182,8 +194,9 @@ export default function KanbanBoard() {
     fetchData();
   };
 
-  const handleDragStart = (e: React.DragEvent, proposalId: string) => {
+  const handleDragStart = (e: React.DragEvent, proposalId: string, fromStage?: string) => {
     e.dataTransfer.setData("text/plain", proposalId);
+    e.dataTransfer.setData("application/x-stage", fromStage || "");
     e.dataTransfer.effectAllowed = "move";
     setDragging(true);
   };
@@ -208,11 +221,23 @@ export default function KanbanBoard() {
     }
   };
 
+  const cancelProposal = async (proposalId: string) => {
+    await fetch(`${API}/api/proposals/${proposalId}/cancel`, { method: "POST" });
+    fetchData();
+  };
+
   const handleDrop = (e: React.DragEvent, stageKey: string) => {
     e.preventDefault();
     const proposalId = e.dataTransfer.getData("text/plain");
+    const fromStage = e.dataTransfer.getData("application/x-stage");
     if (proposalId && DROP_TARGETS.has(stageKey)) {
-      moveProposal(proposalId, stageKey);
+      if (fromStage === "running") {
+        if (window.confirm("Cancel this running experiment and move it back to Proposed?")) {
+          cancelProposal(proposalId);
+        }
+      } else {
+        moveProposal(proposalId, stageKey);
+      }
     }
     setDragOverStage(null);
     setDragging(false);
@@ -258,7 +283,7 @@ export default function KanbanBoard() {
     (p) => !p.worker_id || !workerIds.has(p.worker_id)
   );
 
-  const isDraggable = (stageKey: string) => stageKey === "backlog" || stageKey === "todo";
+  const isDraggable = (stageKey: string) => stageKey === "backlog" || stageKey === "todo" || stageKey === "running";
   const isDropTarget = (stageKey: string) => DROP_TARGETS.has(stageKey);
 
   return (
@@ -313,6 +338,8 @@ export default function KanbanBoard() {
                       info={workers[wid]}
                       selectedObservationId={selectedObservationId}
                       onSelectObservation={setSelectedObservationId}
+                      onDragStart={(e, id) => handleDragStart(e, id, "running")}
+                      onDragEnd={handleDragEnd}
                     />
                   ))}
                   {unassigned.length > 0 && (

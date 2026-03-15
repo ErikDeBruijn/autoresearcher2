@@ -539,6 +539,21 @@ class Store:
         )
         self.conn.commit()
 
+    def cancel_proposal(self, proposal_id: str) -> bool:
+        """Cancel a running proposal: move it back to backlog.
+
+        The worker may still finish executing, but the result won't be
+        linked to this proposal. Returns True if a proposal was cancelled.
+        """
+        cursor = self.conn.execute(
+            "UPDATE queue SET stage = 'backlog', worker_id = NULL, "
+            "started_at = NULL, rank = NULL "
+            "WHERE id = ? AND stage = 'running'",
+            (proposal_id,),
+        )
+        self.conn.commit()
+        return cursor.rowcount > 0
+
     def reclaim_stale_running(self, timeout_s: float = 600) -> int:
         """Move proposals stuck in 'running' back to 'todo'.
 
