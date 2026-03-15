@@ -257,6 +257,24 @@ def make_shell_executor(
     return execute
 
 
+def make_dispatch_executor(executors_by_project: dict[str | None, callable]):
+    """Executor that dispatches to project-specific executors.
+
+    Args:
+        executors_by_project: Dict mapping project_id to executor function.
+            Use None key as the default executor.
+    """
+    def execute(proposal: Proposal) -> dict:
+        project_id = getattr(proposal, "project_id", None)
+        executor = executors_by_project.get(project_id)
+        if executor is None:
+            executor = executors_by_project.get(None)
+        if executor is None:
+            raise ValueError(f"No executor for project {project_id}")
+        return executor(proposal)
+    return execute
+
+
 def make_dry_run_executor():
     """Executor that logs but doesn't execute. For testing."""
     def execute(proposal: Proposal) -> dict:

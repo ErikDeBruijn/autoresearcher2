@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
-from autoresearcher2.v3.executors import make_trainpy_executor, make_dry_run_executor
+from autoresearcher2.v3.executors import make_trainpy_executor, make_shell_executor, make_dispatch_executor, make_dry_run_executor
 from autoresearcher2.v3.llm_call import call_llm_json
 
 logging.basicConfig(
@@ -117,19 +117,55 @@ def main():
     # Planner gets its own Store connection for thread safety
     planner_store = Store(args.database)
 
-    # Worker configs (each worker gets its own Store connection for thread safety)
+    # Build project-specific executors, then dispatch per proposal
+    # Look up Atari project ID from active projects
+    atari_project_id = None
+    for proj in store.list_projects(active_only=True):
+        if "atari" in proj["name"].lower():
+            atari_project_id = proj["id"]
+            break
+
     worker_configs = []
     for i, cuda_dev in enumerate(cuda_devices):
         worker_id = f"worker_{hostname}_{i}"
         if args.dry_run:
             execute_fn = make_dry_run_executor()
         else:
-            execute_fn = make_trainpy_executor(
+            # NanoGPT executor (default)
+            nanogpt_exec = make_trainpy_executor(
                 ssh_host=args.ssh_host,
                 ssh_key=args.ssh_key,
                 cuda_device=cuda_dev,
                 local=args.local_llm,
             )
+
+            executors = {None: nanogpt_exec}  # Default for unassigned proposals
+
+            # Atari executor (if project exists)
+            if atari_project_id:
+                atari_exec = make_shell_executor(
+                    command_template=(
+                        "cd /root/github.com/atari-research && "
+                        "source .venv/bin/activate && "
+                        f"CUDA_VISIBLE_DEVICES={cuda_dev} python train_atari.py 2>&1"
+                    ),
+                    metric_patterns={
+                        "mean_reward": r"mean_reward:\s+([\d.]+)",
+                        "std_reward": r"std_reward:\s+([\d.]+)",
+                        "fps": r"fps:\s+([\d.]+)",
+                    },
+                    timeout=600,
+                    cuda_device=cuda_dev,
+                )
+                executors[atari_project_id] = atari_exec
+
+            # Map all known NanoGPT projects to nanogpt executor
+            for proj in store.list_projects(active_only=True):
+                if proj["id"] not in executors:
+                    executors[proj["id"]] = nanogpt_exec
+
+            execute_fn = make_dispatch_executor(executors)
+
         worker_configs.append((worker_id, execute_fn))
 
     worker_ids = [wid for wid, _ in worker_configs]
