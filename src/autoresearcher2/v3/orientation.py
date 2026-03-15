@@ -29,7 +29,7 @@ DELTA_SCHEMA = {
     "tensions_added": [{"beliefs": ["B_ids"], "nature": "str", "salience": "high|medium|low"}],
     "tensions_resolved": [{"id": "str", "resolution": "str", "reasoning": "str"}],
     "salience_updated": {"high_learntropy": ["obs_ids"], "stale_beliefs": ["B_ids"]},
-    "cost_beliefs_updated": {"intervention_type": {"wall_time_s": "float", "compute_cost": "float"}},
+    "cost_beliefs_updated": {"intervention_type": {"wall_time_s": "float", "energy_kwh": "float", "cost_eur": "float", "avg_power_w": "float"}},
 }
 
 
@@ -58,7 +58,7 @@ Consider:
 - Does it create new tensions between beliefs?
 - Does it resolve existing tensions?
 - Does it reveal something surprising (high learntropy)?
-- Does the actual wall_time or compute_cost differ from our cost_beliefs? Update if so.
+- Check the observation's real cost measurements: energy_kwh, cost_eur, avg_power_w, and wall_time_s. These come from actual power monitoring (Shelly meter + GPU sensors). Update cost_beliefs with these MEASURED values — they are ground truth, not estimates.
 - Are any beliefs now stale (not tested recently)?
 - Should we add new beliefs or expectations based on this evidence?
 

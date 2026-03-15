@@ -103,20 +103,18 @@ export default function StatsBar() {
         <span className="font-mono">{(stats.total_wall_time_s / 60).toFixed(0)}min</span>
       </div>
 
-      {(stats.total_cost_eur > 0 || stats.total_energy_kwh > 0) && (
-        <div className="flex items-center gap-2">
-          <span className="text-gray-400">Cost:</span>
-          <span className="font-mono text-emerald-400">{stats.total_cost_eur.toFixed(2)}€</span>
-          <span className="font-mono text-gray-500">{(stats.total_energy_kwh * 1000).toFixed(0)}Wh</span>
-        </div>
-      )}
+      <div className="flex items-center gap-2">
+        <a href="http://pve03.home:8377/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-400 transition-colors">Energy:</a>
+        <span className="font-mono text-emerald-400">{stats.total_cost_eur.toFixed(2)}€</span>
+        <span className="font-mono text-gray-500">{(stats.total_energy_kwh * 1000).toFixed(0)}Wh</span>
+      </div>
 
       <div className="flex items-center gap-3 ml-auto">
         {workerStatus?.energy?.price_eur_per_kwh != null && (
-          <span className="text-xs text-gray-500 font-mono">{workerStatus.energy.price_eur_per_kwh.toFixed(3)}€/kWh</span>
+          <a href="http://pve03.home:8377/" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 font-mono hover:text-emerald-400 transition-colors">{workerStatus.energy.price_eur_per_kwh.toFixed(3)}€/kWh</a>
         )}
         {workerStatus?.energy?.shelly_total_w != null && (
-          <span className="text-xs text-gray-400 font-mono">{Math.round(workerStatus.energy.shelly_total_w)}W total</span>
+          <a href="http://pve03.home:8377/" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 font-mono hover:text-emerald-400 transition-colors">{Math.round(workerStatus.energy.shelly_total_w)}W total</a>
         )}
         {workerStatus?.gpus ? (
           workerStatus.gpus.map((gpu, i) => (
