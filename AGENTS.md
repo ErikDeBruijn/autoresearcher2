@@ -25,6 +25,35 @@ Before any PR, answer these honestly:
 - **Tolerance-widening** — never relax test thresholds to make things pass. Fix the code instead.
 - **Hardcoded test outputs** — never hardcode expected output to make a test green. A failing honest test is better than a passing fake one.
 
+## Deploying to dllm-experiment VM
+
+### Frontend (static export — no Node.js on VM)
+
+```bash
+# 1. Build locally
+cd web/frontend && npm run build
+
+# 2. Rsync dist/ to VM (NOT .next/ — Next.js exports to dist/ via distDir config)
+rsync -az --delete web/frontend/dist/ root@10.1.1.146:/root/github.com/erikdebruijn/autoresearcher2/web/frontend/dist/ -e 'ssh -i ~/.ssh/pve03_key'
+
+# 3. Restart web service
+ssh -i ~/.ssh/pve03_key root@10.1.1.146 'systemctl restart autoresearcher-web'
+```
+
+- `next.config.ts`: `output: "export"`, `distDir: "dist"` — static HTML goes to `web/frontend/dist/`
+- `web/api.py` mounts `frontend/dist` as StaticFiles
+- `NEXT_PUBLIC_API_URL` must be empty in `.env.local` (relative URLs)
+- `.next/` is the dev build cache, NOT what gets deployed
+
+### Backend (Python)
+
+```bash
+git push
+ssh -i ~/.ssh/pve03_key root@10.1.1.146 'cd /root/github.com/erikdebruijn/autoresearcher2 && git pull && systemctl restart autoresearcher'
+```
+
+Services: `autoresearcher` (research loop) and `autoresearcher-web` (API + frontend) are separate systemd units.
+
 ## Development Style
 
 - **Seed everything.** All stochastic components use `np.random.default_rng(seed)`. No bare `np.random` calls.
