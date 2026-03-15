@@ -225,7 +225,7 @@ def main():
                     "std_reward": r"std_reward:\s+([\d.]+)",
                     "fps": r"fps:\s+([\d.]+)",
                 },
-                timeout=900,
+                timeout=600,
                 cuda_device="",
                 work_dir=atari_dir,
                 base_script=f"{atari_base}/train_atari.py",

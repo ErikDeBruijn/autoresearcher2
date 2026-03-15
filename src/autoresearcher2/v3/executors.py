@@ -279,6 +279,10 @@ def make_shell_executor(
         spec = proposal.intervention_spec
         itype = proposal.intervention_type
 
+        # Always reset base script before any run (prevents stale scripts from prior code_changes)
+        if base_script:
+            run_cmd(f"cp {base_script} {work_dir}/$(basename {base_script})")
+
         # Handle code_change: apply diff or write file_changes before running
         if itype == "code_change" and work_dir:
             diff_content = spec.get("diff")
@@ -286,10 +290,6 @@ def make_shell_executor(
 
             if not diff_content and not file_changes:
                 raise ValueError("code_change requires 'diff' or 'file_changes' in intervention_spec")
-
-            # Always reset base script first
-            if base_script:
-                run_cmd(f"cp {base_script} {work_dir}/$(basename {base_script})")
 
             if diff_content:
                 # Apply unified diff via patch
@@ -303,8 +303,29 @@ def make_shell_executor(
                 logger.info("code_change: applied diff (%d bytes)", len(diff_content))
             else:
                 # Write full file replacements
+                # Inject a wall-time guard into Python scripts to prevent runaways
+                timeout_guard = (
+                    "import signal,sys\n"
+                    f"signal.signal(signal.SIGALRM,lambda s,f:(print('WALL TIME LIMIT EXCEEDED',file=sys.stderr),sys.exit(1)))\n"
+                    f"signal.alarm({timeout - 30})\n"
+                )
                 for filename, content in file_changes.items():
                     safe_name = filename.replace("/", "_").replace("..", "_")
+                    # Inject timeout guard after imports for .py files
+                    if safe_name.endswith(".py") and "signal.alarm" not in content:
+                        # Insert after the last top-level import block
+                        lines = content.split("\n")
+                        insert_idx = 0
+                        for i, line in enumerate(lines):
+                            stripped = line.strip()
+                            if stripped.startswith("import ") or stripped.startswith("from "):
+                                insert_idx = i + 1
+                            elif stripped and not stripped.startswith("#") and not stripped.startswith('"""') and not stripped.startswith("'''") and insert_idx > 0:
+                                break
+                        if insert_idx > 0:
+                            lines.insert(insert_idx, timeout_guard)
+                            content = "\n".join(lines)
+                            logger.info("code_change: injected %ds wall-time guard into %s", timeout - 30, safe_name)
                     b64 = b64mod.b64encode(content.encode()).decode()
                     rc, out = run_cmd(
                         f"python3 -c \"import base64; open('{work_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
