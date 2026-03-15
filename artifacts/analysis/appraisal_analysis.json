@@ -1,0 +1,358 @@
+{
+  "full": {
+    "n_experiments": 20,
+    "n_successful": 13,
+    "best_val_bpb": 1.033423,
+    "waste_ratio": 0.85,
+    "coverage": {
+      "unique_cells": 14,
+      "total_cells": 27,
+      "coverage_pct": 51.85185185185185,
+      "cells_explored": [
+        0,
+        4,
+        5,
+        8,
+        10,
+        11,
+        12,
+        13,
+        14,
+        16,
+        17,
+        22,
+        24,
+        26
+      ]
+    },
+    "convergence_trace": [
+      1.06171,
+      1.049773,
+      1.033423,
+      1.033423,
+      1.033423,
+      1.033423,
+      1.033423,
+      1.033423,
+      1.033423,
+      1.033423,
+      1.033423,
+      1.033423,
+      1.033423
+    ],
+    "score_evolution": [
+      {
+        "experiment": 0,
+        "cell": 26,
+        "val_bpb": null,
+        "success": false,
+        "epistemic": 6.0,
+        "pragmatic": -1.0,
+        "total": 5.0
+      },
+      {
+        "experiment": 1,
+        "cell": 26,
+        "val_bpb": null,
+        "success": false,
+        "epistemic": 6.0,
+        "pragmatic": -1.0,
+        "total": 5.0
+      },
+      {
+        "experiment": 2,
+        "cell": 26,
+        "val_bpb": 1.06171,
+        "success": true,
+        "epistemic": 6.0,
+        "pragmatic": -1.0,
+        "total": 5.0
+      },
+      {
+        "experiment": 3,
+        "cell": 4,
+        "val_bpb": 1.049773,
+        "success": true,
+        "epistemic": 6.0,
+        "pragmatic": -1.0,
+        "total": 5.0
+      },
+      {
+        "experiment": 4,
+        "cell": 13,
+        "val_bpb": 1.033423,
+        "success": true,
+        "epistemic": 4.501248959200666,
+        "pragmatic": -0.27592128274343325,
+        "total": 4.2253276764572325
+      },
+      {
+        "experiment": 5,
+        "cell": 22,
+        "val_bpb": 1.057872,
+        "success": true,
+        "epistemic": 3.8345826007477606,
+        "pragmatic": -0.042094171998810194,
+        "total": 3.79248842874895
+      },
+      {
+        "experiment": 6,
+        "cell": 10,
+        "val_bpb": 1.039985,
+        "success": true,
+        "epistemic": 4.417237329677145,
+        "pragmatic": -0.33825657177386675,
+        "total": 4.078980757903278
+      },
+      {
+        "experiment": 7,
+        "cell": 12,
+        "val_bpb": 1.038551,
+        "success": true,
+        "epistemic": 4.340440834011286,
+        "pragmatic": -0.4263725881392901,
+        "total": 3.914068245871996
+      },
+      {
+        "experiment": 8,
+        "cell": 8,
+        "val_bpb": 1.060822,
+        "success": true,
+        "epistemic": 4.097957302312379,
+        "pragmatic": -0.20123511121080692,
+        "total": 3.896722191101572
+      },
+      {
+        "experiment": 9,
+        "cell": 16,
+        "val_bpb": 1.041236,
+        "success": true,
+        "epistemic": 3.6708548555971525,
+        "pragmatic": -0.07369421770941191,
+        "total": 3.5971606378877405
+      },
+      {
+        "experiment": 10,
+        "cell": 14,
+        "val_bpb": null,
+        "success": false,
+        "epistemic": 3.5944533054694983,
+        "pragmatic": -0.09246823864524427,
+        "total": 3.501985066824254
+      },
+      {
+        "experiment": 11,
+        "cell": 0,
+        "val_bpb": null,
+        "success": false,
+        "epistemic": 5.0095318627195295,
+        "pragmatic": -0.3068750405217763,
+        "total": 4.702656822197754
+      },
+      {
+        "experiment": 12,
+        "cell": 0,
+        "val_bpb": 1.053848,
+        "success": true,
+        "epistemic": 5.0095318627195295,
+        "pragmatic": -0.3068750405217763,
+        "total": 4.702656822197754
+      },
+      {
+        "experiment": 13,
+        "cell": 11,
+        "val_bpb": null,
+        "success": false,
+        "epistemic": 3.9844869996673795,
+        "pragmatic": -0.10927136968595262,
+        "total": 3.875215629981427
+      },
+      {
+        "experiment": 14,
+        "cell": 11,
+        "val_bpb": null,
+        "success": false,
+        "epistemic": 3.9844869996673795,
+        "pragmatic": -0.10927136968595262,
+        "total": 3.875215629981427
+      },
+      {
+        "experiment": 15,
+        "cell": 11,
+        "val_bpb": null,
+        "success": false,
+        "epistemic": 3.9844869996673795,
+        "pragmatic": -0.10927136968595262,
+        "total": 3.875215629981427
+      },
+      {
+        "experiment": 16,
+        "cell": 11,
+        "val_bpb": 1.036804,
+        "success": true,
+        "epistemic": 3.9844869996673795,
+        "pragmatic": -0.10927136968595262,
+        "total": 3.875215629981427
+      },
+      {
+        "experiment": 17,
+        "cell": 24,
+        "val_bpb": 1.061413,
+        "success": true,
+        "epistemic": 3.8005287693030447,
+        "pragmatic": -0.09319977243116523,
+        "total": 3.7073289968718797
+      },
+      {
+        "experiment": 18,
+        "cell": 17,
+        "val_bpb": 1.04656,
+        "success": true,
+        "epistemic": 1.8174481842011736,
+        "pragmatic": -0.0004984261862015267,
+        "total": 1.816949758014972
+      },
+      {
+        "experiment": 19,
+        "cell": 5,
+        "val_bpb": 1.052072,
+        "success": true,
+        "epistemic": 3.0362952814637207,
+        "pragmatic": -0.043351989509553004,
+        "total": 2.992943291954168
+      }
+    ]
+  },
+  "autoresearch": {
+    "n_experiments": 15,
+    "n_successful": 15,
+    "best_val_bpb": 1.033266,
+    "waste_ratio": 0.7333333333333333,
+    "coverage": {
+      "unique_cells": 14,
+      "total_cells": 27,
+      "coverage_pct": 51.85185185185185,
+      "cells_explored": [
+        1,
+        2,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        20,
+        22,
+        23
+      ]
+    },
+    "convergence_trace": [
+      1.047442,
+      1.047442,
+      1.047442,
+      1.037478,
+      1.037478,
+      1.03429,
+      1.03429,
+      1.033266,
+      1.033266,
+      1.033266,
+      1.033266,
+      1.033266,
+      1.033266,
+      1.033266,
+      1.033266
+    ]
+  },
+  "comparison": {
+    "experiments_to_1.05": {
+      "full": 4,
+      "auto": 1
+    },
+    "experiments_to_1.04": {
+      "full": 5,
+      "auto": 4
+    },
+    "experiments_to_1.035": {
+      "full": 5,
+      "auto": 6
+    },
+    "information_gain_pairs": [
+      {
+        "from_cell": 26,
+        "to_cell": 4,
+        "epistemic_delta": 0.0,
+        "val_bpb_improvement": 0.011936999999999864
+      },
+      {
+        "from_cell": 4,
+        "to_cell": 13,
+        "epistemic_delta": -1.498751040799334,
+        "val_bpb_improvement": 0.016350000000000087
+      },
+      {
+        "from_cell": 13,
+        "to_cell": 22,
+        "epistemic_delta": -0.6666663584529053,
+        "val_bpb_improvement": -0.024448999999999943
+      },
+      {
+        "from_cell": 22,
+        "to_cell": 10,
+        "epistemic_delta": 0.5826547289293846,
+        "val_bpb_improvement": 0.017886999999999986
+      },
+      {
+        "from_cell": 10,
+        "to_cell": 12,
+        "epistemic_delta": -0.07679649566585933,
+        "val_bpb_improvement": 0.0014339999999999353
+      },
+      {
+        "from_cell": 12,
+        "to_cell": 8,
+        "epistemic_delta": -0.24248353169890713,
+        "val_bpb_improvement": -0.02227099999999993
+      },
+      {
+        "from_cell": 8,
+        "to_cell": 16,
+        "epistemic_delta": -0.42710244671522624,
+        "val_bpb_improvement": 0.01958599999999988
+      },
+      {
+        "from_cell": 16,
+        "to_cell": 0,
+        "epistemic_delta": 1.338677007122377,
+        "val_bpb_improvement": -0.012611999999999846
+      },
+      {
+        "from_cell": 0,
+        "to_cell": 11,
+        "epistemic_delta": -1.02504486305215,
+        "val_bpb_improvement": 0.017043999999999837
+      },
+      {
+        "from_cell": 11,
+        "to_cell": 24,
+        "epistemic_delta": -0.18395823036433478,
+        "val_bpb_improvement": -0.02460899999999988
+      },
+      {
+        "from_cell": 24,
+        "to_cell": 17,
+        "epistemic_delta": -1.9830805851018711,
+        "val_bpb_improvement": 0.014853000000000005
+      },
+      {
+        "from_cell": 17,
+        "to_cell": 5,
+        "epistemic_delta": 1.2188470972625471,
+        "val_bpb_improvement": -0.005511999999999961
+      }
+    ]
+  }
+}
