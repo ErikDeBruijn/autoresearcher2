@@ -155,7 +155,7 @@ def main():
                 planners[project_id] = Planner(
                     planner_store, llm_call_fn=llm_fn,
                     min_queue_size=args.min_queue,
-                    min_todo=args.n_select + len(args.cuda_devices.split(",")),
+                    min_todo=len(args.cuda_devices.split(",")),
                     n_proposals=args.n_proposals,
                     n_select=args.n_select,
                     project_id=project_id,
