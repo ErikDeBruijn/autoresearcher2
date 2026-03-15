@@ -1,0 +1,27 @@
+[22:59:17] Found 7 failed experiments to retry
+[22:59:17]   Retrying exp 0 | cell 26 | {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'}
+[22:59:17]     original error: train.py failed (exit 1): yTorch, and 45.48 MiB is reserved by PyTorch but unall
+[23:05:15]     SUCCESS: val_bpb=1.062939 tokens=101.6M
+[23:05:15]   Retrying exp 1 | cell 26 | {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'}
+[23:05:15]     original error: train.py failed (exit 143): 37,211 | mfu: 66.0% | epoch: 1 | remaining: 293s    
+[23:15:27]     STILL FAILED: train.py timed out after 600s
+[23:15:27]   Retrying exp 10 | cell 14 | {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'}
+[23:15:27]     original error: train.py failed (exit 255): 01,863 | mfu: 66.9% | epoch: 1 | remaining: 297s    
+[23:21:05]     SUCCESS: val_bpb=1.033814 tokens=176.0M
+[23:21:05]   Retrying exp 11 | cell 0 | {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.1'}
+[23:21:05]     original error: train.py failed (exit 255): 43 | mfu: 60.7% | epoch: 1 | remaining: 283s    
+ste
+[23:26:39]     SUCCESS: val_bpb=1.053943 tokens=323.0M
+[23:26:39]   Retrying exp 13 | cell 11 | {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'}
+[23:26:39]     original error: train.py failed (exit 255): 580,692 | mfu: 64.5% | epoch: 1 | remaining: 93s    
+[23:32:20]     SUCCESS: val_bpb=1.036809 tokens=175.9M
+[23:32:20]   Retrying exp 14 | cell 11 | {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'}
+[23:32:20]     original error: train.py failed (exit 255): 1,729 | mfu: 64.6% | epoch: 1 | remaining: 270s    
+
+[23:38:01]     SUCCESS: val_bpb=1.037141 tokens=175.8M
+[23:38:01]   Retrying exp 15 | cell 11 | {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'}
+[23:38:01]     original error: train.py failed (exit 255): 580,476 | mfu: 64.5% | epoch: 1 | remaining: 55s    
+[23:43:42]     SUCCESS: val_bpb=1.037206 tokens=175.9M
+[23:43:42] Done: 6/7 retries succeeded
+[23:43:42] Full approach now: 19/20 successful
+[23:43:42] Best val_bpb: 1.033423 — {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'}

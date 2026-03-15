@@ -1,0 +1,84 @@
+{
+  "run_id": "e1019e6d",
+  "version": "2.0",
+  "best_val_bpb": 1.034987,
+  "iterations": [
+    {
+      "iteration": 0,
+      "val_bpb": 1.034987,
+      "metadata": {
+        "total_tokens_M": 171.6,
+        "num_steps": 1309.0,
+        "num_params_M": 67.6,
+        "mfu_percent": 63.03,
+        "training_seconds": 300.1
+      },
+      "change": "baseline (unmodified)",
+      "reasoning": "baseline run",
+      "kept": true,
+      "error": null,
+      "has_train_py": false
+    },
+    {
+      "iteration": 1,
+      "val_bpb": 1.164784,
+      "metadata": {
+        "total_tokens_M": 68.4,
+        "num_steps": 522.0,
+        "num_params_M": 173.0,
+        "mfu_percent": 68.58,
+        "training_seconds": 300.5
+      },
+      "change": "Increase depth from 8 to 12 layers (dim 512->768)",
+      "reasoning": "Increasing model depth from 8 to 12 layers (and correspondingly model_dim from 512 to 768) gives a significantly more expressive model. With the dmodel_lr_scale already built in, learning rates auto-adjust. Reducing DEVICE_BATCH_SIZE to 32 keeps memory in check while maintaining the same total batch size via grad accumulation.",
+      "kept": false,
+      "delta": -0.12979699999999994,
+      "error": null,
+      "has_train_py": false
+    },
+    {
+      "iteration": 2,
+      "val_bpb": null,
+      "metadata": {},
+      "change": "Reduce HEAD_DIM from 128 to 64 (4 heads -> 8 heads)",
+      "reasoning": "With HEAD_DIM=128 and model_dim=512, the model only has 4 attention heads, which limits attention expressiveness. Reducing HEAD_DIM to 64 doubles the number of heads to 8 at no extra parameter or compute cost (QKV projections are still n_embd->n_embd), giving the model more capacity to attend to different representation subspaces.",
+      "kept": false,
+      "error": "Syntax error in proposed train.py: unexpected character after line continuation character (train.py, line 1)",
+      "has_train_py": false
+    },
+    {
+      "iteration": 3,
+      "val_bpb": 1.044512,
+      "metadata": {
+        "total_tokens_M": 171.4,
+        "num_steps": 1308.0,
+        "num_params_M": 67.6,
+        "mfu_percent": 63.01,
+        "training_seconds": 300.0
+      },
+      "change": "Reduce HEAD_DIM from 128 to 64 to double attention heads from 4 to 8",
+      "reasoning": "With HEAD_DIM=128 and model_dim=512, the model only has 4 attention heads, severely limiting multi-head attention expressiveness. Reducing HEAD_DIM to 64 doubles heads to 8 at no extra parameter or compute cost, giving richer attention patterns. This was the correct idea from iteration #2 that failed only due to a syntax error.",
+      "kept": false,
+      "delta": -0.009525000000000006,
+      "error": null,
+      "has_train_py": false
+    },
+    {
+      "iteration": 4,
+      "val_bpb": 1.039242,
+      "metadata": {
+        "total_tokens_M": 172.0,
+        "num_steps": 1312.0,
+        "num_params_M": 67.6,
+        "mfu_percent": 63.19,
+        "training_seconds": 300.0
+      },
+      "change": "Increase learning rates by 1.5x across all parameter groups",
+      "reasoning": "In a fixed 5-minute time budget, we need to maximize learning per step. Increasing all learning rates by ~1.5x allows faster convergence without changing model size or step count. The current LRs are conservative and the long cooldown schedule (97% of training) provides a natural safety net against instability from higher peak LRs.",
+      "kept": false,
+      "delta": -0.004254999999999898,
+      "error": null,
+      "has_train_py": false
+    }
+  ]
+}

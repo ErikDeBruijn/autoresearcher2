@@ -1,0 +1,68 @@
+== Evidence Run Narrative Log ==
+Freeform record of the evidence-quality comparison run.
+Run started 2026-03-12 10:49, run_id=5d2ffa21 (random+bayesian), 65018a7c (autoresearch+full).
+
+--- 2026-03-12 10:49 — Run gestart ---
+Fase: Evidence-quality evaluation v1.5
+Doel: Head-to-head vergelijking van 4 approaches op real train.py (27-cell schema, GPU 1, seed 42).
+Schema: DEPTH={6,8,10} × MATRIX_LR={0.02,0.04,0.08} × WEIGHT_DECAY={0.1,0.2,0.4}
+Budget: 20 experimenten per approach, ~5.5 min per experiment.
+Approaches: random → bayesian → autoresearch → full (sequentieel).
+
+--- 2026-03-12 12:27 — Random approach halverwege ---
+Loop check: random 15/20. Eerste patronen zichtbaar: DEPTH=8 cellen consistent beter dan DEPTH=10.
+WEIGHT_DECAY=0.4 domineert. Throughput verschil groot: ~1M tok/s (DEPTH=6) vs ~300K tok/s (DEPTH=10).
+Reproduceerbaarheid sterk: cell 11 twee keer geraakt, Δval_bpb=0.000006.
+
+--- 2026-03-12 12:27 — Silent fallback bug ontdekt ---
+Kritieke instrumentatie-bug gevonden: autoresearch_baseline.py labelt LLM-fallbacks als "llm_flat".
+Als LLM faalt en random wordt gebruikt, staat in de JSON toch source="llm_flat".
+Dit maakt de hele vergelijking onbetrouwbaar. Fix gecommit (ce7d19a):
+- AutoresearchLLMAgent.last_source trackt werkelijke beslissingsbron
+- Nieuwe labels: llm_fallback_error, llm_fallback_empty, llm_fallback
+Erik's feedback: "een crash is minder erg dan dat we niet weten dat hij een fallback heeft gebruikt".
+Besluit: random+bayesian laten afmaken (geen LLM, data is schoon), dan killen vóór autoresearch.
+
+--- 2026-03-12 12:38 — Random compleet ---
+Random 20/20: best=1.033551 (DEPTH=8, MATRIX_LR=0.04, WEIGHT_DECAY=0.4), mean=1.054828, 109.2 min.
+Bayesian gestart. Watcher script actief om te killen na bayesian.
+
+--- 2026-03-12 13:27 — Bayesian convergeert ---
+Bayesian 10/20. Epistemische score gedaald van 6.0 naar 3.1, surprise van 0.071 naar 0.007.
+Model is grotendeels geconvergeerd na ~10 experimenten. Best=1.033820.
+Begon met DEPTH=10 exploratie (hoogste onzekerheid), schakelde snel over naar DEPTH=8.
+
+--- 2026-03-12 13:17 — README gecorrigeerd ---
+README beweerde "does not yet integrate with train.py". Incorrect — integratie is werkend, pilot runs bewezen, evidence run loopt. Alle verouderde claims gefixed (2c36dc5). Per AGENTS.md: README mag niet meer claimen dan code bewijst, maar ook niet minder.
+
+--- 2026-03-12 14:27 — Bayesian compleet, watcher killt process ---
+Bayesian 20/20: best=1.033778 (DEPTH=8, MATRIX_LR=0.04, WEIGHT_DECAY=0.2/0.4), mean=1.051689, 108.5 min.
+Watcher detecteerde autoresearch start marker en killde PID 45609 op 14:27:11.
+Surprise eindigde op 0.0003 — model volledig geconvergeerd. Alle 27 cellen effectief gerankt in ~15 experimenten.
+Data geverifieerd: random 20/20 + bayesian 20/20, geen errors, geen fallbacks. Schoon.
+
+--- 2026-03-12 14:31 — Autoresearch gestart met gefixxte code ---
+Nieuw process (PID 67756), run_id=65018a7c. Gefixxte source-labeling actief.
+Eerste experiment correct gelabeld als random_init. Volgende als llm_flat.
+
+--- 2026-03-12 14:57 — Autoresearch LLM werkt ---
+Autoresearch 5/20. Alle LLM calls succesvol — source labels: 1× random_init, 4× llm_flat.
+Geen fallbacks. LLM stuurt naar DEPTH=8, WEIGHT_DECAY=0.4 — dezelfde regio als bayesian.
+Best=1.037478. Interessant: LLM vindt snel het goede gebied maar is nog niet bij het optimum.
+
+--- 2026-03-12 15:37 — Autoresearch halfway, LLM dominating selection ---
+Autoresearch 12/20 loopt (11 opgeslagen). Best=1.033266 (DEPTH=8, MATRIX_LR=0.04, WEIGHT_DECAY=0.2).
+Dit is BETER dan random (1.033551) en bayesian (1.033778) na hun volledige 20 experimenten.
+
+Source labels: 1× random_init, 10× llm_flat. Nul fallbacks. De gefixxte instrumentatie bevestigt
+dat alle selecties werkelijk door de LLM gemaakt zijn.
+
+Opvallend LLM-gedrag:
+- Experimenten 2-3: LLM begint met DEPTH=10 (slechte keuze), leert snel
+- Vanaf experiment 4: vrijwel exclusief DEPTH=8 — de LLM heeft de sweet spot gevonden
+- Experiment 8 (best so far): DEPTH=8, MATRIX_LR=0.04, WEIGHT_DECAY=0.2 — nét een andere
+  WEIGHT_DECAY dan random/bayesian's best (0.4). Interessant dat het een subtieler optimum vindt.
+- Mean val_bpb (1.045270) al lager dan zowel random (1.054828) als bayesian (1.051689).
+  Dit suggereert dat de LLM niet alleen de best cell vindt maar ook minder tijd verspilt aan slechte cellen.
+
+Geen beslissingen genomen — run loopt autonoom. ETA autoresearch klaar: ~16:20, full start daarna.

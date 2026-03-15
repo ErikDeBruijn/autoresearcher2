@@ -1,0 +1,6 @@
+Thu Mar 12 12:26:03 CET 2026: Watching for bayesian→autoresearch transition...
+Thu Mar 12 12:26:03 CET 2026: Will kill PID 45609 when autoresearch is about to start.
+Thu Mar 12 14:27:11 CET 2026: BAYESIAN SUMMARY: bayesian: best=1.033778 mean=1.051689 tokens/exp=204.7M (20/20 ok, 108.5 min)
+Thu Mar 12 14:27:11 CET 2026: DETECTED autoresearch start. Killing PID 45609...
+Thu Mar 12 14:27:11 CET 2026: Process killed. Random + bayesian data preserved.
+Thu Mar 12 14:27:11 CET 2026: Run autoresearch + full with fixed code next.

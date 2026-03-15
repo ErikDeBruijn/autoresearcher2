@@ -1,0 +1,260 @@
+Thu Mar 12 14:31:31 CET 2026: Starting autoresearch approach...
+[14:31:31] ============================================================
+[14:31:31] EVIDENCE RUN — run_id=65018a7c
+[14:31:31] ============================================================
+[14:31:31] Schema: 27 cells, 3 factors
+[14:31:31] Budget: 20 experiments per approach
+[14:31:31] GPU: 1, Seed: 42
+[14:31:31] Approaches: ['autoresearch']
+[14:31:31] 
+[14:31:31] 
+============================================================
+[14:31:31] --- Approach: AUTORESEARCH BASELINE (flat LLM) ---
+[14:31:31]   [1/20] cell 2 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} [random_init]
+[14:36:49]     → val_bpb=1.047442 tokens=325.1M
+[14:37:00]   [2/20] cell 20 {'DEPTH': '10', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} [llm_flat]
+[14:42:34]     → val_bpb=1.072204 tokens=101.3M
+[14:42:34]   [3/20] cell 23 {'DEPTH': '10', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'} [llm_flat]
+[14:48:09]     → val_bpb=1.056644 tokens=101.2M
+[14:48:09]   [4/20] cell 11 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} [llm_flat]
+[14:53:34]     → val_bpb=1.037478 tokens=175.8M
+[14:53:42]   [5/20] cell 10 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.2'} [llm_flat]
+[14:59:07]     → val_bpb=1.040231 tokens=175.9M
+[14:59:07]   [6/20] cell 14 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'} [llm_flat]
+[15:04:32]     → val_bpb=1.034290 tokens=175.6M
+[15:04:32]   [7/20] cell 1 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.2'} [llm_flat]
+[15:09:50]     → val_bpb=1.050132 tokens=322.7M
+[15:09:59]   [8/20] cell 13 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} [llm_flat]
+[15:15:24]     → val_bpb=1.033266 tokens=175.6M
+[15:15:24]   [9/20] cell 17 {'DEPTH': '8', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} [llm_flat]
+[15:20:49]     → val_bpb=1.044812 tokens=175.4M
+[15:20:49]   [10/20] cell 12 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.1'} [llm_flat]
+[15:26:14]     → val_bpb=1.038340 tokens=175.4M
+[15:26:25]   [11/20] cell 9 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.1'} [llm_flat]
+[15:31:51]     → val_bpb=1.043134 tokens=175.9M
+[15:31:51]   [12/20] cell 16 {'DEPTH': '8', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.2'} [llm_flat]
+[15:37:15]     → val_bpb=1.041324 tokens=175.4M
+[15:37:23]   [13/20] cell 22 {'DEPTH': '10', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} [llm_flat]
+[15:42:57]     → val_bpb=1.058201 tokens=101.2M
+[15:42:57]   [14/20] cell 15 {'DEPTH': '8', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.1'} [llm_flat]
+[15:48:22]     → val_bpb=1.041080 tokens=175.1M
+LLM returned no valid suggestions, falling back to random
+[15:48:32]   [15/20] cell 20 {'DEPTH': '10', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} [llm_fallback_empty]
+[15:54:07]     → val_bpb=1.072559 tokens=101.3M
+LLM returned no valid suggestions, falling back to random
+[15:54:19]   [16/20] cell 17 {'DEPTH': '8', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} [llm_fallback_empty]
+[15:59:44]     → val_bpb=1.045977 tokens=175.5M
+[16:00:00]   [17/20] cell 13 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} [llm_flat]
+[16:05:24]     → val_bpb=1.032934 tokens=175.5M
+[16:05:24]   [18/20] cell 10 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.2'} [llm_flat]
+[16:10:49]     → val_bpb=1.040192 tokens=175.6M
+[16:10:49]   [19/20] cell 4 {'DEPTH': '6', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} [llm_flat]
+[16:16:08]     → val_bpb=1.050092 tokens=322.3M
+LLM returned no valid suggestions, falling back to random
+[16:16:15]   [20/20] cell 11 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} [llm_fallback_empty]
+[16:41:56]     → FAILED: Command '['ssh', '-i', '~/.ssh/pve03_key', '-o', 'ConnectTimeout=10', 'root@dllm-experiment.home', 'cd ~/github.com/karpathy/autoresearch && CUDA_VISIBLE_DEVICES=1 uv run train.py 2>&1']' timed out after 900 seconds
+[16:41:56] 
+  autoresearch: best=1.032934 mean=1.046333 tokens/exp=183.3M (19/20 ok, 130.4 min)
+[16:41:56] 
+============================================================
+[16:41:56] ALL DONE — 130.4 min total
+[16:41:56] ============================================================
+[16:41:56] 
+COMPARISON:
+[16:41:56] Approach                   Best       Mean   Unique    Tok/exp      Tok/s
+[16:41:56] ----------------------------------------------------------------------
+[16:41:56] autoresearch           1.032934   1.046333       15     183.3M     565577
+[16:41:56] 
+Results: artifacts/evidence/65018a7c.json
+Thu Mar 12 16:41:56 CET 2026: Starting full approach...
+[16:41:56] ============================================================
+[16:41:56] EVIDENCE RUN — run_id=e5ee6b3e
+[16:41:56] ============================================================
+[16:41:56] Schema: 27 cells, 3 factors
+[16:41:56] Budget: 20 experiments per approach
+[16:41:56] GPU: 1, Seed: 42
+[16:41:56] Approaches: ['full']
+[16:41:56] 
+[16:41:56] 
+============================================================
+[16:41:56] --- Approach: FULL (Bayesian + LLM) ---
+[16:41:56]   [1/20] cell 26 {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} [lookahead] (prag=-1.000 epist=6.000)
+Thu Mar 12 16:46:24 CET 2026: Restarting full approach with enriched LLM prompt (tokens, prior results, epistemic context)...
+[16:46:25] ============================================================
+[16:46:25] EVIDENCE RUN — run_id=f42458c2
+[16:46:25] ============================================================
+[16:46:25] Schema: 27 cells, 3 factors
+[16:46:25] Budget: 20 experiments per approach
+[16:46:25] GPU: 1, Seed: 42
+[16:46:25] Approaches: ['full']
+[16:46:25] 
+[16:46:25] 
+============================================================
+[16:46:25] --- Approach: FULL (Bayesian + LLM) ---
+[16:46:25]   [1/20] cell 26 {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} [lookahead] (prag=-1.000 epist=6.000)
+Thu Mar 12 16:46:27 CET 2026: Restarting full approach with enriched LLM prompt...
+[16:46:32] ============================================================
+[16:46:32] EVIDENCE RUN — run_id=e6a5a06b
+[16:46:32] ============================================================
+[16:46:32] Schema: 27 cells, 3 factors
+[16:46:32] Budget: 20 experiments per approach
+[16:46:32] GPU: 1, Seed: 42
+[16:46:32] Approaches: ['full']
+[16:46:32] 
+[16:46:32] 
+============================================================
+[16:46:32] --- Approach: FULL (Bayesian + LLM) ---
+[16:46:32]   [1/20] cell 26 {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} [lookahead] (prag=-1.000 epist=6.000)
+[16:46:39] ============================================================
+[16:46:39] EVIDENCE RUN — run_id=d240b43f
+[16:46:39] ============================================================
+[16:46:39] Schema: 27 cells, 3 factors
+[16:46:39] Budget: 20 experiments per approach
+[16:46:39] GPU: 1, Seed: 42
+[16:46:39] Approaches: ['full']
+[16:46:39] 
+[16:46:39] 
+============================================================
+[16:46:39] --- Approach: FULL (Bayesian + LLM) ---
+[16:46:39]   [1/20] cell 26 {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} [lookahead] (prag=-1.000 epist=6.000)
+[16:46:50]     → FAILED: train.py failed (exit 1): yTorch, and 45.48 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+
+[16:46:50]   [2/20] cell 26 {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} [lookahead] (prag=-1.000 epist=6.000)
+[16:47:11]     → FAILED: train.py failed (exit 143): 37,211 | mfu: 66.0% | epoch: 1 | remaining: 293s    
+step 00029 (2.3%) | loss: 6.783101 | lrm: 1.00 | dt: 389ms | tok/sec: 336,758 | mfu: 65.9% | epoch: 1 | remaining: 293s    
+step 00030 (2.4%) | loss: 6.672009 | lrm: 1.00 | dt: 390ms | tok/sec: 336,513 | mfu: 65.9% | epoch: 1 | remaining: 292s    
+[16:47:11]   [3/20] cell 26 {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} [lookahead] (prag=-1.000 epist=6.000)
+[16:52:49]     → val_bpb=1.061710 tokens=101.1M surprise=0.0707
+[16:52:49]   LLM consultation (after 3 experiments)...
+[16:53:15]     LLM: cell 4 {'DEPTH': '6', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} — DEPTH=6 is entirely untested in this approach, and prior approaches never tested it either — this explores whether the shallowest model (with ~323M tokens) achieves lower val_bpb, using the MATRIX_LR and WEIGHT_DECAY combination that performed best across prior approaches.
+[16:53:15]     LLM: cell 13 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} — This is the best-performing configuration across all prior approaches (val_bpb ~1.033), so replicating it under the current method tests whether autoresearcher2 reproduces that result and provides a strong exploitation baseline.
+[16:53:15]     LLM: cell 22 {'DEPTH': '10', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} — The only DEPTH=10 result used the highest MATRIX_LR and WEIGHT_DECAY; testing with the prior-best mid-range hyperparameters isolates whether DEPTH=10's weaker performance is due to fewer tokens or genuinely suboptimal architecture, and probes the untested MATRIX_LR=0.04 and WEIGHT_DECAY=0.2 levels at this depth.
+[16:53:15]   [4/20] cell 4 {'DEPTH': '6', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} [llm_augmented] (prag=-1.000 epist=6.000)
+[16:58:36]     → val_bpb=1.049773 tokens=323.0M surprise=0.0724
+[16:58:36]   [5/20] cell 13 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} [llm_augmented] (prag=-0.276 epist=4.501)
+[17:04:04]     → val_bpb=1.033423 tokens=175.5M surprise=0.0265
+[17:04:04]   [6/20] cell 22 {'DEPTH': '10', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} [llm_augmented] (prag=-0.042 epist=3.835)
+[17:09:41]     → val_bpb=1.057872 tokens=101.2M surprise=0.0028
+[17:09:41]   LLM consultation (after 6 experiments)...
+[17:09:58]     LLM: cell 10 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.2'} — MATRIX_LR=0.02 is NEVER TESTED in the current approach, and DEPTH=8 is consistently the best-performing depth across all prior approaches, so this explores the untested learning rate in the most promising architecture.
+[17:09:58]     LLM: cell 12 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.1'} — WEIGHT_DECAY=0.1 is NEVER TESTED in the current approach, and DEPTH=8/MATRIX_LR=0.04 is the best-performing region across all prior methods (val_bpb ~1.033), so this tests whether lower regularization improves the already-strong configuration.
+[17:09:58]     LLM: cell 8 {'DEPTH': '6', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} — Cell 26 (DEPTH=10, MATRIX_LR=0.08, WEIGHT_DECAY=0.4) was a high-surprise result achieving 0.9383 despite only 101M tokens; testing the same LR/WD at DEPTH=6 with ~3x more tokens probes whether the strong performance generalizes or was depth-specific.
+[17:09:58]   [7/20] cell 10 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.2'} [llm_augmented] (prag=-0.338 epist=4.417)
+[17:15:26]     → val_bpb=1.039985 tokens=176.0M surprise=0.0326
+[17:15:26]   [8/20] cell 12 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.1'} [llm_augmented] (prag=-0.426 epist=4.340)
+[17:20:53]     → val_bpb=1.038551 tokens=175.1M surprise=0.0425
+[17:20:53]   [9/20] cell 8 {'DEPTH': '6', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} [llm_augmented] (prag=-0.201 epist=4.098)
+[17:26:14]     → val_bpb=1.060822 tokens=322.4M surprise=0.0182
+[17:26:14]   LLM consultation (after 9 experiments)...
+[17:26:26]     LLM: cell 16 {'DEPTH': '8', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.2'} — MATRIX_LR=0.08 has only been tested at DEPTH=6 and DEPTH=10 extremes — testing it at DEPTH=8 (where prior approaches consistently found the best results) explores whether high learning rate benefits generalize to the mid-depth sweet spot.
+[17:26:26]     LLM: cell 14 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'} — Prior approaches consistently found DEPTH=8/MATRIX_LR=0.04/WEIGHT_DECAY=0.4 among their top performers (~1.034 bpb), yet this cell is untested in the current approach — running it refines our best-performing region and provides a direct comparison point.
+[17:26:26]     LLM: cell 0 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.1'} — This corner of the space (low LR, low weight decay, shallow depth) is completely untested across all approaches, and given the token budget confound favoring DEPTH=6, it probes whether the combination of minimal regularization with conservative learning rate and maximum training tokens yields competitive results.
+[17:26:26]   [10/20] cell 16 {'DEPTH': '8', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.2'} [llm_augmented] (prag=-0.074 epist=3.671)
+[17:32:31]     → val_bpb=1.041236 tokens=175.4M surprise=0.0072
+[17:32:31]   [11/20] cell 14 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'} [llm_augmented] (prag=-0.092 epist=3.594)
+[19:02:52]     → FAILED: train.py failed (exit 255): 01,863 | mfu: 66.9% | epoch: 1 | remaining: 297s    
+step 00023 (0.9%) | loss: 7.494440 | lrm: 0.86 | dt: 218ms | tok/sec: 601,195 | mfu: 66.8% | epoch: 1 | remaining: 297s    
+step 00024 (0.9%) | loss: 7.322347 | lrm: 0.93 | dt: 218ms | tok/sec: 601,445 | mfu: 66.8% | epoch: 1 | remaining: 297s    
+[19:02:52]   [12/20] cell 0 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.1'} [llm_augmented] (prag=-0.307 epist=5.010)
+[19:39:08]     → FAILED: train.py failed (exit 255): 43 | mfu: 60.7% | epoch: 1 | remaining: 283s    
+step 00156 (5.7%) | loss: 4.274709 | lrm: 0.97 | dt: 119ms | tok/sec: 1,097,334 | mfu: 60.6% | epoch: 1 | remaining: 283s    
+step 00157 (5.8%) | loss: 4.268980 | lrm: 0.97 | dt: 119ms | tok/sec: 1,097,840 | mfu: 60.6% | epoch: 1 | remaining: 283s    
+[19:39:08]   LLM consultation (after 12 experiments)...
+LLM call failed, falling back to Thompson sampling
+Traceback (most recent call last):
+  File "/Users/erik/github.com/erikdebruijn/autoresearcher2/src/autoresearcher2/llm/proposal.py", line 37, in propose_experiments
+    raw = _call_claude(prompt, ssh_host, ssh_key)
+  File "/Users/erik/github.com/erikdebruijn/autoresearcher2/src/autoresearcher2/llm/proposal.py", line 291, in _call_claude
+    result = subprocess.run(
+        ssh_cmd,
+    ...<3 lines>...
+        timeout=120,
+    )
+  File "/Users/erik/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/erik/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 1222, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/erik/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 2129, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/erik/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 1269, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['ssh', '-i', '~/.ssh/pve03_key', '-o', 'StrictHostKeyChecking=accept-new', '-o', 'ConnectTimeout=10', 'root@dllm-experiment.home', 'claude -p --output-format json 2>/dev/null']' timed out after 120 seconds
+[20:15:18]     LLM returned no suggestions (failed or empty)
+[20:15:18]   [13/20] cell 0 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.1'} [llm_fallback] (prag=-0.307 epist=5.010)
+[20:27:41]     → val_bpb=1.053848 tokens=325.6M surprise=0.0246
+[20:27:41]   [14/20] cell 11 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} [lookahead] (prag=-0.109 epist=3.984)
+[21:14:10]     → FAILED: train.py failed (exit 255): 580,692 | mfu: 64.5% | epoch: 1 | remaining: 93s    
+step 00940 (69.1%) | loss: 3.068817 | lrm: 0.34 | dt: 226ms | tok/sec: 580,887 | mfu: 64.5% | epoch: 1 | remaining: 92s    
+step 00941 (69.2%) | loss: 3.072761 | lrm: 0.34 | dt: 225ms | tok/sec: 581,364 | mfu: 64.6% | epoch: 1 | remaining: 92s    
+[21:14:10]   [15/20] cell 11 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} [lookahead] (prag=-0.109 epist=3.984)
+[21:46:25]     → FAILED: train.py failed (exit 255): 1,729 | mfu: 64.6% | epoch: 1 | remaining: 270s    
+step 00145 (9.9%) | loss: 4.259556 | lrm: 0.93 | dt: 225ms | tok/sec: 581,382 | mfu: 64.6% | epoch: 1 | remaining: 270s    
+step 00146 (10.0%) | loss: 4.248571 | lrm: 0.93 | dt: 225ms | tok/sec: 581,466 | mfu: 64.6% | epoch: 1 | remaining: 270s    
+[21:46:25]   LLM consultation (after 15 experiments)...
+LLM call failed, falling back to Thompson sampling
+Traceback (most recent call last):
+  File "/Users/erik/github.com/erikdebruijn/autoresearcher2/src/autoresearcher2/llm/proposal.py", line 37, in propose_experiments
+    raw = _call_claude(prompt, ssh_host, ssh_key)
+  File "/Users/erik/github.com/erikdebruijn/autoresearcher2/src/autoresearcher2/llm/proposal.py", line 291, in _call_claude
+    result = subprocess.run(
+        ssh_cmd,
+    ...<3 lines>...
+        timeout=120,
+    )
+  File "/Users/erik/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 556, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/erik/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 1222, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/erik/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 2129, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/erik/.local/share/uv/python/cpython-3.13.9-macos-aarch64-none/lib/python3.13/subprocess.py", line 1269, in _check_timeout
+    raise TimeoutExpired(
+    ...<2 lines>...
+            stderr=b''.join(stderr_seq) if stderr_seq else None)
+subprocess.TimeoutExpired: Command '['ssh', '-i', '~/.ssh/pve03_key', '-o', 'StrictHostKeyChecking=accept-new', '-o', 'ConnectTimeout=10', 'root@dllm-experiment.home', 'claude -p --output-format json 2>/dev/null']' timed out after 120 seconds
+[22:19:54]     LLM returned no suggestions (failed or empty)
+[22:19:54]   [16/20] cell 11 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} [llm_fallback] (prag=-0.109 epist=3.984)
+[22:27:00]     → FAILED: train.py failed (exit 255): 580,476 | mfu: 64.5% | epoch: 1 | remaining: 55s    
+step 01109 (81.6%) | loss: 2.993369 | lrm: 0.21 | dt: 226ms | tok/sec: 580,999 | mfu: 64.5% | epoch: 1 | remaining: 55s    
+step 01110 (81.7%) | loss: 2.991485 | lrm: 0.21 | dt: 226ms | tok/sec: 580,087 | mfu: 64.4% | epoch: 1 | remaining: 55s    
+[22:27:00]   [17/20] cell 11 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} [lookahead] (prag=-0.109 epist=3.984)
+[22:32:27]     → val_bpb=1.036804 tokens=176.7M surprise=0.0108
+[22:32:27]   [18/20] cell 24 {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.1'} [lookahead] (prag=-0.093 epist=3.801)
+[22:38:05]     → val_bpb=1.061413 tokens=101.1M surprise=0.0078
+[22:38:05]   LLM consultation (after 18 experiments)...
+[22:38:19]     LLM: cell 17 {'DEPTH': '8', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} — DEPTH=8 consistently performs best across all prior approaches, and this specific cell is untried in the current approach while prior runs show DEPTH=8 with WEIGHT_DECAY=0.4 yielding top results (1.0336-1.0343), so this exploits the best region with a higher MATRIX_LR variant.
+[22:38:19]     LLM: cell 5 {'DEPTH': '6', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'} — Cell 4 (DEPTH=6, MATRIX_LR=0.04, WD=0.2) was a high-surprise result; testing the same depth and LR with higher weight decay checks whether that surprising performance generalizes or was specific to WD=0.2, while also exploring an untried cell.
+[22:38:19]     LLM: cell 18 {'DEPTH': '10', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.1'} — DEPTH=10 is underexplored with low MATRIX_LR and low weight decay — this untried corner tests whether the surprisingly strong DEPTH=10 results (best val_bpb despite 3x fewer tokens) hold with conservative hyperparameters, helping disentangle architecture quality from regularization effects.
+[22:38:19]   [19/20] cell 17 {'DEPTH': '8', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} [llm_augmented] (prag=-0.000 epist=1.817)
+[22:43:46]     → val_bpb=1.046560 tokens=175.5M surprise=0.0002
+[22:43:46]   [20/20] cell 5 {'DEPTH': '6', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'} [llm_augmented] (prag=-0.043 epist=3.036)
+[22:49:07]     → val_bpb=1.052072 tokens=322.8M surprise=0.0040
+[22:49:07] 
+  full: best=1.033423 mean=1.048775 tokens/exp=204.0M (13/20 ok, 362.5 min)
+[22:49:07] 
+============================================================
+[22:49:07] ALL DONE — 362.5 min total
+[22:49:07] ============================================================
+[22:49:07] 
+COMPARISON:
+[22:49:07] Approach                   Best       Mean   Unique    Tok/exp      Tok/s
+[22:49:07] ----------------------------------------------------------------------
+[22:49:07] full                   1.033423   1.048775       13     204.0M     578459
+[22:49:07] 
+Results: artifacts/evidence/d240b43f.json
+[22:49:08] Run directory: artifacts/runs/2026-03-12_evidence-d240b43f
+[22:49:08] Report generation failed: No module named 'scripts'
+Thu Mar 12 22:49:08 CET 2026: Full complete. Generating report...
+Asking LLM for Discussion section...
+  Discussion generated.
+LaTeX written to: /Users/erik/github.com/erikdebruijn/autoresearcher2/artifacts/runs/2026-03-12_evidence-v1.5/report.tex
+PDF generated: /Users/erik/github.com/erikdebruijn/autoresearcher2/artifacts/runs/2026-03-12_evidence-v1.5/report.pdf
+Thu Mar 12 22:49:36 CET 2026: Final report generated.

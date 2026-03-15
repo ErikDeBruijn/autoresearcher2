@@ -1,0 +1,859 @@
+{
+  "run_id": "85f48ee5",
+  "version": "v2.0-steps",
+  "n_iterations": 7,
+  "schema": {
+    "DEPTH": [
+      "6",
+      "8",
+      "10"
+    ],
+    "MATRIX_LR": [
+      "0.02",
+      "0.04",
+      "0.08"
+    ],
+    "WEIGHT_DECAY": [
+      "0.1",
+      "0.2",
+      "0.4"
+    ]
+  },
+  "results": [
+    {
+      "cell": 11,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "outcome": 0.963681,
+      "appraisal": {
+        "surprise": 0.007707860208227002,
+        "theory_conflict": 0.0001263583640692951,
+        "prediction_impact_breadth": 19.0,
+        "learntropy": 0.00010599830313720472
+      }
+    },
+    {
+      "cell": 4,
+      "config": {
+        "DEPTH": "6",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "outcome": 0.9504870000000001,
+      "appraisal": {
+        "surprise": 0.007499032484410084,
+        "theory_conflict": 0.00012293495876082106,
+        "prediction_impact_breadth": 19.0,
+        "learntropy": 0.00010312650943900404
+      }
+    },
+    {
+      "cell": 22,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "outcome": 0.9421919999999999,
+      "appraisal": {
+        "surprise": 0.0024198928648123674,
+        "theory_conflict": 5.26035082164406e-05,
+        "prediction_impact_breadth": 22.0,
+        "learntropy": 4.748365788543852e-05
+      }
+    },
+    {
+      "cell": 15,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "outcome": 0.9603809999999999,
+      "appraisal": {
+        "surprise": 0.005466928929270143,
+        "theory_conflict": 9.21388203272743e-05,
+        "prediction_impact_breadth": 24.0,
+        "learntropy": 8.686931288525942e-05
+      }
+    },
+    {
+      "cell": 0,
+      "config": {
+        "DEPTH": "6",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "outcome": 0.9458470000000001,
+      "appraisal": {
+        "surprise": 0.0028963239150808784,
+        "theory_conflict": 5.179252384481571e-05,
+        "prediction_impact_breadth": 21.0,
+        "learntropy": 4.5676712621921746e-05
+      }
+    },
+    {
+      "cell": 26,
+      "config": {
+        "DEPTH": "10",
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "outcome": 0.938965,
+      "appraisal": {
+        "surprise": 0.0030427878499432737,
+        "theory_conflict": 5.44656740348781e-05,
+        "prediction_impact_breadth": 20.0,
+        "learntropy": 4.6876588550454354e-05
+      }
+    },
+    {
+      "cell": 12,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "outcome": 0.964906,
+      "appraisal": {
+        "surprise": 0.0007187544036583171,
+        "theory_conflict": 1.6973959256887127e-05,
+        "prediction_impact_breadth": 19.0,
+        "learntropy": 1.423895356672546e-05
+      }
+    },
+    {
+      "cell": 8,
+      "config": {
+        "DEPTH": "6",
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "outcome": 0.93947,
+      "appraisal": {
+        "surprise": 0.0006672831667615675,
+        "theory_conflict": 1.6494908793336956e-05,
+        "prediction_impact_breadth": 15.0,
+        "learntropy": 1.2294579114853488e-05
+      }
+    },
+    {
+      "cell": 13,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "outcome": 0.9668920000000001,
+      "appraisal": {
+        "surprise": 0.0001598043387184278,
+        "theory_conflict": 5.410244551974722e-06,
+        "prediction_impact_breadth": 11.0,
+        "learntropy": 3.453276529101096e-06
+      }
+    },
+    {
+      "cell": 9,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.1"
+      },
+      "outcome": 0.9566840000000001,
+      "appraisal": {
+        "surprise": 2.188500247668479e-05,
+        "theory_conflict": 9.858062595643824e-07,
+        "prediction_impact_breadth": 7.0,
+        "learntropy": 5.019479783350074e-07
+      }
+    },
+    {
+      "cell": 10,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.02",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "outcome": 0.9599329999999999,
+      "appraisal": {
+        "surprise": 0.0010001587575279025,
+        "theory_conflict": 3.94146145629847e-05,
+        "prediction_impact_breadth": 15.0,
+        "learntropy": 2.9377919156595654e-05
+      }
+    },
+    {
+      "cell": 16,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "outcome": 0.957276,
+      "appraisal": {
+        "surprise": 0.0002926859141146876,
+        "theory_conflict": 1.254889581785554e-05,
+        "prediction_impact_breadth": 6.0,
+        "learntropy": 5.915606219472772e-06
+      }
+    },
+    {
+      "cell": 17,
+      "config": {
+        "DEPTH": "8",
+        "MATRIX_LR": "0.08",
+        "WEIGHT_DECAY": "0.4"
+      },
+      "outcome": 0.954075,
+      "appraisal": {
+        "surprise": 0.00020629251412052074,
+        "theory_conflict": 1.1982056469884471e-05,
+        "prediction_impact_breadth": 8.0,
+        "learntropy": 6.522205426762407e-06
+      }
+    }
+  ],
+  "step_log": [
+    {
+      "iteration": 0,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.4"
+          }
+        },
+        "reasoning": "Fallback: Thompson sampling (LLM unavailable)"
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 11: outcome=0.9637",
+        "payload": {
+          "cell": 11,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.963681
+        }
+      }
+    },
+    {
+      "iteration": 1,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.2"
+          }
+        },
+        "reasoning": "Center-grid experiment with shallowest depth to establish a baseline at DEPTH=6 where token budget is highest (~323M), contrasting with our sole DEPTH=8 result."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 4: outcome=0.9505",
+        "payload": {
+          "cell": 4,
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.9504870000000001
+        }
+      }
+    },
+    {
+      "iteration": 1,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.2"
+          }
+        },
+        "reasoning": "Matching config at DEPTH=10 to create a clean depth comparison (6 vs 8 vs 10) at mid-range LR and weight decay, enabling us to disentangle depth effects from token budget confound."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 22: outcome=0.9422",
+        "payload": {
+          "cell": 22,
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.9421919999999999
+        }
+      }
+    },
+    {
+      "iteration": 1,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.1"
+          }
+        },
+        "reasoning": "Explore the opposite corner from exp 0 (high LR, low weight decay) at the same DEPTH=8 to begin estimating MATRIX_LR and WEIGHT_DECAY main effects while controlling depth."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 15: outcome=0.9604",
+        "payload": {
+          "cell": 15,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.1"
+          },
+          "outcome": 0.9603809999999999
+        }
+      }
+    },
+    {
+      "iteration": 2,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.1"
+          }
+        },
+        "reasoning": "With only 4 experiments, we need more data; this explores the shallow+low-LR+low-WD corner to help disentangle DEPTH (highest importance) from the other factors."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 0: outcome=0.9458",
+        "payload": {
+          "cell": 0,
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.1"
+          },
+          "outcome": 0.9458470000000001
+        }
+      }
+    },
+    {
+      "iteration": 2,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4"
+          }
+        },
+        "reasoning": "Tests the opposite corner (deep+high-LR+high-WD) to maximize contrast with the previous proposal and probe whether high weight decay compensates for aggressive learning rate at greater depth."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 26: outcome=0.9390",
+        "payload": {
+          "cell": 26,
+          "config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.938965
+        }
+      }
+    },
+    {
+      "iteration": 2,
+      "step": {
+        "type": "hypothesis",
+        "payload": {
+          "claim": "DEPTH=8 yields the best outcomes when controlling for other factors, because it balances model capacity against token budget (176M tokens vs 323M for DEPTH=6).",
+          "proposed_test": "import json\nbest_by_depth = {}\nfor row in DATA:\n    d = row['config']['DEPTH']\n    if d not in best_by_depth or row['outcome'] > best_by_depth[d]:\n        best_by_depth[d] = row['outcome']\ndepth8_best = best_by_depth.get('8', 0)\nother_best = max(v for k, v in best_by_depth.items() if k != '8') if len(best_by_depth) > 1 else 0\nresult = {'supported': depth8_best > other_best, 'depth8_best': depth8_best, 'other_best': other_best, 'best_by_depth': best_by_depth}\nprint(json.dumps(result))",
+          "acceptance_threshold": "depth8_best > other_best across at least 6 total experiments"
+        },
+        "reasoning": "The two DEPTH=8 runs (0.9637, 0.9604) outperform DEPTH=6 (0.9505) and DEPTH=10 (0.9422); making this claim explicit lets us test it as more data arrives."
+      },
+      "result": {
+        "success": true,
+        "summary": "Hypothesis tested: DEPTH=8 yields the best outcomes when controlling for other ",
+        "payload": {
+          "claim": "DEPTH=8 yields the best outcomes when controlling for other factors, because it balances model capacity against token budget (176M tokens vs 323M for DEPTH=6).",
+          "threshold": "depth8_best > other_best across at least 6 total experiments",
+          "test_output": {
+            "supported": true,
+            "depth8_best": 0.963681,
+            "other_best": 0.9504870000000001,
+            "best_by_depth": {
+              "8": 0.963681,
+              "6": 0.9504870000000001,
+              "10": 0.9421919999999999
+            }
+          },
+          "code": "import json\nbest_by_depth = {}\nfor row in DATA:\n    d = row['config']['DEPTH']\n    if d not in best_by_depth or row['outcome'] > best_by_depth[d]:\n        best_by_depth[d] = row['outcome']\ndepth8_best = best_by_depth.get('8', 0)\nother_best = max(v for k, v in best_by_depth.items() if k != '8') if len(best_by_depth) > 1 else 0\nresult = {'supported': depth8_best > other_best, 'depth8_best': depth8_best, 'other_best': other_best, 'best_by_depth': best_by_depth}\nprint(json.dumps(result))"
+        }
+      }
+    },
+    {
+      "iteration": 3,
+      "step": {
+        "type": "analysis",
+        "payload": {
+          "question": "What are the main effects of each factor on outcome, and are there any interaction effects visible in the 6 experiments so far?",
+          "code": "import json\nimport numpy as np\nfrom itertools import combinations\n\nresults = []\nfor d in DATA:\n    results.append({'DEPTH': d['config']['DEPTH'], 'MATRIX_LR': d['config']['MATRIX_LR'], 'WEIGHT_DECAY': d['config']['WEIGHT_DECAY'], 'outcome': d['outcome']})\n\n# Main effects\nanalysis = {'main_effects': {}, 'best_config': None, 'worst_config': None}\nfor factor in ['DEPTH', 'MATRIX_LR', 'WEIGHT_DECAY']:\n    levels = {}\n    for r in results:\n        lv = r[factor]\n        levels.setdefault(lv, []).append(r['outcome'])\n    analysis['main_effects'][factor] = {k: round(np.mean(v), 4) for k, v in sorted(levels.items())}\n\nbest = max(results, key=lambda x: x['outcome'])\nworst = min(results, key=lambda x: x['outcome'])\nanalysis['best_config'] = {k: v for k, v in best.items()}\nanalysis['worst_config'] = {k: v for k, v in worst.items()}\nanalysis['outcome_range'] = round(best['outcome'] - worst['outcome'], 4)\n\nprint(json.dumps(analysis, indent=2))"
+        },
+        "reasoning": "With 6 experiments done, we need to understand the main effects and outcome landscape before choosing the next experiments strategically."
+      },
+      "result": {
+        "success": true,
+        "summary": "Analysis complete: What are the main effects of each factor on outcome, and are there any interacti",
+        "payload": {
+          "question": "What are the main effects of each factor on outcome, and are there any interaction effects visible in the 6 experiments so far?",
+          "output": {
+            "main_effects": {
+              "DEPTH": {
+                "10": 0.9406,
+                "6": 0.9482,
+                "8": 0.962
+              },
+              "MATRIX_LR": {
+                "0.02": 0.9548,
+                "0.04": 0.9463,
+                "0.08": 0.9497
+              },
+              "WEIGHT_DECAY": {
+                "0.1": 0.9531,
+                "0.2": 0.9463,
+                "0.4": 0.9513
+              }
+            },
+            "best_config": {
+              "DEPTH": "8",
+              "MATRIX_LR": "0.02",
+              "WEIGHT_DECAY": "0.4",
+              "outcome": 0.963681
+            },
+            "worst_config": {
+              "DEPTH": "10",
+              "MATRIX_LR": "0.08",
+              "WEIGHT_DECAY": "0.4",
+              "outcome": 0.938965
+            },
+            "outcome_range": 0.0247
+          },
+          "code": "import json\nimport numpy as np\nfrom itertools import combinations\n\nresults = []\nfor d in DATA:\n    results.append({'DEPTH': d['config']['DEPTH'], 'MATRIX_LR': d['config']['MATRIX_LR'], 'WEIGHT_DECAY': d['config']['WEIGHT_DECAY'], 'outcome': d['outcome']})\n\n# Main effects\nanalysis = {'main_effects': {}, 'best_config': None, 'worst_config': None}\nfor factor in ['DEPTH', 'MATRIX_LR', 'WEIGHT_DECAY']:\n    levels = {}\n    for r in results:\n        lv = r[factor]\n        levels.setdefault(lv, []).append(r['outcome'])\n    analysis['main_effects'][factor] = {k: round(np.mean(v), 4) for k, v in sorted(levels.items())}\n\nbest = max(results, key=lambda x: x['outcome'])\nworst = min(results, key=lambda x: x['outcome'])\nanalysis['best_config'] = {k: v for k, v in best.items()}\nanalysis['worst_config'] = {k: v for k, v in worst.items()}\nanalysis['outcome_range'] = round(best['outcome'] - worst['outcome'], 4)\n\nprint(json.dumps(analysis, indent=2))"
+        }
+      }
+    },
+    {
+      "iteration": 3,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.1"
+          }
+        },
+        "reasoning": "DEPTH=8 has the two best outcomes so far; pairing it with MATRIX_LR=0.04 (mid) and low weight decay tests whether the strong DEPTH=8 performance generalizes, and explores an unseen cell."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 12: outcome=0.9649",
+        "payload": {
+          "cell": 12,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.1"
+          },
+          "outcome": 0.964906
+        }
+      }
+    },
+    {
+      "iteration": 3,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4"
+          }
+        },
+        "reasoning": "DEPTH=6 gets the most tokens (~323M) which may help; pairing with high LR and high WD tests a corner of the design space and helps estimate the DEPTH x MATRIX_LR interaction."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 8: outcome=0.9395",
+        "payload": {
+          "cell": 8,
+          "config": {
+            "DEPTH": "6",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.93947
+        }
+      }
+    },
+    {
+      "iteration": 4,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.2"
+          }
+        },
+        "reasoning": "DEPTH=8 consistently produces the best outcomes; testing with the mid-range MATRIX_LR and WEIGHT_DECAY to probe the center of the best-performing region and get a replicate near our best configs (exps 0, 3, 6)."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 13: outcome=0.9669",
+        "payload": {
+          "cell": 13,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.04",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.9668920000000001
+        }
+      }
+    },
+    {
+      "iteration": 4,
+      "step": {
+        "type": "analysis",
+        "payload": {
+          "question": "Is there a statistically significant main effect of DEPTH on outcome, and what is the estimated effect size after controlling for the token budget confound?",
+          "code": "import json\nimport numpy as np\nfrom itertools import groupby\n\noutcomes = [(d['config']['DEPTH'], d['config']['MATRIX_LR'], d['config']['WEIGHT_DECAY'], d['outcome']) for d in DATA]\n\n# Main effects by depth\ndepth_outcomes = {}\nfor d, ml, wd, o in outcomes:\n    depth_outcomes.setdefault(d, []).append(o)\n\ndepth_means = {k: np.mean(v) for k, v in depth_outcomes.items()}\ndepth_counts = {k: len(v) for k, v in depth_outcomes.items()}\n\n# Token budgets per depth\ntok_budget = {'6': 323, '8': 176, '10': 101}\n\n# Simple OLS: outcome ~ depth_numeric + matrix_lr_numeric + wd_numeric\nimport statsmodels.api as sm\nX = []\ny = []\nfor d, ml, wd, o in outcomes:\n    X.append([float(d), float(ml), float(wd)])\n    y.append(o)\nX = np.array(X)\ny = np.array(y)\nX = sm.add_constant(X)\nmodel = sm.OLS(y, X).fit()\n\nresult = {\n    'depth_means': depth_means,\n    'depth_counts': depth_counts,\n    'ols_coefficients': {'intercept': model.params[0], 'DEPTH': model.params[1], 'MATRIX_LR': model.params[2], 'WEIGHT_DECAY': model.params[3]},\n    'ols_pvalues': {'intercept': model.pvalues[0], 'DEPTH': model.pvalues[1], 'MATRIX_LR': model.pvalues[2], 'WEIGHT_DECAY': model.pvalues[3]},\n    'r_squared': model.rsquared,\n    'note': 'Negative DEPTH coefficient means deeper=worse. But DEPTH=10 gets ~3x fewer tokens than DEPTH=6, so the depth effect is confounded with training budget.'\n}\nprint(json.dumps(result, indent=2))"
+        },
+        "reasoning": "With 8 experiments we have enough data to fit a simple linear model and quantify whether DEPTH's apparent advantage at 8 is statistically supported or within noise, while flagging the token budget confound."
+      },
+      "result": {
+        "success": true,
+        "summary": "Analysis complete: Is there a statistically significant main effect of DEPTH on outcome, and what i",
+        "payload": {
+          "question": "Is there a statistically significant main effect of DEPTH on outcome, and what is the estimated effect size after controlling for the token budget confound?",
+          "output": {
+            "depth_means": {
+              "8": 0.9639650000000001,
+              "6": 0.9452680000000001,
+              "10": 0.9405785
+            },
+            "depth_counts": {
+              "8": 4,
+              "6": 3,
+              "10": 2
+            },
+            "ols_coefficients": {
+              "intercept": 0.9610914241598563,
+              "DEPTH": 0.0005458480926428441,
+              "MATRIX_LR": -0.1401948228882809,
+              "WEIGHT_DECAY": -0.02548831516802887
+            },
+            "ols_pvalues": {
+              "intercept": 1.7386127433344303e-07,
+              "DEPTH": 0.8618479167669085,
+              "MATRIX_LR": 0.5017625232685242,
+              "WEIGHT_DECAY": 0.5110315282253536
+            },
+            "r_squared": 0.21693037104263824,
+            "note": "Negative DEPTH coefficient means deeper=worse. But DEPTH=10 gets ~3x fewer tokens than DEPTH=6, so the depth effect is confounded with training budget."
+          },
+          "code": "import json\nimport numpy as np\nfrom itertools import groupby\n\noutcomes = [(d['config']['DEPTH'], d['config']['MATRIX_LR'], d['config']['WEIGHT_DECAY'], d['outcome']) for d in DATA]\n\n# Main effects by depth\ndepth_outcomes = {}\nfor d, ml, wd, o in outcomes:\n    depth_outcomes.setdefault(d, []).append(o)\n\ndepth_means = {k: np.mean(v) for k, v in depth_outcomes.items()}\ndepth_counts = {k: len(v) for k, v in depth_outcomes.items()}\n\n# Token budgets per depth\ntok_budget = {'6': 323, '8': 176, '10': 101}\n\n# Simple OLS: outcome ~ depth_numeric + matrix_lr_numeric + wd_numeric\nimport statsmodels.api as sm\nX = []\ny = []\nfor d, ml, wd, o in outcomes:\n    X.append([float(d), float(ml), float(wd)])\n    y.append(o)\nX = np.array(X)\ny = np.array(y)\nX = sm.add_constant(X)\nmodel = sm.OLS(y, X).fit()\n\nresult = {\n    'depth_means': depth_means,\n    'depth_counts': depth_counts,\n    'ols_coefficients': {'intercept': model.params[0], 'DEPTH': model.params[1], 'MATRIX_LR': model.params[2], 'WEIGHT_DECAY': model.params[3]},\n    'ols_pvalues': {'intercept': model.pvalues[0], 'DEPTH': model.pvalues[1], 'MATRIX_LR': model.pvalues[2], 'WEIGHT_DECAY': model.pvalues[3]},\n    'r_squared': model.rsquared,\n    'note': 'Negative DEPTH coefficient means deeper=worse. But DEPTH=10 gets ~3x fewer tokens than DEPTH=6, so the depth effect is confounded with training budget.'\n}\nprint(json.dumps(result, indent=2))"
+        }
+      }
+    },
+    {
+      "iteration": 4,
+      "step": {
+        "type": "hypothesis",
+        "payload": {
+          "claim": "DEPTH=8 is the optimal depth level, outperforming both DEPTH=6 and DEPTH=10 on average by at least 0.01 (a non-monotonic relationship), even after accounting for variation across other factors.",
+          "proposed_test": "import json\nimport numpy as np\n\ndepth_outcomes = {}\nfor d in DATA:\n    depth = d['config']['DEPTH']\n    depth_outcomes.setdefault(depth, []).append(d['outcome'])\n\nmeans = {k: np.mean(v) for k, v in depth_outcomes.items()}\n\ndepth8_mean = means.get('8', 0)\ndepth6_mean = means.get('6', 0)\ndepth10_mean = means.get('10', 0)\n\nadv_over_6 = depth8_mean - depth6_mean\nadv_over_10 = depth8_mean - depth10_mean\n\nresult = {\n    'means': means,\n    'advantage_over_6': adv_over_6,\n    'advantage_over_10': adv_over_10,\n    'hypothesis_supported': adv_over_6 >= 0.01 and adv_over_10 >= 0.01\n}\nprint(json.dumps(result, indent=2))",
+          "acceptance_threshold": "DEPTH=8 mean outcome exceeds both DEPTH=6 and DEPTH=10 means by >= 0.01"
+        },
+        "reasoning": "Current data shows DEPTH=8 mean at ~0.963 vs ~0.948 (D6) and ~0.941 (D10), suggesting a non-monotonic sweet spot; formalizing this as a testable hypothesis lets us track whether it holds as more data arrives."
+      },
+      "result": {
+        "success": false,
+        "summary": "Hypothesis test failed: Exit code 1: in dumps\n    **kw).encode(obj)\n          ~~~~~~",
+        "payload": {
+          "claim": "DEPTH=8 is the optimal depth level, outperforming both DEPTH=6 and DEPTH=10 on average by at least 0.01 (a non-monotonic relationship), even after accounting for variation across other factors.",
+          "error": "Exit code 1: in dumps\n    **kw).encode(obj)\n          ~~~~~~^^^^^\n  File \"/usr/lib/python3.13/json/encoder.py\", line 200, in encode\n    chunks = self.iterencode(o, _one_shot=True)\n  File \"/usr/lib/python3.13/json/encoder.py\", line 261, in iterencode\n    return _iterencode(o, 0)\n  File \"/usr/lib/python3.13/json/encoder.py\", line 180, in default\n    raise TypeError(f'Object of type {o.__class__.__name__} '\n                    f'is not JSON serializable')\nTypeError: Object of type bool is not JSON serializable\n",
+          "code": "import json\nimport numpy as np\n\ndepth_outcomes = {}\nfor d in DATA:\n    depth = d['config']['DEPTH']\n    depth_outcomes.setdefault(depth, []).append(d['outcome'])\n\nmeans = {k: np.mean(v) for k, v in depth_outcomes.items()}\n\ndepth8_mean = means.get('8', 0)\ndepth6_mean = means.get('6', 0)\ndepth10_mean = means.get('10', 0)\n\nadv_over_6 = depth8_mean - depth6_mean\nadv_over_10 = depth8_mean - depth10_mean\n\nresult = {\n    'means': means,\n    'advantage_over_6': adv_over_6,\n    'advantage_over_10': adv_over_10,\n    'hypothesis_supported': adv_over_6 >= 0.01 and adv_over_10 >= 0.01\n}\nprint(json.dumps(result, indent=2))"
+        }
+      }
+    },
+    {
+      "iteration": 5,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.1"
+          }
+        },
+        "reasoning": "DEPTH=8 dominates the top results; testing with low MATRIX_LR and low WEIGHT_DECAY to probe whether the best DEPTH=8 config so far (exp 6: 0.9649) can be beaten by reducing weight decay further."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 9: outcome=0.9567",
+        "payload": {
+          "cell": 9,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.1"
+          },
+          "outcome": 0.9566840000000001
+        }
+      }
+    },
+    {
+      "iteration": 5,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.2"
+          }
+        },
+        "reasoning": "Completing the DEPTH=8, MATRIX_LR=0.02 slice to separate WEIGHT_DECAY effects within the best-performing depth, since we only have WEIGHT_DECAY=0.4 for this combination so far."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 10: outcome=0.9599",
+        "payload": {
+          "cell": 10,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.9599329999999999
+        }
+      }
+    },
+    {
+      "iteration": 5,
+      "step": {
+        "type": "hypothesis",
+        "payload": {
+          "claim": "DEPTH=8 is the optimal depth level, outperforming both DEPTH=6 and DEPTH=10 by at least 0.01 on average, and this advantage is NOT explained by the token budget confound (since DEPTH=8 sits in the middle of the token range).",
+          "proposed_test": "import json\nimeans = {}\nfor d in ['6','8','10']:\n    vals = [r['outcome'] for r in DATA if r['config']['DEPTH']==d]\n    imeans[d] = sum(vals)/len(vals) if vals else None\ngap_vs_6 = imeans['8'] - imeans['6']\ngap_vs_10 = imeans['8'] - imeans['10']\nresult = {'means': imeans, 'gap_vs_6': gap_vs_6, 'gap_vs_10': gap_vs_10, 'accept': gap_vs_6 >= 0.01 and gap_vs_10 >= 0.01}\nprint(json.dumps(result))",
+          "acceptance_threshold": "DEPTH=8 mean exceeds both DEPTH=6 and DEPTH=10 means by >= 0.01"
+        },
+        "reasoning": "Making the apparent DEPTH=8 superiority (mean 0.964 vs 0.945/0.941) explicit and testable; the mid-range token budget makes this less likely to be a confound artifact, but we need to track whether the gap holds as more data arrives."
+      },
+      "result": {
+        "success": true,
+        "summary": "Hypothesis tested: DEPTH=8 is the optimal depth level, outperforming both DEPTH",
+        "payload": {
+          "claim": "DEPTH=8 is the optimal depth level, outperforming both DEPTH=6 and DEPTH=10 by at least 0.01 on average, and this advantage is NOT explained by the token budget confound (since DEPTH=8 sits in the middle of the token range).",
+          "threshold": "DEPTH=8 mean exceeds both DEPTH=6 and DEPTH=10 means by >= 0.01",
+          "test_output": {
+            "means": {
+              "6": 0.9452680000000001,
+              "8": 0.9620795000000001,
+              "10": 0.9405785
+            },
+            "gap_vs_6": 0.01681149999999998,
+            "gap_vs_10": 0.021501000000000103,
+            "accept": true
+          },
+          "code": "import json\nimeans = {}\nfor d in ['6','8','10']:\n    vals = [r['outcome'] for r in DATA if r['config']['DEPTH']==d]\n    imeans[d] = sum(vals)/len(vals) if vals else None\ngap_vs_6 = imeans['8'] - imeans['6']\ngap_vs_10 = imeans['8'] - imeans['10']\nresult = {'means': imeans, 'gap_vs_6': gap_vs_6, 'gap_vs_10': gap_vs_10, 'accept': gap_vs_6 >= 0.01 and gap_vs_10 >= 0.01}\nprint(json.dumps(result))"
+        }
+      }
+    },
+    {
+      "iteration": 6,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.2"
+          }
+        },
+        "reasoning": "DEPTH=8 consistently dominates; testing the one remaining DEPTH=8 cell with MATRIX_LR=0.08 and moderate weight decay to complete coverage of DEPTH=8 configurations."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 16: outcome=0.9573",
+        "payload": {
+          "cell": 16,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.2"
+          },
+          "outcome": 0.957276
+        }
+      }
+    },
+    {
+      "iteration": 6,
+      "step": {
+        "type": "experiment",
+        "payload": {
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4"
+          }
+        },
+        "reasoning": "Fills the last untested DEPTH=8 cell, giving us complete data for all 9 DEPTH=8 configurations to robustly estimate MATRIX_LR and WEIGHT_DECAY effects within the best depth."
+      },
+      "result": {
+        "success": true,
+        "summary": "Experiment cell 17: outcome=0.9541",
+        "payload": {
+          "cell": 17,
+          "config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4"
+          },
+          "outcome": 0.954075
+        }
+      }
+    },
+    {
+      "iteration": 6,
+      "step": {
+        "type": "hypothesis",
+        "payload": {
+          "claim": "DEPTH=8 yields significantly higher outcomes than DEPTH=6 and DEPTH=10, even after acknowledging the token budget confound, with a mean advantage of at least 0.015 over the next best depth.",
+          "proposed_test": "import numpy as np\nfrom scipy import stats\nd8 = [r['outcome'] for r in DATA if r['config']['DEPTH'] == '8']\nd_other = [r['outcome'] for r in DATA if r['config']['DEPTH'] != '8']\nmean_diff = np.mean(d8) - np.mean(d_other)\nt_stat, p_val = stats.ttest_ind(d8, d_other, equal_var=False)\nimport json\nprint(json.dumps({'mean_d8': np.mean(d8), 'mean_other': np.mean(d_other), 'diff': mean_diff, 'p_value': p_val, 'accept': bool(mean_diff >= 0.015 and p_val < 0.05)}))",
+          "acceptance_threshold": "Mean difference >= 0.015 AND p-value < 0.05 (Welch's t-test)"
+        },
+        "reasoning": "DEPTH=8 mean is ~0.962 vs ~0.943 for others; formalizing this as a testable hypothesis with statistical rigor before committing to DEPTH=8 as the dominant setting."
+      },
+      "result": {
+        "success": true,
+        "summary": "Hypothesis tested: DEPTH=8 yields significantly higher outcomes than DEPTH=6 an",
+        "payload": {
+          "claim": "DEPTH=8 yields significantly higher outcomes than DEPTH=6 and DEPTH=10, even after acknowledging the token budget confound, with a mean advantage of at least 0.015 over the next best depth.",
+          "threshold": "Mean difference >= 0.015 AND p-value < 0.05 (Welch's t-test)",
+          "test_output": {
+            "mean_d8": 0.9604785,
+            "mean_other": 0.9433921999999999,
+            "diff": 0.01708630000000011,
+            "p_value": 0.00019942851874529813,
+            "accept": true
+          },
+          "code": "import numpy as np\nfrom scipy import stats\nd8 = [r['outcome'] for r in DATA if r['config']['DEPTH'] == '8']\nd_other = [r['outcome'] for r in DATA if r['config']['DEPTH'] != '8']\nmean_diff = np.mean(d8) - np.mean(d_other)\nt_stat, p_val = stats.ttest_ind(d8, d_other, equal_var=False)\nimport json\nprint(json.dumps({'mean_d8': np.mean(d8), 'mean_other': np.mean(d_other), 'diff': mean_diff, 'p_value': p_val, 'accept': bool(mean_diff >= 0.015 and p_val < 0.05)}))"
+        }
+      }
+    }
+  ],
+  "analysis_log": [
+    {
+      "question": "What are the main effects of each factor on outcome, and are there any interaction effects visible in the 6 experiments so far?",
+      "code": "import json\nimport numpy as np\nfrom itertools import combinations\n\nresults = []\nfor d in DATA:\n    results.append({'DEPTH': d['config']['DEPTH'], 'MATRIX_LR': d['config']['MATRIX_LR'], 'WEIGHT_DECAY': d['config']['WEIGHT_DECAY'], 'outcome': d['outcome']})\n\n# Main effects\nanalysis = {'main_effects': {}, 'best_config': None, 'worst_config': None}\nfor factor in ['DEPTH', 'MATRIX_LR', 'WEIGHT_DECAY']:\n    levels = {}\n    for r in results:\n        lv = r[factor]\n        levels.setdefault(lv, []).append(r['outcome'])\n    analysis['main_effects'][factor] = {k: round(np.mean(v), 4) for k, v in sorted(levels.items())}\n\nbest = max(results, key=lambda x: x['outcome'])\nworst = min(results, key=lambda x: x['outcome'])\nanalysis['best_config'] = {k: v for k, v in best.items()}\nanalysis['worst_config'] = {k: v for k, v in worst.items()}\nanalysis['outcome_range'] = round(best['outcome'] - worst['outcome'], 4)\n\nprint(json.dumps(analysis, indent=2))",
+      "result": {
+        "success": true,
+        "output": {
+          "main_effects": {
+            "DEPTH": {
+              "10": 0.9406,
+              "6": 0.9482,
+              "8": 0.962
+            },
+            "MATRIX_LR": {
+              "0.02": 0.9548,
+              "0.04": 0.9463,
+              "0.08": 0.9497
+            },
+            "WEIGHT_DECAY": {
+              "0.1": 0.9531,
+              "0.2": 0.9463,
+              "0.4": 0.9513
+            }
+          },
+          "best_config": {
+            "DEPTH": "8",
+            "MATRIX_LR": "0.02",
+            "WEIGHT_DECAY": "0.4",
+            "outcome": 0.963681
+          },
+          "worst_config": {
+            "DEPTH": "10",
+            "MATRIX_LR": "0.08",
+            "WEIGHT_DECAY": "0.4",
+            "outcome": 0.938965
+          },
+          "outcome_range": 0.0247
+        },
+        "stdout": "{\n  \"main_effects\": {\n    \"DEPTH\": {\n      \"10\": 0.9406,\n      \"6\": 0.9482,\n      \"8\": 0.962\n    },\n    \"MATRIX_LR\": {\n      \"0.02\": 0.9548,\n      \"0.04\": 0.9463,\n      \"0.08\": 0.9497\n    },\n    \"WEIGHT_DECAY\": {\n      \"0.1\": 0.9531,\n      \"0.2\": 0.9463,\n      \"0.4\": 0.9513\n    }\n  },\n  \"best_config\": {\n    \"DEPTH\": \"8\",\n    \"MATRIX_LR\": \"0.02\",\n    \"WEIGHT_DECAY\": \"0.4\",\n    \"outcome\": 0.963681\n  },\n  \"worst_config\": {\n    \"DEPTH\": \"10\",\n    \"MATRIX_LR\": \"0.08\",\n    \"WEIGHT_DECAY\": \"0.4\",\n    \"outcome\": 0.938965\n  },\n  \"outcome_range\": 0.0247\n}\n",
+        "stderr": ""
+      }
+    },
+    {
+      "question": "Is there a statistically significant main effect of DEPTH on outcome, and what is the estimated effect size after controlling for the token budget confound?",
+      "code": "import json\nimport numpy as np\nfrom itertools import groupby\n\noutcomes = [(d['config']['DEPTH'], d['config']['MATRIX_LR'], d['config']['WEIGHT_DECAY'], d['outcome']) for d in DATA]\n\n# Main effects by depth\ndepth_outcomes = {}\nfor d, ml, wd, o in outcomes:\n    depth_outcomes.setdefault(d, []).append(o)\n\ndepth_means = {k: np.mean(v) for k, v in depth_outcomes.items()}\ndepth_counts = {k: len(v) for k, v in depth_outcomes.items()}\n\n# Token budgets per depth\ntok_budget = {'6': 323, '8': 176, '10': 101}\n\n# Simple OLS: outcome ~ depth_numeric + matrix_lr_numeric + wd_numeric\nimport statsmodels.api as sm\nX = []\ny = []\nfor d, ml, wd, o in outcomes:\n    X.append([float(d), float(ml), float(wd)])\n    y.append(o)\nX = np.array(X)\ny = np.array(y)\nX = sm.add_constant(X)\nmodel = sm.OLS(y, X).fit()\n\nresult = {\n    'depth_means': depth_means,\n    'depth_counts': depth_counts,\n    'ols_coefficients': {'intercept': model.params[0], 'DEPTH': model.params[1], 'MATRIX_LR': model.params[2], 'WEIGHT_DECAY': model.params[3]},\n    'ols_pvalues': {'intercept': model.pvalues[0], 'DEPTH': model.pvalues[1], 'MATRIX_LR': model.pvalues[2], 'WEIGHT_DECAY': model.pvalues[3]},\n    'r_squared': model.rsquared,\n    'note': 'Negative DEPTH coefficient means deeper=worse. But DEPTH=10 gets ~3x fewer tokens than DEPTH=6, so the depth effect is confounded with training budget.'\n}\nprint(json.dumps(result, indent=2))",
+      "result": {
+        "success": true,
+        "output": {
+          "depth_means": {
+            "8": 0.9639650000000001,
+            "6": 0.9452680000000001,
+            "10": 0.9405785
+          },
+          "depth_counts": {
+            "8": 4,
+            "6": 3,
+            "10": 2
+          },
+          "ols_coefficients": {
+            "intercept": 0.9610914241598563,
+            "DEPTH": 0.0005458480926428441,
+            "MATRIX_LR": -0.1401948228882809,
+            "WEIGHT_DECAY": -0.02548831516802887
+          },
+          "ols_pvalues": {
+            "intercept": 1.7386127433344303e-07,
+            "DEPTH": 0.8618479167669085,
+            "MATRIX_LR": 0.5017625232685242,
+            "WEIGHT_DECAY": 0.5110315282253536
+          },
+          "r_squared": 0.21693037104263824,
+          "note": "Negative DEPTH coefficient means deeper=worse. But DEPTH=10 gets ~3x fewer tokens than DEPTH=6, so the depth effect is confounded with training budget."
+        },
+        "stdout": "{\n  \"depth_means\": {\n    \"8\": 0.9639650000000001,\n    \"6\": 0.9452680000000001,\n    \"10\": 0.9405785\n  },\n  \"depth_counts\": {\n    \"8\": 4,\n    \"6\": 3,\n    \"10\": 2\n  },\n  \"ols_coefficients\": {\n    \"intercept\": 0.9610914241598563,\n    \"DEPTH\": 0.0005458480926428441,\n    \"MATRIX_LR\": -0.1401948228882809,\n    \"WEIGHT_DECAY\": -0.02548831516802887\n  },\n  \"ols_pvalues\": {\n    \"intercept\": 1.7386127433344303e-07,\n    \"DEPTH\": 0.8618479167669085,\n    \"MATRIX_LR\": 0.5017625232685242,\n    \"WEIGHT_DECAY\": 0.5110315282253536\n  },\n  \"r_squared\": 0.21693037104263824,\n  \"note\": \"Negative DEPTH coefficient means deeper=worse. But DEPTH=10 gets ~3x fewer tokens than DEPTH=6, so the depth effect is confounded with training budget.\"\n}\n",
+        "stderr": ""
+      }
+    }
+  ],
+  "pending_schema_changes": [],
+  "wall_time_s": 4451.097276926041
+}

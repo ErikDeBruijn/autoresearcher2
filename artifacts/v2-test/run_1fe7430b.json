@@ -1,0 +1,23 @@
+{
+  "run_id": "1fe7430b",
+  "version": "2.0-test",
+  "experiments": [
+    {
+      "cell": 4,
+      "config": {
+        "DEPTH": "6",
+        "MATRIX_LR": "0.04",
+        "WEIGHT_DECAY": "0.2"
+      },
+      "outcome": 0.9493609999999999,
+      "val_bpb": 1.050639,
+      "wall_time_s": 339.3,
+      "tokens_M": 317.1,
+      "tok_per_sec": 934554.4,
+      "error": null,
+      "source": "llm_v2",
+      "experiment": 0,
+      "reasoning": "Start with the shallowest model at middle hyperparameters as a strong baseline, since DEPTH=6 sees 3x more tokens and may compensate for fewer layers."
+    }
+  ]
+}

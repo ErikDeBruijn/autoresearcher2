@@ -1,0 +1,102 @@
+[10:49:34] ============================================================
+[10:49:34] EVIDENCE RUN — run_id=5d2ffa21
+[10:49:34] ============================================================
+[10:49:34] Schema: 27 cells, 3 factors
+[10:49:34] Budget: 20 experiments per approach
+[10:49:34] GPU: 1, Seed: 42
+[10:49:34] Approaches: ['random', 'bayesian', 'autoresearch', 'full']
+[10:49:34] 
+[10:49:34] 
+============================================================
+[10:49:34] --- Approach: RANDOM ---
+[10:49:34]   [1/20] cell 2 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'}
+[10:54:52]     → val_bpb=1.047761 tokens=323.9M
+[10:54:52]   [2/20] cell 20 {'DEPTH': '10', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'}
+[11:00:27]     → val_bpb=1.072547 tokens=101.3M
+[11:00:27]   [3/20] cell 17 {'DEPTH': '8', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'}
+[11:05:51]     → val_bpb=1.044573 tokens=175.5M
+[11:05:51]   [4/20] cell 11 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'}
+[11:11:16]     → val_bpb=1.037555 tokens=176.0M
+[11:11:16]   [5/20] cell 11 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'}
+[11:16:41]     → val_bpb=1.037549 tokens=176.0M
+[11:16:41]   [6/20] cell 23 {'DEPTH': '10', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'}
+[11:22:15]     → val_bpb=1.057028 tokens=101.2M
+[11:22:15]   [7/20] cell 2 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'}
+[11:27:33]     → val_bpb=1.049314 tokens=323.2M
+[11:27:33]   [8/20] cell 18 {'DEPTH': '10', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.1'}
+[11:33:07]     → val_bpb=1.081398 tokens=101.2M
+[11:33:07]   [9/20] cell 5 {'DEPTH': '6', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'}
+[11:38:25]     → val_bpb=1.052301 tokens=323.0M
+[11:38:25]   [10/20] cell 2 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'}
+[11:43:43]     → val_bpb=1.049422 tokens=323.5M
+[11:43:43]   [11/20] cell 14 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'}
+[11:49:08]     → val_bpb=1.033551 tokens=175.8M
+[11:49:08]   [12/20] cell 26 {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'}
+[11:54:43]     → val_bpb=1.060396 tokens=101.1M
+[11:54:43]   [13/20] cell 19 {'DEPTH': '10', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.2'}
+[12:00:18]     → val_bpb=1.077628 tokens=101.3M
+[12:00:18]   [14/20] cell 20 {'DEPTH': '10', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'}
+[12:05:53]     → val_bpb=1.073151 tokens=101.3M
+[12:05:53]   [15/20] cell 19 {'DEPTH': '10', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.2'}
+[12:11:28]     → val_bpb=1.077918 tokens=101.2M
+[12:11:28]   [16/20] cell 21 {'DEPTH': '10', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.1'}
+[12:17:02]     → val_bpb=1.060331 tokens=101.2M
+[12:17:02]   [17/20] cell 13 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'}
+[12:22:27]     → val_bpb=1.036423 tokens=175.5M
+[12:22:27]   [18/20] cell 3 {'DEPTH': '6', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.1'}
+[12:27:45]     → val_bpb=1.051262 tokens=322.4M
+[12:27:45]   [19/20] cell 22 {'DEPTH': '10', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'}
+[12:33:20]     → val_bpb=1.057845 tokens=101.2M
+[12:33:20]   [20/20] cell 12 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.1'}
+[12:38:44]     → val_bpb=1.038599 tokens=175.4M
+[12:38:44] 
+  random: best=1.033551 mean=1.054828 tokens/exp=179.1M (20/20 ok, 109.2 min)
+[12:38:44] 
+============================================================
+[12:38:44] --- Approach: BAYESIAN (no LLM) ---
+[12:38:44]   [1/20] cell 26 {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} (prag=-1.000 epist=6.000)
+[12:44:19]     → val_bpb=1.060403 tokens=101.2M surprise=0.0709
+[12:44:19]   [2/20] cell 22 {'DEPTH': '10', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} (prag=-0.712 epist=5.833)
+[12:49:54]     → val_bpb=1.058080 tokens=101.2M surprise=0.0515
+[12:49:54]   [3/20] cell 18 {'DEPTH': '10', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.1'} (prag=-0.535 epist=5.714)
+[12:55:29]     → val_bpb=1.081276 tokens=101.2M surprise=0.0363
+[12:55:29]   [4/20] cell 16 {'DEPTH': '8', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.2'} (prag=-0.583 epist=5.700)
+[13:00:53]     → val_bpb=1.041199 tokens=175.5M surprise=0.0447
+[13:00:53]   [5/20] cell 14 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'} (prag=-0.456 epist=5.614)
+[13:06:18]     → val_bpb=1.033820 tokens=175.8M surprise=0.0359
+[13:06:18]   [6/20] cell 2 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} (prag=-0.458 epist=5.550)
+[13:11:36]     → val_bpb=1.049157 tokens=323.2M surprise=0.0349
+[13:11:36]   [7/20] cell 3 {'DEPTH': '6', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.1'} (prag=-0.350 epist=5.449)
+[13:16:54]     → val_bpb=1.051162 tokens=322.2M surprise=0.0264
+[13:16:54]   [8/20] cell 7 {'DEPTH': '6', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.2'} (prag=-0.081 epist=4.002)
+[13:22:12]     → val_bpb=1.054081 tokens=322.0M surprise=0.0066
+[13:22:12]   [9/20] cell 15 {'DEPTH': '8', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.1'} (prag=-0.100 epist=3.940)
+[13:27:37]     → val_bpb=1.040289 tokens=175.4M surprise=0.0096
+[13:27:37]   [10/20] cell 1 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.2'} (prag=-0.047 epist=3.112)
+[13:32:54]     → val_bpb=1.051122 tokens=322.8M surprise=0.0044
+[13:32:54]   [11/20] cell 11 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} (prag=-0.033 epist=3.049)
+[13:38:19]     → val_bpb=1.037665 tokens=175.9M surprise=0.0034
+[13:38:19]   [12/20] cell 12 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.1'} (prag=-0.006 epist=2.321)
+[13:43:44]     → val_bpb=1.038715 tokens=175.2M surprise=0.0003
+[13:43:44]   [13/20] cell 23 {'DEPTH': '10', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.4'} (prag=-0.005 epist=2.177)
+[13:49:19]     → val_bpb=1.056690 tokens=101.2M surprise=0.0001
+[13:49:19]   [14/20] cell 19 {'DEPTH': '10', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.2'} (prag=-0.010 epist=2.105)
+[13:54:53]     → val_bpb=1.077825 tokens=101.2M surprise=0.0001
+[13:54:53]   [15/20] cell 24 {'DEPTH': '10', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.1'} (prag=-0.008 epist=1.997)
+[14:00:29]     → val_bpb=1.060487 tokens=101.1M surprise=0.0002
+[14:00:29]   [16/20] cell 4 {'DEPTH': '6', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} (prag=-0.004 epist=1.556)
+[14:05:47]     → val_bpb=1.050135 tokens=322.4M surprise=0.0000
+[14:05:47]   [17/20] cell 8 {'DEPTH': '6', 'MATRIX_LR': '0.08', 'WEIGHT_DECAY': '0.4'} (prag=-0.017 epist=1.438)
+[14:11:05]     → val_bpb=1.061005 tokens=322.4M surprise=0.0016
+[14:11:05]   [18/20] cell 9 {'DEPTH': '8', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.1'} (prag=-0.011 epist=1.336)
+[14:16:29]     → val_bpb=1.043408 tokens=175.6M surprise=0.0015
+[14:16:29]   [19/20] cell 13 {'DEPTH': '8', 'MATRIX_LR': '0.04', 'WEIGHT_DECAY': '0.2'} (prag=-0.006 epist=0.925)
+[14:21:54]     → val_bpb=1.033778 tokens=175.4M surprise=0.0009
+[14:21:54]   [20/20] cell 0 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.1'} (prag=-0.002 epist=0.034)
+[14:27:11]     → val_bpb=1.053483 tokens=322.7M surprise=0.0003
+[14:27:11] 
+  bayesian: best=1.033778 mean=1.051689 tokens/exp=204.7M (20/20 ok, 108.5 min)
+[14:27:11] 
+============================================================
+[14:27:11] --- Approach: AUTORESEARCH BASELINE (flat LLM) ---
+[14:27:11]   [1/20] cell 2 {'DEPTH': '6', 'MATRIX_LR': '0.02', 'WEIGHT_DECAY': '0.4'} [random_init]
