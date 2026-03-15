@@ -212,6 +212,47 @@ def test_proposals_survive_reconnect(tmp_path):
     store2.close()
 
 
+def test_reclaim_stale_running(store):
+    """Proposals stuck in 'running' after service restart get moved back to 'todo'."""
+    import time as _time
+
+    p = Proposal(
+        intent="stuck experiment", rationale="test", expected_learning="test",
+        intervention_type="config_change", intervention_spec={"x": "1"},
+    )
+    p.promote("todo")
+    store.save_proposal(p)
+
+    # Simulate claiming and then a stale started_at timestamp
+    store.conn.execute(
+        "UPDATE queue SET stage = 'running', worker_id = 'dead_worker', started_at = ? WHERE id = ?",
+        (_time.time() - 1000, p.id),  # Started 1000s ago
+    )
+    store.conn.commit()
+    assert store.count_proposals("running") == 1
+
+    reclaimed = store.reclaim_stale_running(timeout_s=600)
+    assert reclaimed == 1
+    assert store.count_proposals("running") == 0
+    assert store.count_proposals("todo") == 1
+
+
+def test_reclaim_does_not_touch_fresh_running(store):
+    """Recently started proposals should not be reclaimed."""
+    p = Proposal(
+        intent="active experiment", rationale="test", expected_learning="test",
+        intervention_type="config_change", intervention_spec={"x": "1"},
+    )
+    p.promote("todo")
+    store.save_proposal(p)
+    store.claim_next_todo("active_worker")
+    assert store.count_proposals("running") == 1
+
+    reclaimed = store.reclaim_stale_running(timeout_s=600)
+    assert reclaimed == 0
+    assert store.count_proposals("running") == 1
+
+
 def test_structured_data_queryable(store):
     """v4.0 criterion: structured fields are queryable."""
     p = Proposal(

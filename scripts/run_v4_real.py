@@ -102,6 +102,11 @@ def main():
         seed_world_model(store)
         logger.info("Initialized database at %s", args.database)
 
+    # Reclaim proposals stuck in 'running' from previous service runs
+    reclaimed = store.reclaim_stale_running(timeout_s=600)
+    if reclaimed > 0:
+        logger.info("Reclaimed %d stale running proposals back to todo", reclaimed)
+
     # LLM call function (for planner)
     def llm_fn(prompt):
         return call_llm_json(prompt, ssh_host=args.ssh_host, local=args.local_llm)

@@ -291,6 +291,21 @@ class Store:
         )
         self.conn.commit()
 
+    def reclaim_stale_running(self, timeout_s: float = 600) -> int:
+        """Move proposals stuck in 'running' back to 'todo'.
+
+        This handles the case where a service restart leaves proposals
+        in 'running' state with no worker actually executing them.
+        """
+        cutoff = time.time() - timeout_s
+        cursor = self.conn.execute(
+            "UPDATE queue SET stage = 'todo', worker_id = NULL, started_at = NULL "
+            "WHERE stage = 'running' AND started_at < ?",
+            (cutoff,),
+        )
+        self.conn.commit()
+        return cursor.rowcount
+
     def mark_reviewed(self, proposal_id: str):
         """Move a done proposal to reviewed after orientation has processed it."""
         self.conn.execute(
