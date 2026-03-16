@@ -328,14 +328,18 @@ def generate_latex(data, figures, output_dir):
         # Best result
         traj = proj["trajectory"]
         vals = [t["value"] for t in traj if t["value"] is not None]
-        if direction == "maximize":
-            best_val = max(vals) if vals else None
+        if vals:
+            if direction == "maximize":
+                best_val = max(vals)
+            else:
+                best_val = min(vals)
             best_run = next(t for t in traj if t["value"] == best_val)
+            best_spec = ", ".join(f"{k}={v}" for k, v in best_run["spec"].items() if k not in ("file_changes",))
+            best_result_section = f"""\\subsubsection*{{Best result}}
+\\texttt{{{escape_latex(target)}}} = \\textbf{{{best_val:.6f}}} at run {best_run["run"]} ({escape_latex(best_run["type"])}) \\\\
+Config: \\texttt{{{escape_latex(best_spec)}}}"""
         else:
-            best_val = min(vals) if vals else None
-            best_run = next(t for t in traj if t["value"] == best_val)
-
-        best_spec = ", ".join(f"{k}={v}" for k, v in best_run["spec"].items() if k not in ("file_changes",))
+            best_result_section = "\\subsubsection*{Best result}\nNo successful observations with target metric yet."
 
         # Convergence figure
         conv_fig = figures.get(f"{slug}_convergence")
@@ -351,9 +355,7 @@ def generate_latex(data, figures, output_dir):
 \\textbf{{World model:}} v{proj["wm_version"]} --- {n_beliefs} beliefs, {n_tensions} tensions \\\\
 \\textbf{{Cost:}} {totals["energy_kwh"]:.3f} kWh, \\euro{{}}{totals["cost_eur"]:.2f}, {totals["wall_s"]/3600:.1f} hours wall time
 
-\\subsubsection*{{Best result}}
-\\texttt{{{escape_latex(target)}}} = \\textbf{{{best_val:.6f}}} at run {best_run["run"]} ({escape_latex(best_run["type"])}) \\\\
-Config: \\texttt{{{escape_latex(best_spec)}}}
+{best_result_section}
 """
         if conv_fig:
             conv_rel = Path(conv_fig).relative_to(output_dir)
@@ -422,9 +424,9 @@ Type & Wall time (s) & Energy (Wh) & Cost (\\euro{{}}) \\\\
 \\midrule
 """
             for itype, costs in proj["cost_beliefs"].items():
-                wt = costs.get("wall_time_s", 0)
-                en = costs.get("energy_kwh", 0) * 1000
-                co = costs.get("cost_eur", 0)
+                wt = costs.get("wall_time_s") or 0
+                en = (costs.get("energy_kwh") or 0) * 1000
+                co = costs.get("cost_eur") or 0
                 project_sections += f"  {escape_latex(itype)} & {wt:.0f} & {en:.1f} & {co:.4f} \\\\\n"
             project_sections += """\\bottomrule
 \\end{tabular}
