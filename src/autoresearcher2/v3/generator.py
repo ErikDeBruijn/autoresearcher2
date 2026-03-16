@@ -14,7 +14,7 @@ Cognitive order per proposal:
 
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from autoresearcher2.v3.world_model import WorldModel
 from autoresearcher2.v3.proposal import Proposal
@@ -56,10 +56,23 @@ def domain_config_from_project(project: dict) -> DomainConfig:
 
     Reads the domain_config dict stored in the project's metadata.
     Falls back to generic defaults if the project has no domain_config.
+
+    If domain_config contains a base_script_path, the file is read from disk
+    and its contents are set as base_script (used for code_change proposals).
     """
     dc = project.get("domain_config")
     if not dc:
         return DomainConfig()
+
+    base_script = dc.get("base_script", "")
+    base_script_path = dc.get("base_script_path", "")
+    if base_script_path and not base_script:
+        try:
+            with open(base_script_path) as f:
+                base_script = f.read()
+        except FileNotFoundError:
+            logger.warning("Base script not found: %s", base_script_path)
+
     return DomainConfig(
         name=dc.get("name", project.get("name", "research experiment")),
         description=dc.get("description", project.get("description", DomainConfig.description)),
@@ -67,7 +80,7 @@ def domain_config_from_project(project: dict) -> DomainConfig:
         parameters=dc.get("parameters", DomainConfig.parameters),
         diversity_hint=dc.get("diversity_hint", DomainConfig.diversity_hint),
         hardware=dc.get("hardware", ""),
-        base_script=dc.get("base_script", ""),
+        base_script=base_script,
         base_script_name=dc.get("base_script_name", "train.py"),
     )
 

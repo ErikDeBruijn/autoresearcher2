@@ -246,7 +246,7 @@ def main():
         all active projects and ticks their planner. Also ticks a default
         planner for proposals without a project (backwards compat).
         """
-        from autoresearcher2.v3.generator import DomainConfig
+        from autoresearcher2.v3.generator import domain_config_from_project
         planners: dict[str | None, Planner] = {}
         cycle = 0
 
@@ -292,27 +292,7 @@ def main():
             return planners[project_id]
 
         def build_domain(proj):
-            dc = proj.get("domain_config")
-            if not dc:
-                return None
-            base_script = ""
-            base_script_name = dc.get("base_script_name", "train.py")
-            base_script_path = dc.get("base_script_path", "")
-            if base_script_path:
-                try:
-                    with open(base_script_path) as f:
-                        base_script = f.read()
-                except FileNotFoundError:
-                    logger.warning("Base script not found: %s", base_script_path)
-            return DomainConfig(
-                name=dc.get("name", proj["name"]),
-                description=dc.get("description", proj.get("description", "")),
-                intervention_types=dc.get("intervention_types", "config_change or probe"),
-                parameters=dc.get("parameters", ""),
-                diversity_hint=dc.get("diversity_hint", ""),
-                base_script=base_script,
-                base_script_name=base_script_name,
-            )
+            return domain_config_from_project(proj)
 
         while not stop.is_set():
             cycle += 1
