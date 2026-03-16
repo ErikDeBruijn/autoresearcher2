@@ -1,7 +1,10 @@
 """Tests for generator — rationale-first proposal generation."""
 import pytest
 from autoresearcher2.v3.world_model import WorldModel
-from autoresearcher2.v3.generator import generate_proposals, build_generator_prompt, DomainConfig, ATARI_DOMAIN, GENERIC_DOMAIN
+from autoresearcher2.v3.generator import (
+    generate_proposals, build_generator_prompt, DomainConfig,
+    domain_config_from_project,
+)
 
 
 def make_rich_world_model():
@@ -121,17 +124,29 @@ def test_generator_handles_malformed_response():
 def test_domain_config_changes_prompt():
     wm = make_rich_world_model()
 
+    # Default (no domain) should use generic defaults
     default_prompt = build_generator_prompt(wm, n_proposals=3)
-    assert "NanoGPT" in default_prompt
-    assert "DEPTH" in default_prompt
+    assert "experiment" in default_prompt.lower() or "research" in default_prompt.lower()
 
-    atari_prompt = build_generator_prompt(wm, n_proposals=3, domain=ATARI_DOMAIN)
+    atari = DomainConfig(
+        name="Atari Breakout",
+        description="We train RL agents on ALE/Breakout-v5.",
+        intervention_types="config_change or probe",
+        parameters="learning_rate, n_envs, total_timesteps",
+        diversity_hint="Mix config_change and code_change",
+    )
+    atari_prompt = build_generator_prompt(wm, n_proposals=3, domain=atari)
     assert "Breakout" in atari_prompt
     assert "learning_rate" in atari_prompt
-    assert "NanoGPT" not in atari_prompt
 
-    generic_prompt = build_generator_prompt(wm, n_proposals=3, domain=GENERIC_DOMAIN)
-    assert "NanoGPT" not in generic_prompt
+    generic = DomainConfig(
+        name="generic optimization",
+        description="We run experiments to optimize a target metric.",
+        intervention_types="config_change (modify parameters) or probe (cheap test)",
+        parameters="any key-value pairs relevant to the domain",
+        diversity_hint="Mix of config_change (full run) and probe (quick test)",
+    )
+    generic_prompt = build_generator_prompt(wm, n_proposals=3, domain=generic)
     assert "Atari" not in generic_prompt
     assert "optimize a target metric" in generic_prompt
 
@@ -169,6 +184,86 @@ def test_generate_proposals_with_domain():
             ]
         }
 
-    proposals = generate_proposals(wm, n_proposals=1, llm_call_fn=mock_llm, domain=ATARI_DOMAIN)
+    atari_domain = DomainConfig(
+        name="Atari Breakout",
+        description="We train RL agents on ALE/Breakout-v5.",
+        intervention_types="config_change or probe",
+        parameters="learning_rate, n_envs, total_timesteps",
+        diversity_hint="Mix config_change and code_change",
+    )
+    proposals = generate_proposals(wm, n_proposals=1, llm_call_fn=mock_llm, domain=atari_domain)
     assert len(proposals) == 1
     assert proposals[0].intervention_spec["game"] == "Breakout"
+
+
+def test_domain_config_from_project_with_config():
+    """domain_config_from_project reads domain_config dict from project metadata."""
+    project = {
+        "id": "proj-1",
+        "name": "Protein Folding",
+        "description": "Predict protein 3D structures",
+        "domain_config": {
+            "name": "Protein folding optimization",
+            "description": "We predict protein 3D structures from amino acid sequences.",
+            "intervention_types": "config_change (modify folding parameters) or probe (small test run)",
+            "parameters": "temperature, num_iterations, model_size",
+            "diversity_hint": "Mix of config_change and probe",
+            "hardware": "4x A100 GPUs",
+        },
+    }
+    dc = domain_config_from_project(project)
+    assert isinstance(dc, DomainConfig)
+    assert dc.name == "Protein folding optimization"
+    assert "amino acid" in dc.description
+    assert "temperature" in dc.parameters
+    assert dc.hardware == "4x A100 GPUs"
+
+
+def test_domain_config_from_project_without_config():
+    """domain_config_from_project returns generic defaults when project has no domain_config."""
+    project = {"id": "proj-2", "name": "My Experiment", "description": "Some research"}
+    dc = domain_config_from_project(project)
+    assert isinstance(dc, DomainConfig)
+    # Should use generic defaults, not NanoGPT-specific content
+    assert "NanoGPT" not in dc.name
+    assert "NanoGPT" not in dc.description
+    assert "DEPTH" not in dc.parameters
+    assert "MATRIX_LR" not in dc.parameters
+
+
+def test_domain_config_from_project_generates_proposals():
+    """Full round-trip: project metadata -> domain config -> generator -> proposals."""
+    wm = make_rich_world_model()
+    project = {
+        "id": "proj-bio",
+        "name": "Drug Discovery",
+        "domain_config": {
+            "name": "Drug binding affinity",
+            "description": "We optimize molecular binding affinity scores.",
+            "intervention_types": "config_change (modify docking parameters) or probe (quick screen)",
+            "parameters": "ligand_type, receptor_site, scoring_function, num_conformers",
+            "diversity_hint": "Mix docking parameter tweaks and quick screening probes",
+        },
+    }
+    dc = domain_config_from_project(project)
+
+    def mock_llm(prompt):
+        assert "binding affinity" in prompt
+        assert "ligand_type" in prompt
+        assert "NanoGPT" not in prompt
+        return {
+            "proposals": [
+                {
+                    "intent": "Test alternative scoring function",
+                    "rationale": "Current scoring may miss key interactions",
+                    "expected_learning": "Whether Vina scoring outperforms default",
+                    "intervention_type": "config_change",
+                    "intervention_spec": {"scoring_function": "vina", "num_conformers": 100},
+                    "estimated_cost": {"cost_to_test": "~10 min CPU"},
+                }
+            ]
+        }
+
+    proposals = generate_proposals(wm, n_proposals=1, llm_call_fn=mock_llm, domain=dc)
+    assert len(proposals) == 1
+    assert proposals[0].intervention_spec["scoring_function"] == "vina"
