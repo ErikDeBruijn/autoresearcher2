@@ -3,6 +3,7 @@ import pytest
 from autoresearcher2.v3.world_model import WorldModel
 from autoresearcher2.v3.observation import Observation
 from autoresearcher2.v3.orientation import orient, build_orientation_prompt
+from autoresearcher2.v3.generator import DomainConfig
 
 
 def make_world_model():
@@ -128,3 +129,50 @@ def test_orientation_cost_learning():
 
     orient(wm, obs, mock_llm)
     assert wm.cost_beliefs["config_change"]["wall_time_s"] == 450
+
+
+def test_orientation_prompt_domain_agnostic_with_non_ml_domain():
+    """When given a non-ML DomainConfig, the prompt should not contain ML-specific terms."""
+    wm = WorldModel()
+    wm.add_belief(claim="pH 7.0 is optimal for growth", confidence=0.6, evidence_for=["obs_001"])
+    wm.cost_beliefs = {"lab_experiment": {"wall_time_s": 3600}}
+
+    obs = Observation(
+        intervention_type="lab_experiment",
+        intervention_spec={"pH": "7.5", "temperature_c": "37"},
+        outcome_metrics={"colony_count": 150, "outcome": 150},
+        outcome_success=True,
+        wall_time_s=3500,
+    )
+
+    domain = DomainConfig(
+        name="microbiology experiment",
+        description="We run lab experiments to optimize bacterial colony growth.",
+        hardware="incubator + plate reader",
+    )
+
+    prompt = build_orientation_prompt(wm, obs, domain=domain)
+
+    # The prompt should NOT contain ML-specific terms
+    ml_terms = ["energy_kwh", "cost_eur", "avg_power_w", "GPU", "power monitoring", "Shelly meter"]
+    for term in ml_terms:
+        assert term.lower() not in prompt.lower(), (
+            f"ML-specific term '{term}' found in orientation prompt for non-ML domain"
+        )
+
+    # The prompt SHOULD reference the domain
+    assert "microbiology" in prompt.lower() or "lab experiment" in prompt.lower()
+
+
+def test_orientation_prompt_default_domain_is_generic():
+    """Without a DomainConfig, the prompt should still be domain-agnostic."""
+    wm = make_world_model()
+    obs = make_observation()
+
+    prompt = build_orientation_prompt(wm, obs)
+
+    # Default prompt should not hardcode ML-specific measurement terms in instructions
+    # (They may appear in the data itself, which is fine)
+    instruction_section = prompt.split("UPDATE INSTRUCTIONS")[1].split("REQUIRED OUTPUT")[0]
+    assert "Shelly meter" not in instruction_section
+    assert "GPU sensors" not in instruction_section
