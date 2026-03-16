@@ -250,18 +250,69 @@ def main():
         planners: dict[str | None, Planner] = {}
         cycle = 0
 
-        def get_or_create_planner(project_id, domain=None):
+        PRIORITY_SLOTS = {
+            "exclusive": {"n_proposals": 5, "n_select": 3},
+            "high":      {"n_proposals": 5, "n_select": 3},
+            "normal":    {"n_proposals": 3, "n_select": 2},
+            "low":       {"n_proposals": 2, "n_select": 1},
+        }
+
+        def get_priority_slots(proj):
+            priority = proj.get("priority", "auto")
+            if priority == "paused":
+                return None
+            if priority in PRIORITY_SLOTS:
+                return PRIORITY_SLOTS[priority]
+            # auto: compute expected_gain
+            gain = planner_store.compute_expected_gain(proj["id"])
+            if gain >= 0.5:
+                return {"n_proposals": 5, "n_select": 3}
+            if gain >= 0.2:
+                return {"n_proposals": 3, "n_select": 2}
+            return {"n_proposals": 2, "n_select": 1}
+
+        def get_or_create_planner(project_id, domain=None, n_proposals=None, n_select=None):
             if project_id not in planners:
                 planners[project_id] = Planner(
                     planner_store, llm_call_fn=llm_fn,
                     min_queue_size=args.min_queue,
                     min_todo=len(cuda_devices),
-                    n_proposals=args.n_proposals,
-                    n_select=args.n_select,
+                    n_proposals=n_proposals or args.n_proposals,
+                    n_select=n_select or args.n_select,
                     project_id=project_id,
                     domain=domain,
                 )
+            else:
+                # Update slots dynamically per cycle
+                p = planners[project_id]
+                if n_proposals:
+                    p.n_proposals = n_proposals
+                if n_select:
+                    p.n_select = n_select
             return planners[project_id]
+
+        def build_domain(proj):
+            dc = proj.get("domain_config")
+            if not dc:
+                return None
+            base_script = ""
+            base_script_name = dc.get("base_script_name", "train.py")
+            base_script_path = dc.get("base_script_path", "")
+            if base_script_path:
+                try:
+                    with open(base_script_path) as f:
+                        base_script = f.read()
+                except FileNotFoundError:
+                    logger.warning("Base script not found: %s", base_script_path)
+            return DomainConfig(
+                name=dc.get("name", proj["name"]),
+                description=dc.get("description", proj.get("description", "")),
+                intervention_types=dc.get("intervention_types", "config_change or probe"),
+                parameters=dc.get("parameters", ""),
+                diversity_hint=dc.get("diversity_hint", ""),
+                base_script=base_script,
+                base_script_name=base_script_name,
+            )
 
         while not stop.is_set():
             cycle += 1
@@ -271,35 +322,28 @@ def main():
                 if reclaimed > 0:
                     logger.info("Reclaimed %d stale running proposals", reclaimed)
 
-                # Tick planner for each active project
+                # Tick planner for each active project, respecting priority
                 active_projects = planner_store.list_projects(active_only=True)
+
+                # Exclusive mode: if any project is exclusive, only run that one
+                exclusive = [p for p in active_projects if p.get("priority") == "exclusive"]
+                if exclusive:
+                    active_projects = exclusive[:1]
+
                 for proj in active_projects:
-                    domain = None
-                    if proj.get("domain_config"):
-                        dc = proj["domain_config"]
-                        # Load base script from disk if path is configured
-                        base_script = ""
-                        base_script_name = dc.get("base_script_name", "train.py")
-                        base_script_path = dc.get("base_script_path", "")
-                        if base_script_path:
-                            try:
-                                with open(base_script_path) as f:
-                                    base_script = f.read()
-                            except FileNotFoundError:
-                                logger.warning("Base script not found: %s", base_script_path)
-                        domain = DomainConfig(
-                            name=dc.get("name", proj["name"]),
-                            description=dc.get("description", proj.get("description", "")),
-                            intervention_types=dc.get("intervention_types", "config_change or probe"),
-                            parameters=dc.get("parameters", ""),
-                            diversity_hint=dc.get("diversity_hint", ""),
-                            base_script=base_script,
-                            base_script_name=base_script_name,
-                        )
-                    planner = get_or_create_planner(proj["id"], domain)
+                    slots = get_priority_slots(proj)
+                    if slots is None:
+                        continue  # paused
+                    domain = build_domain(proj)
+                    planner = get_or_create_planner(
+                        proj["id"], domain,
+                        n_proposals=slots["n_proposals"],
+                        n_select=slots["n_select"],
+                    )
                     summary = planner.tick()
                     if any(v > 0 for v in summary.values()):
-                        logger.info("Planner [%s] cycle %d: %s", proj["name"], cycle, summary)
+                        logger.info("Planner [%s] (%s) cycle %d: %s",
+                                   proj["name"], proj.get("priority", "auto"), cycle, summary)
 
                 # Also tick default planner for unassigned proposals (backwards compat)
                 default_planner = get_or_create_planner(None)

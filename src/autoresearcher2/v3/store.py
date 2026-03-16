@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS projects (
     executor_script TEXT,
     docker_image  TEXT,
     created_at    REAL NOT NULL,
-    active        INTEGER NOT NULL DEFAULT 1
+    active        INTEGER NOT NULL DEFAULT 1,
+    priority      TEXT NOT NULL DEFAULT 'auto'
 );
 
 CREATE TABLE IF NOT EXISTS observations (
@@ -121,6 +122,8 @@ MIGRATIONS = [
     "INSERT OR IGNORE INTO pipeline_activity (id) VALUES (1);",
     # v4.9: Artifact storage for recordings/previews
     "ALTER TABLE observations ADD COLUMN artifact_paths TEXT;",
+    # v4.11: Project priority system
+    "ALTER TABLE projects ADD COLUMN priority TEXT NOT NULL DEFAULT 'auto';",
 ]
 
 
@@ -276,7 +279,7 @@ class Store:
 
     def update_project(self, project_id: str, **kwargs):
         allowed = {"name", "description", "domain_config", "executor_script",
-                    "docker_image", "active"}
+                    "docker_image", "active", "priority"}
         updates = {}
         for k, v in kwargs.items():
             if k not in allowed:
@@ -301,6 +304,7 @@ class Store:
             "docker_image": row["docker_image"],
             "created_at": row["created_at"],
             "active": bool(row["active"]),
+            "priority": row["priority"] if "priority" in row.keys() else "auto",
         }
 
     # --- Layer 1: Observations (append-only) ---
@@ -437,6 +441,29 @@ class Store:
             }
             for r in rows
         ]
+
+    def compute_expected_gain(self, project_id: str) -> float:
+        """Compute expected learning gain for a project (0.0-1.0).
+
+        Based on recent learntropy trend, belief uncertainty, and unresolved tensions.
+        Used by Auto priority to allocate planner resources dynamically.
+        """
+        wm = self.load_world_model(project_id=project_id)
+        history = self.get_world_model_history(project_id=project_id)
+
+        # 1. Recent learntropy trend (last 5 updates)
+        recent_lt = [h["delta"].get("learntropy", 0) for h in history[-5:] if h["delta"]]
+        avg_learntropy = sum(recent_lt) / len(recent_lt) if recent_lt else 0.5
+
+        # 2. Low-confidence belief ratio
+        beliefs = wm.beliefs
+        low_conf = [b for b in beliefs if float(b.get("confidence", 1.0)) < 0.5]
+        uncertainty_ratio = len(low_conf) / max(len(beliefs), 1)
+
+        # 3. Unresolved tension ratio
+        tension_ratio = len(wm.tensions) / max(len(beliefs), 1)
+
+        return min(1.0, 0.4 * avg_learntropy + 0.35 * uncertainty_ratio + 0.25 * tension_ratio)
 
     # --- Layer 3: Queue (stage mutations) ---
 

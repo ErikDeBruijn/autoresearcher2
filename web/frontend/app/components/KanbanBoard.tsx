@@ -117,6 +117,20 @@ export default function KanbanBoard() {
     }
   }, []);
 
+  const setProjectPriority = useCallback(async (projectId: string, priority: string) => {
+    // Optimistic update
+    setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, priority } : p));
+    try {
+      await fetch(`${API}/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priority }),
+      });
+    } catch (e) {
+      console.error("Failed to set project priority", e);
+    }
+  }, []);
+
   // Build project lookup for enriching proposals with name/color
   const projectMap = new Map(projects.map((p, i) => [p.id, { ...p, color: getProjectColor(i) }]));
 
@@ -347,6 +361,7 @@ export default function KanbanBoard() {
         visibleProjects={visibleProjects}
         onToggle={toggleProject}
         onToggleActive={toggleProjectActive}
+        onSetPriority={setProjectPriority}
         selectedObservationId={selectedObservationId}
         onSelectObservation={setSelectedObservationId}
       />

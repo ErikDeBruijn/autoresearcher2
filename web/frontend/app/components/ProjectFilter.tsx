@@ -8,6 +8,8 @@ interface Project {
   name: string;
   description: string;
   active: boolean;
+  priority?: string;
+  expected_gain?: number | null;
   domain_config?: { target_metric?: string; optimize?: string } | null;
   energy_kwh?: number;
   cost_eur?: number;
@@ -270,11 +272,21 @@ function ProgressChart({ observations, metric, color, optimize = "minimize", sel
   );
 }
 
+const PRIORITY_OPTIONS = [
+  { value: "auto", label: "Auto", color: "text-blue-400" },
+  { value: "exclusive", label: "Exclusive", color: "text-red-400" },
+  { value: "high", label: "High", color: "text-yellow-400" },
+  { value: "normal", label: "Normal", color: "text-green-400" },
+  { value: "low", label: "Low", color: "text-gray-400" },
+  { value: "paused", label: "Paused", color: "text-gray-600" },
+] as const;
+
 export default function ProjectFilter({
   projects,
   visibleProjects,
   onToggle,
   onToggleActive,
+  onSetPriority,
   selectedObservationId,
   onSelectObservation,
 }: {
@@ -282,6 +294,7 @@ export default function ProjectFilter({
   visibleProjects: Set<string>;
   onToggle: (projectId: string) => void;
   onToggleActive: (projectId: string, active: boolean) => void;
+  onSetPriority?: (projectId: string, priority: string) => void;
   selectedObservationId?: string;
   onSelectObservation?: (obsId: string) => void;
 }) {
@@ -348,23 +361,29 @@ export default function ProjectFilter({
               className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-800/50 transition-colors"
               onClick={() => setExpandedProject(expanded ? null : p.id)}
             >
-              {/* Active toggle (play/pause as state indicators) */}
-              <div className="flex items-center gap-0.5">
-                <button
-                  onClick={(e) => { e.stopPropagation(); if (!p.active) onToggleActive(p.id, true); }}
-                  className={`text-sm transition-all ${p.active ? "text-green-400 opacity-100" : "text-gray-600 opacity-50 hover:opacity-80"}`}
-                  title="Run project"
-                >
-                  ▶
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); if (p.active) onToggleActive(p.id, false); }}
-                  className={`text-sm transition-all ${!p.active ? "text-yellow-400 opacity-100" : "text-gray-600 opacity-50 hover:opacity-80"}`}
-                  title="Pause project (finish active runs, stop generating)"
-                >
-                  ⏸
-                </button>
-              </div>
+              {/* Priority dropdown */}
+              <select
+                value={p.priority || "auto"}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  const priority = e.target.value;
+                  if (onSetPriority) {
+                    onSetPriority(p.id, priority);
+                  }
+                  // Also sync active flag: paused=inactive, everything else=active
+                  onToggleActive(p.id, priority !== "paused");
+                }}
+                className={`text-xs font-mono rounded border border-gray-700 bg-gray-800 px-1.5 py-0.5 cursor-pointer focus:outline-none focus:border-gray-500 ${
+                  PRIORITY_OPTIONS.find((o) => o.value === (p.priority || "auto"))?.color || "text-blue-400"
+                }`}
+                title={`Priority${p.priority === "auto" && p.expected_gain != null ? ` (gain: ${p.expected_gain.toFixed(2)})` : ""}`}
+              >
+                {PRIORITY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}{opt.value === "auto" && p.expected_gain != null ? ` (${p.expected_gain.toFixed(2)})` : ""}
+                  </option>
+                ))}
+              </select>
 
               {/* Visibility toggle (eye icon) */}
               <button

@@ -164,6 +164,11 @@ def get_projects():
             proj["cost_eur"] = round(cost, 4)
             proj["wall_time_s"] = round(wall_time, 1)
             proj["experiment_count"] = len(proj_obs)
+            # Compute expected gain for Auto priority display
+            try:
+                proj["expected_gain"] = round(store.compute_expected_gain(proj["id"]), 3)
+            except Exception:
+                proj["expected_gain"] = None
 
         return projects
     finally:
@@ -211,6 +216,7 @@ class ProjectUpdate(BaseModel):
     description: str | None = None
     active: bool | None = None
     domain_config: dict | None = None
+    priority: str | None = None
 
 
 @app.patch("/api/projects/{project_id}")
@@ -225,6 +231,17 @@ async def update_project(project_id: str, data: ProjectUpdate):
         project = store.get_project(project_id)
         await manager.broadcast({"type": "project_updated", "project": project})
         return project
+    finally:
+        store.close()
+
+
+@app.get("/api/projects/{project_id}/expected_gain")
+def get_expected_gain(project_id: str):
+    """Compute expected learning gain for a project."""
+    store = get_store()
+    try:
+        gain = store.compute_expected_gain(project_id)
+        return {"project_id": project_id, "expected_gain": round(gain, 3)}
     finally:
         store.close()
 
