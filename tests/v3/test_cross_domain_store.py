@@ -7,7 +7,7 @@ import pytest
 from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
-from autoresearcher2.v3.generator import DomainConfig, ATARI_DOMAIN
+from autoresearcher2.v3.generator import DomainConfig
 
 
 def make_domain_llm(domain_proposals):
@@ -61,7 +61,7 @@ def test_atari_full_cycle_with_store(store):
         return {"metrics": {"mean_reward": 42.5}, "compute_cost": 0.5}
 
     planner = Planner(store, llm_call_fn=llm, min_queue_size=3, min_todo=2,
-                      n_proposals=2, n_select=2, domain=ATARI_DOMAIN)
+                      n_proposals=2, n_select=2, domain=DomainConfig(name="Atari Breakout", description="We train RL agents on ALE/Breakout-v5.", intervention_types="config_change or probe", parameters="learning_rate, n_envs", diversity_hint="Mix config_change and probe"))
     worker = Worker(store, execute_fn=execute, worker_id="test_worker")
 
     # Two cycles: generate → critique → execute → orient
@@ -136,7 +136,7 @@ def test_domain_config_reaches_prompt(store):
         return {}
 
     planner = Planner(store, llm_call_fn=capture_llm, min_queue_size=3,
-                      min_todo=2, n_proposals=2, domain=ATARI_DOMAIN)
+                      min_todo=2, n_proposals=2, domain=DomainConfig(name="Atari Breakout", description="We train RL agents on ALE/Breakout-v5.", intervention_types="config_change or probe", parameters="learning_rate, n_envs", diversity_hint="Mix config_change and probe"))
     planner.tick()
 
     # The generator prompt should mention CartPole

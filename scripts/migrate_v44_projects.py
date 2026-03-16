@@ -12,7 +12,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from autoresearcher2.v3.store import Store
-from autoresearcher2.v3.generator import NANOGPT_DOMAIN
 
 
 def migrate(db_path: str):
@@ -31,11 +30,11 @@ def migrate(db_path: str):
             name="NanoGPT",
             description="NanoGPT training hyperparameter optimization on ClimbMix-400B",
             domain_config={
-                "name": NANOGPT_DOMAIN.name,
-                "description": NANOGPT_DOMAIN.description,
-                "intervention_types": NANOGPT_DOMAIN.intervention_types,
-                "parameters": NANOGPT_DOMAIN.parameters,
-                "diversity_hint": NANOGPT_DOMAIN.diversity_hint,
+                "name": "NanoGPT training",
+                "description": "We run NanoGPT training experiments.",
+                "intervention_types": "config_change (modify training hyperparameters), probe (short training run to test hypothesis cheaply), or code_change (rewrite train.py with structural changes)",
+                "parameters": "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size",
+                "diversity_hint": "Mix of config_change (full run), probe (short run), and code_change (when the hypothesis requires structural code changes)",
             },
         )
         print(f"Created NanoGPT project: {pid}")

@@ -41,41 +41,40 @@ PROPOSAL_SCHEMA = {
 @dataclass
 class DomainConfig:
     """Domain description for the generator prompt."""
-    name: str = "NanoGPT training"
-    description: str = "We run NanoGPT training experiments."
-    intervention_types: str = "config_change (modify training hyperparameters), probe (short training run to test hypothesis cheaply), or code_change (rewrite train.py with structural changes — use file_changes key in intervention_spec)"
-    parameters: str = "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size. For code_change: {\"file_changes\": {\"train.py\": \"full file content\"}}"
-    diversity_hint: str = "Mix of config_change (full run), probe (short run, include \"run_steps\" in spec), and code_change (when the hypothesis requires structural code changes, not just parameter tweaks)"
+    name: str = "research experiment"
+    description: str = "We run experiments to optimize a target metric."
+    intervention_types: str = "config_change (modify parameters), probe (cheap test to validate hypothesis), or code_change (rewrite experiment script with structural changes — use file_changes key in intervention_spec)"
+    parameters: str = "any key-value pairs relevant to the experiment domain"
+    diversity_hint: str = "Mix of config_change (full run), probe (quick test), and code_change (when the hypothesis requires structural changes)"
     hardware: str = ""
     base_script: str = ""  # Current training script content — shown to LLM for code_change proposals
     base_script_name: str = "train.py"  # Filename for the base script
 
 
-NANOGPT_DOMAIN = DomainConfig(
-    hardware="2x NVIDIA RTX PRO 6000 Blackwell Max-Q (96GB VRAM each). Experiments run on one GPU at a time. VRAM is NOT a bottleneck — 96GB is enormous for NanoGPT scale models. Focus on compute efficiency (wall time, val_bpb per GPU-hour) rather than memory constraints."
-)
+def domain_config_from_project(project: dict) -> DomainConfig:
+    """Build a DomainConfig from project metadata.
 
-ATARI_DOMAIN = DomainConfig(
-    name="Atari Breakout",
-    description="We train RL agents on ALE/Breakout-v5 using GPU-accelerated PPO with CnnPolicy. Max reward ~400+ (expert human ~31). Runs on NVIDIA RTX PRO 6000 GPU. LIMITS: total_timesteps <= 500_000, n_envs <= 8. Output must include 'mean_reward: <float>'. Model saved to /tmp/rl_model_latest.zip.",
-    intervention_types="config_change (tweak hyperparameters), probe (short training run), or code_change (rewrite train_atari.py with structural changes via file_changes key — e.g. different algorithms, custom wrappers, reward shaping, frame stacking).",
-    parameters="For config_change: learning_rate, n_envs, total_timesteps, gamma, clip_range, n_steps, batch_size, n_epochs, ent_coef. For code_change: {\"file_changes\": {\"train_atari.py\": \"full file content\"}} — you can rewrite the training script. LIMITS: total_timesteps <= 500_000, n_envs <= 8.",
-    diversity_hint="Mix config_change (hyperparameter search) and code_change (algorithm changes like DQN/A2C, reward shaping, custom CNN architectures, frame stacking strategies). Breakout requires strategic play — explore different approaches.",
-    base_script_name="train_atari.py",
-)
-
-GENERIC_DOMAIN = DomainConfig(
-    name="generic optimization",
-    description="We run experiments to optimize a target metric.",
-    intervention_types="config_change (modify parameters) or probe (cheap test)",
-    parameters="any key-value pairs relevant to the domain",
-    diversity_hint="Mix of config_change (full run) and probe (quick test)",
-)
+    Reads the domain_config dict stored in the project's metadata.
+    Falls back to generic defaults if the project has no domain_config.
+    """
+    dc = project.get("domain_config")
+    if not dc:
+        return DomainConfig()
+    return DomainConfig(
+        name=dc.get("name", project.get("name", "research experiment")),
+        description=dc.get("description", project.get("description", DomainConfig.description)),
+        intervention_types=dc.get("intervention_types", DomainConfig.intervention_types),
+        parameters=dc.get("parameters", DomainConfig.parameters),
+        diversity_hint=dc.get("diversity_hint", DomainConfig.diversity_hint),
+        hardware=dc.get("hardware", ""),
+        base_script=dc.get("base_script", ""),
+        base_script_name=dc.get("base_script_name", "train.py"),
+    )
 
 
 def build_generator_prompt(world_model: WorldModel, n_proposals: int = 5, domain: DomainConfig = None) -> str:
     """Build prompt for the generator LLM role."""
-    domain = domain or NANOGPT_DOMAIN
+    domain = domain or DomainConfig()
     wm_json = json.dumps(world_model.to_dict(), indent=2, default=str)
     schema_json = json.dumps(PROPOSAL_SCHEMA, indent=2)
 
