@@ -60,7 +60,7 @@ class Planner:
                 if obs is not None:
                     self._set_activity("orienting", p.id)
                     wm = self._load_world_model()
-                    delta = orient(wm, obs, self.llm_call_fn)
+                    delta = orient(wm, obs, self.llm_call_fn, domain=self.domain)
                     if delta:
                         self._save_world_model(wm, trigger_obs_id=p.observation_id, delta=delta)
                         summary["oriented"] += 1
@@ -77,7 +77,8 @@ class Planner:
                 self._set_activity("critiquing")
                 wm = self._load_world_model()
                 accepted = critique_proposals(
-                    wm, backlog, n_select=self.n_select, llm_call_fn=self.llm_call_fn
+                    wm, backlog, n_select=self.n_select, llm_call_fn=self.llm_call_fn,
+                    domain=self.domain,
                 )
                 for p in accepted:
                     self.workspace.move_proposal(p, "todo")

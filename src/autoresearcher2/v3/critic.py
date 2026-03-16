@@ -14,6 +14,7 @@ import logging
 
 from autoresearcher2.v3.world_model import WorldModel
 from autoresearcher2.v3.proposal import Proposal
+from autoresearcher2.v3.generator import DomainConfig
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +34,10 @@ def build_critic_prompt(
     world_model: WorldModel,
     proposals: list[Proposal],
     n_select: int = 2,
+    domain: DomainConfig = None,
 ) -> str:
     """Build prompt for the critic LLM role."""
+    domain = domain or DomainConfig()
     wm_json = json.dumps(world_model.to_dict(), indent=2, default=str)
     proposals_json = json.dumps(
         [p.to_dict() for p in proposals], indent=2, default=str
@@ -42,6 +45,7 @@ def build_critic_prompt(
     schema_json = json.dumps(CRITIC_SCHEMA, indent=2)
 
     return f"""You are a skeptical research reviewer evaluating experiment proposals.
+Domain: {domain.name} — {domain.description}
 
 ## CURRENT WORLD MODEL
 
@@ -53,7 +57,7 @@ def build_critic_prompt(
 
 ## YOUR ROLE
 
-You are the convergent thinker — the editor who decides what's worth our limited compute budget.
+You are the convergent thinker — the editor who decides what's worth our limited budget.
 
 Evaluate each proposal and:
 1. **Accept** the {n_select} most valuable proposals for execution
@@ -87,6 +91,7 @@ def critique_proposals(
     proposals: list[Proposal],
     n_select: int = 2,
     llm_call_fn=None,
+    domain: DomainConfig = None,
 ) -> list[Proposal]:
     """Evaluate and rank proposals, returning the accepted ones.
 
@@ -95,6 +100,7 @@ def critique_proposals(
         proposals: Proposals from the generator
         n_select: How many to accept
         llm_call_fn: Function that takes prompt string and returns parsed JSON dict
+        domain: Optional domain configuration for domain-appropriate language
 
     Returns:
         Accepted proposals, sorted by rank (best first)
@@ -102,7 +108,7 @@ def critique_proposals(
     if not proposals:
         return []
 
-    prompt = build_critic_prompt(world_model, proposals, n_select)
+    prompt = build_critic_prompt(world_model, proposals, n_select, domain=domain)
 
     try:
         response = llm_call_fn(prompt)
