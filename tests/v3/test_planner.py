@@ -60,7 +60,8 @@ class PlannerMockLLM:
 def store(tmp_path):
     s = Store(tmp_path / "test.db")
     s.init()
-    return s
+    yield s
+    s.close()
 
 
 def test_planner_generates_when_queue_empty(store):

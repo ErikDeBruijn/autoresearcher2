@@ -110,7 +110,8 @@ class Planner:
                     self.store.set_pipeline_activity("critiquing", pid)
                     wm = self.store.load_world_model(project_id=pid)
                     accepted = critique_proposals(
-                        wm, backlog, n_select=self.n_select, llm_call_fn=self.llm_call_fn
+                        wm, backlog, n_select=self.n_select, llm_call_fn=self.llm_call_fn,
+                        domain=self.domain,
                     )
                     for p in accepted:
                         self.store.move_proposal(p, "todo")
