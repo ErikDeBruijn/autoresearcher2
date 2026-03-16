@@ -2,7 +2,7 @@
 """Smoke test: run planner + worker for a few cycles with mock execution.
 
 Usage:
-    python scripts/run_v3_smoke.py [--workspace /tmp/v3_smoke]
+    python scripts/run_v3_smoke.py [--db /tmp/v3_smoke.db]
 
 This validates the full OODA loop works end-to-end without requiring
 a real LLM or GPU. Uses a mock LLM and mock execution function.
@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from autoresearcher2.v3.workspace import Workspace
+from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
 
@@ -79,16 +79,16 @@ def mock_execute(proposal):
 
 def main():
     parser = argparse.ArgumentParser(description="v3 smoke test")
-    parser.add_argument("--workspace", type=Path, default="/tmp/v3_smoke")
+    parser.add_argument("--db", type=Path, default="/tmp/v3_smoke.db")
     parser.add_argument("--cycles", type=int, default=3)
     args = parser.parse_args()
 
-    ws = Workspace(args.workspace)
-    ws.init()
+    store = Store(args.db)
+    store.init()
 
     mock_llm = SmokeTestLLM()
-    planner = Planner(ws, llm_call_fn=mock_llm, min_queue_size=3, n_proposals=2, n_select=2)
-    worker = Worker(ws, execute_fn=mock_execute)
+    planner = Planner(store, llm_call_fn=mock_llm, min_queue_size=3, n_proposals=2, n_select=2)
+    worker = Worker(store, execute_fn=mock_execute)
 
     for cycle in range(args.cycles):
         logger.info("=== Cycle %d ===", cycle + 1)
@@ -109,20 +109,20 @@ def main():
 
     # Final status
     logger.info("=== Final Status ===")
-    logger.info("Backlog: %d", ws.count_proposals("backlog"))
-    logger.info("Todo: %d", ws.count_proposals("todo"))
-    logger.info("Running: %d", ws.count_proposals("running"))
-    logger.info("Done: %d", ws.count_proposals("done"))
-    logger.info("Observations: %d", len(ws.list_observations()))
+    logger.info("Backlog: %d", store.count_proposals("backlog"))
+    logger.info("Todo: %d", store.count_proposals("todo"))
+    logger.info("Running: %d", store.count_proposals("running"))
+    logger.info("Done: %d", store.count_proposals("done"))
+    logger.info("Observations: %d", len(store.list_observations()))
 
-    wm = ws.load_world_model()
+    wm = store.load_world_model()
     logger.info("World model version: %d, beliefs: %d",
                wm.version, len(wm.beliefs))
     logger.info("LLM calls: %d", mock_llm.call_count)
 
     # Verify basic health
-    assert ws.count_proposals("done") > 0, "No proposals completed!"
-    assert len(ws.list_observations()) > 0, "No observations recorded!"
+    assert store.count_proposals("done") > 0, "No proposals completed!"
+    assert len(store.list_observations()) > 0, "No observations recorded!"
     assert wm.version > 0, "World model never updated!"
     logger.info("Smoke test PASSED")
 

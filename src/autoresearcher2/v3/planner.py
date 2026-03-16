@@ -28,7 +28,7 @@ class Planner:
 
     def __init__(
         self,
-        workspace,
+        store,
         llm_call_fn,
         min_queue_size: int = 5,
         min_todo: int = 2,
@@ -37,7 +37,7 @@ class Planner:
         domain=None,
         project_id: str = None,
     ):
-        self.workspace = workspace
+        self.store = store
         self.llm_call_fn = llm_call_fn
         self.min_queue_size = min_queue_size
         self.min_todo = min_todo
@@ -53,69 +53,69 @@ class Planner:
         pid = self.project_id
 
         # Phase 1: Orient — process new observations
-        done_proposals = self.workspace.list_proposals("done", project_id=pid)
+        done_proposals = self.store.list_proposals("done", project_id=pid)
         for p in done_proposals:
             if p.observation_id and p.observation_id not in self._processed_observations:
-                obs = self.workspace.load_observation(p.observation_id)
+                obs = self.store.load_observation(p.observation_id)
                 if obs is not None:
-                    self.workspace.set_pipeline_activity("orienting", pid, p.id)
-                    wm = self.workspace.load_world_model(project_id=pid)
+                    self.store.set_pipeline_activity("orienting", pid, p.id)
+                    wm = self.store.load_world_model(project_id=pid)
                     delta = orient(wm, obs, self.llm_call_fn, domain=self.domain)
                     if delta:
-                        self.workspace.save_world_model(
+                        self.store.save_world_model(
                             wm, trigger_obs_id=p.observation_id, delta=delta,
                             project_id=pid,
                         )
                         summary["oriented"] += 1
-                    self.workspace.mark_reviewed(p.id)
+                    self.store.mark_reviewed(p.id)
                     self._processed_observations.add(p.observation_id)
-                    self.workspace.clear_pipeline_activity()
+                    self.store.clear_pipeline_activity()
 
         # Phase 2: Critique — if todo is low, promote from backlog
-        todo_count = self.workspace.count_proposals("todo", project_id=pid)
+        todo_count = self.store.count_proposals("todo", project_id=pid)
         if todo_count < self.min_todo:
-            backlog = self.workspace.list_proposals("backlog", project_id=pid)
+            backlog = self.store.list_proposals("backlog", project_id=pid)
             if backlog:
-                self.workspace.set_pipeline_activity("critiquing", pid)
-                wm = self.workspace.load_world_model(project_id=pid)
+                self.store.set_pipeline_activity("critiquing", pid)
+                wm = self.store.load_world_model(project_id=pid)
                 accepted = critique_proposals(
                     wm, backlog, n_select=self.n_select, llm_call_fn=self.llm_call_fn,
                     domain=self.domain,
                 )
                 for p in accepted:
-                    self.workspace.move_proposal(p, "todo")
+                    self.store.move_proposal(p, "todo")
                     summary["promoted"] += 1
-                self.workspace.clear_pipeline_activity()
+                self.store.clear_pipeline_activity()
 
         # Phase 3: Generate — if backlog is low, produce new proposals
-        backlog_count = self.workspace.count_proposals("backlog", project_id=pid)
+        backlog_count = self.store.count_proposals("backlog", project_id=pid)
         if backlog_count < self.min_queue_size:
-            self.workspace.set_pipeline_activity("generating", pid)
-            wm = self.workspace.load_world_model(project_id=pid)
+            self.store.set_pipeline_activity("generating", pid)
+            wm = self.store.load_world_model(project_id=pid)
             proposals = generate_proposals(
                 wm, n_proposals=self.n_proposals, llm_call_fn=self.llm_call_fn,
                 domain=self.domain,
             )
             for p in proposals:
-                self.workspace.save_proposal(p, project_id=pid)
+                self.store.save_proposal(p, project_id=pid)
             summary["generated"] = len(proposals)
-            self.workspace.clear_pipeline_activity()
+            self.store.clear_pipeline_activity()
 
         # Phase 4: Critique again — if generation just restocked backlog, promote immediately
         if summary["generated"] > 0 and summary["promoted"] == 0:
-            todo_count = self.workspace.count_proposals("todo", project_id=pid)
+            todo_count = self.store.count_proposals("todo", project_id=pid)
             if todo_count < self.min_todo:
-                backlog = self.workspace.list_proposals("backlog", project_id=pid)
+                backlog = self.store.list_proposals("backlog", project_id=pid)
                 if backlog:
-                    self.workspace.set_pipeline_activity("critiquing", pid)
-                    wm = self.workspace.load_world_model(project_id=pid)
+                    self.store.set_pipeline_activity("critiquing", pid)
+                    wm = self.store.load_world_model(project_id=pid)
                     accepted = critique_proposals(
                         wm, backlog, n_select=self.n_select, llm_call_fn=self.llm_call_fn
                     )
                     for p in accepted:
-                        self.workspace.move_proposal(p, "todo")
+                        self.store.move_proposal(p, "todo")
                         summary["promoted"] += 1
-                    self.workspace.clear_pipeline_activity()
+                    self.store.clear_pipeline_activity()
 
         return summary
 
