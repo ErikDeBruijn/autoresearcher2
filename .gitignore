@@ -4,3 +4,8 @@ __pycache__/
 dist/
 *.pyc
 .pytest_cache/
+*.db
+.DS_Store
+artifacts/reports/
+artifacts/runs/**/.DS_Store
+web/frontend/test-results/
