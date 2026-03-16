@@ -7,7 +7,7 @@ Tests that the generator-critic loop handles:
 4. Mixed intervention types (code_change, probe, schema_extension)
 """
 import pytest
-from autoresearcher2.v3.workspace import Workspace
+from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
 from autoresearcher2.v3.world_model import WorldModel
@@ -37,16 +37,17 @@ def make_domain_llm(domain_name, proposals_spec):
 
 
 @pytest.fixture
-def ws(tmp_path):
-    workspace = Workspace(tmp_path / "research")
-    workspace.init()
-    return workspace
+def store(tmp_path):
+    s = Store(tmp_path / "research.db")
+    s.init()
+    yield s
+    s.close()
 
 
-def run_domain_cycle(ws, domain_llm, execute_fn, cycles=2):
+def run_domain_cycle(store, domain_llm, execute_fn, cycles=2):
     """Run planner+worker cycles and return final state."""
-    planner = Planner(ws, llm_call_fn=domain_llm, min_queue_size=3, n_proposals=2, n_select=2)
-    worker = Worker(ws, execute_fn=execute_fn)
+    planner = Planner(store, llm_call_fn=domain_llm, min_queue_size=3, n_proposals=2, n_select=2)
+    worker = Worker(store, execute_fn=execute_fn)
 
     for _ in range(cycles):
         planner.tick()
@@ -54,14 +55,14 @@ def run_domain_cycle(ws, domain_llm, execute_fn, cycles=2):
             pass
 
     return {
-        "done": ws.count_proposals("done"),
-        "observations": len(ws.list_observations()),
-        "world_model_version": ws.load_world_model().version,
-        "beliefs": len(ws.load_world_model().beliefs),
+        "done": store.count_proposals("done"),
+        "observations": len(store.list_observations()),
+        "world_model_version": store.load_world_model().version,
+        "beliefs": len(store.load_world_model().beliefs),
     }
 
 
-def test_llm_training_domain(ws):
+def test_llm_training_domain(store):
     """Domain: NanoGPT hyperparameter optimization."""
     llm = make_domain_llm("gpt", {
         "proposals": [
@@ -88,13 +89,13 @@ def test_llm_training_domain(ws):
     def execute(proposal):
         return {"metrics": {"val_bpb": 1.05}, "compute_cost": 0.50}
 
-    result = run_domain_cycle(ws, llm, execute)
+    result = run_domain_cycle(store, llm, execute)
     assert result["done"] >= 2
     assert result["observations"] >= 2
     assert result["world_model_version"] > 0
 
 
-def test_atari_domain(ws):
+def test_atari_domain(store):
     """Domain: Atari game score optimization."""
     llm = make_domain_llm("atari", {
         "proposals": [
@@ -121,12 +122,12 @@ def test_atari_domain(ws):
     def execute(proposal):
         return {"metrics": {"mean_reward": 42.5, "max_reward": 100}}
 
-    result = run_domain_cycle(ws, llm, execute)
+    result = run_domain_cycle(store, llm, execute)
     assert result["done"] >= 2
     assert result["observations"] >= 2
 
 
-def test_cold_outreach_domain(ws):
+def test_cold_outreach_domain(store):
     """Domain: Cold outreach message optimization."""
     llm = make_domain_llm("outreach", {
         "proposals": [
@@ -153,11 +154,11 @@ def test_cold_outreach_domain(ws):
     def execute(proposal):
         return {"metrics": {"open_rate": 0.35, "reply_rate": 0.08, "meeting_rate": 0.02}}
 
-    result = run_domain_cycle(ws, llm, execute)
+    result = run_domain_cycle(store, llm, execute)
     assert result["done"] >= 2
 
 
-def test_mixed_intervention_types(ws):
+def test_mixed_intervention_types(store):
     """All intervention types work through the pipeline."""
     llm = make_domain_llm("mixed", {
         "proposals": [
@@ -187,6 +188,6 @@ def test_mixed_intervention_types(ws):
         types_executed.append(proposal.intervention_type)
         return {"metrics": {"result": 1.0}}
 
-    run_domain_cycle(ws, llm, execute, cycles=1)
+    run_domain_cycle(store, llm, execute, cycles=1)
     assert "config_change" in types_executed
     assert "code_change" in types_executed

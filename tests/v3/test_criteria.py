@@ -4,7 +4,6 @@ Criteria 12: Cost beliefs improve after observations
 Criteria 13: Deliberation efficiency (skip full cycle for cheap probes)
 """
 import pytest
-from autoresearcher2.v3.workspace import Workspace
 from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
@@ -50,13 +49,6 @@ class CostLearningLLM:
 
 
 @pytest.fixture
-def ws(tmp_path):
-    workspace = Workspace(tmp_path / "research")
-    workspace.init()
-    return workspace
-
-
-@pytest.fixture
 def store(tmp_path):
     s = Store(tmp_path / "research.db")
     s.init()
@@ -64,7 +56,7 @@ def store(tmp_path):
     s.close()
 
 
-def test_cost_beliefs_improve_after_runs(ws):
+def test_cost_beliefs_improve_after_runs(store):
     """Criterion 12: after 5+ runs, cost_beliefs reflect actual observed costs."""
     mock_llm = CostLearningLLM()
     actual_times = [120, 135, 128, 140, 125]  # Real wall times
@@ -74,8 +66,8 @@ def test_cost_beliefs_improve_after_runs(ws):
         mock_llm.observed_costs.append(t)
         return {"metrics": {"y": 1.0}, "compute_cost": 0.5}
 
-    planner = Planner(ws, llm_call_fn=mock_llm, min_queue_size=2, n_proposals=1, n_select=1)
-    worker = Worker(ws, execute_fn=mock_execute)
+    planner = Planner(store, llm_call_fn=mock_llm, min_queue_size=2, n_proposals=1, n_select=1)
+    worker = Worker(store, execute_fn=mock_execute)
 
     # Run 5 cycles
     for _ in range(5):
@@ -83,7 +75,7 @@ def test_cost_beliefs_improve_after_runs(ws):
         while worker.tick() is not None:
             pass
 
-    wm = ws.load_world_model()
+    wm = store.load_world_model()
     # Cost beliefs should exist and reflect observed data (not initial guesses)
     assert "config_change" in wm.cost_beliefs
     # The last update should reflect actual wall times (~120-140s), not the initial default
@@ -113,7 +105,7 @@ def test_cost_beliefs_tracked_in_store(store):
     assert len(cost_deltas) > 0, "No cost belief updates recorded in history"
 
 
-def test_todo_queue_stays_filled(ws):
+def test_todo_queue_stays_filled(store):
     """Criterion 10: todo should stay filled while backlog has items."""
     call_count = [0]
 
@@ -137,8 +129,8 @@ def test_todo_queue_stays_filled(ws):
             return {"rankings": []}
         return {}
 
-    planner = Planner(ws, llm_call_fn=mock_llm, min_queue_size=3, n_proposals=3, n_select=2)
-    worker = Worker(ws, execute_fn=lambda p: {"metrics": {"ok": True}})
+    planner = Planner(store, llm_call_fn=mock_llm, min_queue_size=3, n_proposals=3, n_select=2)
+    worker = Worker(store, execute_fn=lambda p: {"metrics": {"ok": True}})
 
     # Run several cycles
     for _ in range(3):
@@ -147,5 +139,5 @@ def test_todo_queue_stays_filled(ws):
         worker.tick()
 
     # After planner ticks, todo should have items (planner replenishes)
-    total_actionable = ws.count_proposals("backlog") + ws.count_proposals("todo")
+    total_actionable = store.count_proposals("backlog") + store.count_proposals("todo")
     assert total_actionable > 0, "Queue should stay filled"

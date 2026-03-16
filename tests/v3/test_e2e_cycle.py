@@ -4,7 +4,7 @@ Tests v3.2 criterion: observation → orientation → generator → critic →
 worker → observation completes without manual intervention.
 """
 import pytest
-from autoresearcher2.v3.workspace import Workspace
+from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
 
@@ -54,44 +54,45 @@ class E2EMockLLM:
 
 
 @pytest.fixture
-def ws(tmp_path):
-    workspace = Workspace(tmp_path / "research")
-    workspace.init()
-    return workspace
+def store(tmp_path):
+    s = Store(tmp_path / "research.db")
+    s.init()
+    yield s
+    s.close()
 
 
-def test_full_ooda_cycle(ws):
-    """Complete cycle: generate → critique → execute → orient."""
+def test_full_ooda_cycle(store):
+    """Complete cycle: generate -> critique -> execute -> orient."""
     mock_llm = E2EMockLLM()
 
     # Mock execution function
     def mock_execute(proposal):
         return {"metrics": {"outcome": 0.85}, "compute_cost": 0.10}
 
-    planner = Planner(ws, llm_call_fn=mock_llm, min_queue_size=3, n_proposals=2, n_select=1)
-    worker = Worker(ws, execute_fn=mock_execute)
+    planner = Planner(store, llm_call_fn=mock_llm, min_queue_size=3, n_proposals=2, n_select=1)
+    worker = Worker(store, execute_fn=mock_execute)
 
     # Step 1: Planner generates proposals (queue is empty)
     summary1 = planner.tick()
     assert summary1["generated"] == 2
-    assert ws.count_proposals("backlog") + ws.count_proposals("todo") == 2
+    assert store.count_proposals("backlog") + store.count_proposals("todo") == 2
 
     # Step 2: Worker executes a todo item
     worker_result = worker.tick()
     assert worker_result is not None
     assert worker_result["outcome_success"] is True
-    assert ws.count_proposals("done") == 1
+    assert store.count_proposals("done") == 1
 
     # Step 3: Planner orients on the result, then generates more
     summary2 = planner.tick()
     assert summary2["oriented"] == 1  # Processed the new observation
     # World model should be updated
-    wm = ws.load_world_model()
+    wm = store.load_world_model()
     assert wm.version > 0
     assert len(wm.beliefs) > 0
 
 
-def test_multi_tick_convergence(ws):
+def test_multi_tick_convergence(store):
     """Multiple planner+worker ticks produce a growing set of observations."""
     mock_llm = E2EMockLLM()
     execution_count = [0]
@@ -100,8 +101,8 @@ def test_multi_tick_convergence(ws):
         execution_count[0] += 1
         return {"metrics": {"outcome": 0.85 + execution_count[0] * 0.01}}
 
-    planner = Planner(ws, llm_call_fn=mock_llm, min_queue_size=3, n_proposals=2, n_select=2)
-    worker = Worker(ws, execute_fn=mock_execute)
+    planner = Planner(store, llm_call_fn=mock_llm, min_queue_size=3, n_proposals=2, n_select=2)
+    worker = Worker(store, execute_fn=mock_execute)
 
     # Run 3 cycles
     for _ in range(3):
@@ -110,33 +111,33 @@ def test_multi_tick_convergence(ws):
         while worker.tick() is not None:
             pass
 
-    observations = ws.list_observations()
+    observations = store.list_observations()
     assert len(observations) >= 3
     # All observations should be successful
     assert all(o.outcome_success for o in observations)
 
 
-def test_worker_idles_when_no_work(ws):
+def test_worker_idles_when_no_work(store):
     """Worker returns None when planner hasn't produced work yet."""
-    worker = Worker(ws, execute_fn=lambda p: {"metrics": {}})
+    worker = Worker(store, execute_fn=lambda p: {"metrics": {}})
     assert worker.tick() is None
 
 
-def test_planner_worker_independence(ws):
+def test_planner_worker_independence(store):
     """Planner and worker operate on different stages without conflict."""
     mock_llm = E2EMockLLM()
-    planner = Planner(ws, llm_call_fn=mock_llm, min_queue_size=3, n_proposals=2, n_select=1)
-    worker = Worker(ws, execute_fn=lambda p: {"metrics": {"x": 1}})
+    planner = Planner(store, llm_call_fn=mock_llm, min_queue_size=3, n_proposals=2, n_select=1)
+    worker = Worker(store, execute_fn=lambda p: {"metrics": {"x": 1}})
 
     # Planner fills queue
     planner.tick()
 
     # Verify stages are populated correctly
-    backlog = ws.count_proposals("backlog")
-    todo = ws.count_proposals("todo")
+    backlog = store.count_proposals("backlog")
+    todo = store.count_proposals("todo")
     assert backlog + todo == 2
 
     # Worker claims from todo
     worker.tick()
-    assert ws.count_proposals("running") == 0  # Already completed
-    assert ws.count_proposals("done") == 1
+    assert store.count_proposals("running") == 0  # Already completed
+    assert store.count_proposals("done") == 1
