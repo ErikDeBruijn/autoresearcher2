@@ -56,11 +56,11 @@ NANOGPT_DOMAIN = DomainConfig(
 )
 
 ATARI_DOMAIN = DomainConfig(
-    name="RL CartPole",
-    description="We train RL agents on CartPole-v1 (fast CPU benchmark). The base script uses SB3 PPO with MlpPolicy. Max reward is 500 (solved). Experiments run on CPU only — must complete in <60 seconds. HARD LIMITS: total_timesteps <= 50_000, n_envs <= 4. IMPORTANT: Your train_atari.py MUST save the trained model to /tmp/rl_model_latest.zip. Output must include 'mean_reward: <float>'.",
-    intervention_types="config_change (tweak hyperparameters), probe (quick diagnostic run), or code_change (rewrite train_atari.py with structural changes via file_changes key — e.g. different algorithms, custom wrappers, learning rate schedules).",
-    parameters="For config_change: learning_rate, n_envs, total_timesteps, gamma, clip_range, n_steps, batch_size, n_epochs. For code_change: {\"file_changes\": {\"train_atari.py\": \"full file content\"}} — you can rewrite the training script. HARD LIMITS: total_timesteps <= 50_000, n_envs <= 4.",
-    diversity_hint="Mix config_change (hyperparameter search) and code_change (algorithm changes, reward shaping, custom networks). CartPole is solvable with good hyperparameters — the research question is finding the optimal config efficiently.",
+    name="Atari Breakout",
+    description="We train RL agents on ALE/Breakout-v5 using GPU-accelerated PPO with CnnPolicy. Max reward ~400+ (expert human ~31). Runs on NVIDIA RTX PRO 6000 GPU. LIMITS: total_timesteps <= 500_000, n_envs <= 8. Output must include 'mean_reward: <float>'. Model saved to /tmp/rl_model_latest.zip.",
+    intervention_types="config_change (tweak hyperparameters), probe (short training run), or code_change (rewrite train_atari.py with structural changes via file_changes key — e.g. different algorithms, custom wrappers, reward shaping, frame stacking).",
+    parameters="For config_change: learning_rate, n_envs, total_timesteps, gamma, clip_range, n_steps, batch_size, n_epochs, ent_coef. For code_change: {\"file_changes\": {\"train_atari.py\": \"full file content\"}} — you can rewrite the training script. LIMITS: total_timesteps <= 500_000, n_envs <= 8.",
+    diversity_hint="Mix config_change (hyperparameter search) and code_change (algorithm changes like DQN/A2C, reward shaping, custom CNN architectures, frame stacking strategies). Breakout requires strategic play — explore different approaches.",
     base_script_name="train_atari.py",
 )
 

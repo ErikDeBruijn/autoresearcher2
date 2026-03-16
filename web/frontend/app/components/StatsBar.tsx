@@ -115,6 +115,9 @@ export default function StatsBar() {
 
       <a
         href={`${API}/api/report/download`}
+        download
+        target="_blank"
+        rel="noopener noreferrer"
         className="px-2 py-0.5 text-xs font-mono rounded border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors no-underline"
         title="Generate and download PDF report"
       >

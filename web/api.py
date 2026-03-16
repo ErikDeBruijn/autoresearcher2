@@ -913,7 +913,9 @@ def download_report(regenerate: bool = True):
     pdf = _find_latest_pdf()
     if not pdf:
         raise HTTPException(status_code=404, detail="No report found")
-    return FileResponse(pdf, media_type="application/pdf", filename=pdf.name)
+    from datetime import datetime as _dt
+    fname = f"autoresearcher-report-{_dt.now().strftime('%Y-%m-%d')}.pdf"
+    return FileResponse(pdf, media_type="application/pdf", filename=fname)
 
 
 # --- Artifact serving ---

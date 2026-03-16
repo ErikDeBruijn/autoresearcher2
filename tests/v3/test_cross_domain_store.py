@@ -142,5 +142,5 @@ def test_domain_config_reaches_prompt(store):
     # The generator prompt should mention CartPole
     gen_prompts = [p for p in prompts_seen if "Generate" in p]
     assert len(gen_prompts) > 0
-    assert "CartPole" in gen_prompts[0]
+    assert "Breakout" in gen_prompts[0]
     assert "NanoGPT" not in gen_prompts[0]

@@ -120,42 +120,18 @@ def main():
     # Planner gets its own Store connection for thread safety
     planner_store = Store(args.database)
 
-    # Categorize ALL projects by type: CPU-bound (Atari) vs GPU-bound (NanoGPT)
-    # Uses all projects (not just active) so workers stay restricted even when
-    # projects are paused. Workers idle when their project list is all-paused.
-    cpu_project_ids = []
-    gpu_project_ids = []
-    for proj in store.list_projects(active_only=False):
-        if "atari" in proj["name"].lower() or "cartpole" in proj["name"].lower() or "rl " in proj["name"].lower():
-            cpu_project_ids.append(proj["id"])
-        else:
-            gpu_project_ids.append(proj["id"])
+    # All projects run on GPU — both NanoGPT and Atari/RL use GPU workers.
+    # Atari Breakout uses CnnPolicy which requires GPU for reasonable speed.
+    gpu_project_ids = [proj["id"] for proj in store.list_projects(active_only=False)]
+    # RL project IDs (for executor dispatch)
+    rl_project_ids = [
+        proj["id"] for proj in store.list_projects(active_only=False)
+        if "atari" in proj["name"].lower() or "cartpole" in proj["name"].lower()
+        or "rl " in proj["name"].lower() or "breakout" in proj["name"].lower()
+    ]
 
     worker_configs = []  # (worker_id, execute_fn, project_ids, post_complete_fn)
 
-    # --- GPU workers: one per CUDA device, NanoGPT only ---
-    for i, cuda_dev in enumerate(cuda_devices):
-        worker_id = f"{hostname}_GPU{cuda_dev}"
-        if args.dry_run:
-            execute_fn = make_dry_run_executor()
-        else:
-            nanogpt_exec = make_trainpy_executor(
-                ssh_host=args.ssh_host,
-                ssh_key=args.ssh_key,
-                cuda_device=cuda_dev,
-                local=args.local_llm,
-            )
-            executors = {None: nanogpt_exec}
-            for pid in gpu_project_ids:
-                executors[pid] = nanogpt_exec
-            execute_fn = make_dispatch_executor(executors)
-
-        worker_configs.append((worker_id, execute_fn, gpu_project_ids, None))
-
-    # --- CPU workers: Atari only, no GPU required ---
-    # Each CPU worker runs one Atari experiment at a time (~1.5 cores each).
-    # With --cpu-workers 4, that's 4 parallel Atari experiments using ~6 cores.
-    # Workers share the base venv (7.5GB) via symlink, only the script is copied.
     atari_base = "/root/github.com/atari-research"
     record_script = "/root/github.com/erikdebruijn/autoresearcher2/scripts/record_video.py"
 
@@ -191,7 +167,6 @@ def main():
                     video_path = m.group(1).strip()
                     artifact_paths = dict(obs.artifact_paths or {})
                     artifact_paths["video"] = video_path
-                    # Update in DB (observation already saved by worker)
                     video_store = Store(args.database)
                     video_store.update_observation_artifacts(obs.id, artifact_paths)
                     video_store.close()
@@ -200,13 +175,25 @@ def main():
         except Exception:
             logger.warning("Video recording error", exc_info=True)
 
-    for i in range(args.cpu_workers):
-        worker_id = f"{hostname}_CPU{i}"
+    # --- GPU workers: one per CUDA device ---
+    # Each GPU worker handles both NanoGPT and Atari Breakout projects.
+    # Atari Breakout uses CnnPolicy which needs GPU for reasonable speed.
+    for i, cuda_dev in enumerate(cuda_devices):
+        worker_id = f"{hostname}_GPU{cuda_dev}"
+        post_complete = None
         if args.dry_run:
             execute_fn = make_dry_run_executor()
         else:
-            atari_dir = f"{atari_base}_cpu{i}"
-            # Create lightweight per-worker dir: symlink venv, copy script
+            # NanoGPT executor
+            nanogpt_exec = make_trainpy_executor(
+                ssh_host=args.ssh_host,
+                ssh_key=args.ssh_key,
+                cuda_device=cuda_dev,
+                local=args.local_llm,
+            )
+
+            # Atari Breakout executor (GPU-accelerated)
+            atari_dir = f"{atari_base}_gpu{cuda_dev}"
             subprocess.run(
                 ["bash", "-c",
                  f"mkdir -p {atari_dir} && "
@@ -214,31 +201,40 @@ def main():
                  f"cp {atari_base}/train_atari.py {atari_dir}/train_atari.py"],
                 capture_output=True, text=True, timeout=30,
             )
-            execute_fn = make_shell_executor(
+            atari_exec = make_shell_executor(
                 command_template=(
-                    f"taskset -c 14,15 bash -c '"
                     f"cd {atari_dir} && "
                     "source .venv/bin/activate && "
-                    "CUDA_VISIBLE_DEVICES= python train_atari.py 2>&1'"
+                    f"CUDA_VISIBLE_DEVICES={cuda_dev} python train_atari.py 2>&1"
                 ),
                 metric_patterns={
                     "mean_reward": r"mean_reward:\s+([\d.]+)",
                     "std_reward": r"std_reward:\s+([\d.]+)",
                     "fps": r"fps:\s+([\d.]+)",
                 },
-                timeout=120,
-                cuda_device="",
+                timeout=900,
+                cuda_device=cuda_dev,
                 work_dir=atari_dir,
                 base_script=f"{atari_base}/train_atari.py",
-                max_timesteps=50_000,
-                max_n_envs=4,
+                max_timesteps=500_000,
+                max_n_envs=8,
             )
 
-        worker_configs.append((worker_id, execute_fn, cpu_project_ids, atari_post_complete))
+            # Dispatch: RL projects → atari executor, everything else → NanoGPT
+            executors = {None: nanogpt_exec}
+            for pid in gpu_project_ids:
+                if pid in rl_project_ids:
+                    executors[pid] = atari_exec
+                else:
+                    executors[pid] = nanogpt_exec
+            execute_fn = make_dispatch_executor(executors)
+            post_complete = atari_post_complete
+
+        worker_configs.append((worker_id, execute_fn, gpu_project_ids, post_complete))
 
     worker_ids = [wid for wid, _, _, _ in worker_configs]
-    logger.info("Starting v4 research loop (dry_run=%s, gpus=%s, cpu_workers=%d, workers=%s)",
-                args.dry_run, cuda_devices, args.cpu_workers, worker_ids)
+    logger.info("Starting v4 research loop (dry_run=%s, gpus=%s, workers=%s)",
+                args.dry_run, cuda_devices, worker_ids)
 
     # Shared stop event for graceful shutdown
     stop = threading.Event()
@@ -259,7 +255,7 @@ def main():
                 planners[project_id] = Planner(
                     planner_store, llm_call_fn=llm_fn,
                     min_queue_size=args.min_queue,
-                    min_todo=len(cuda_devices) + args.cpu_workers,
+                    min_todo=len(cuda_devices),
                     n_proposals=args.n_proposals,
                     n_select=args.n_select,
                     project_id=project_id,
