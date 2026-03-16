@@ -1,0 +1,1045 @@
+{
+  "projects": [
+    {
+      "name": "NanoGPT",
+      "id": "proj_f6d452ea",
+      "domain_config": {
+        "name": "NanoGPT training",
+        "parameters": "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size",
+        "target_metric": "val_bpb"
+      },
+      "target_metric": "val_bpb",
+      "optimize": "minimize",
+      "total_obs": 71,
+      "success_obs": 51,
+      "failed_obs": 20,
+      "wm_version": 102,
+      "trajectory": [
+        {
+          "run": 1,
+          "value": 1.154632,
+          "best": 1.154632,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.001,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64,
+            "run_steps": 500
+          }
+        },
+        {
+          "run": 2,
+          "value": 1.087211,
+          "best": 1.087211,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.005,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64,
+            "run_steps": 500
+          }
+        },
+        {
+          "run": 3,
+          "value": 1.184376,
+          "best": 1.087211,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 3,
+            "MATRIX_LR": 0.001,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64,
+            "run_steps": 500
+          }
+        },
+        {
+          "run": 4,
+          "value": 1.149211,
+          "best": 1.087211,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.001,
+            "WEIGHT_DECAY": 0.0,
+            "batch_size": 64,
+            "run_steps": 500
+          }
+        },
+        {
+          "run": 5,
+          "value": 1.182136,
+          "best": 1.087211,
+          "type": "probe",
+          "spec": {
+            "run_steps": 500,
+            "DEPTH": 3,
+            "MATRIX_LR": 0.001,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64,
+            "num_steps": 500
+          }
+        },
+        {
+          "run": 6,
+          "value": 1.105887,
+          "best": 1.087211,
+          "type": "probe",
+          "spec": {
+            "run_steps": 300,
+            "MATRIX_LR": 0.003,
+            "DEPTH": 6,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64,
+            "num_steps": 300
+          }
+        },
+        {
+          "run": 7,
+          "value": 1.082576,
+          "best": 1.082576,
+          "type": "probe",
+          "spec": {
+            "MATRIX_LR": 0.005,
+            "WEIGHT_DECAY": 0.1,
+            "DEPTH": 6,
+            "batch_size": 128,
+            "run_steps": 1500
+          }
+        },
+        {
+          "run": 8,
+          "value": 1.062445,
+          "best": 1.062445,
+          "type": "probe",
+          "spec": {
+            "MATRIX_LR": 0.01,
+            "WEIGHT_DECAY": 0.1,
+            "DEPTH": 6,
+            "batch_size": 64,
+            "run_steps": 2000
+          }
+        },
+        {
+          "run": 9,
+          "value": 1.117662,
+          "best": 1.062445,
+          "type": "probe",
+          "spec": {
+            "run_steps": 400,
+            "DEPTH": 6,
+            "MATRIX_LR": 0.002,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 128,
+            "num_steps": 400
+          }
+        },
+        {
+          "run": 10,
+          "value": 1.151591,
+          "best": 1.062445,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.001,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 128,
+            "num_steps": 1000
+          }
+        },
+        {
+          "run": 11,
+          "value": 1.084113,
+          "best": 1.062445,
+          "type": "probe",
+          "spec": {
+            "MATRIX_LR": 0.005,
+            "WEIGHT_DECAY": 0.05,
+            "DEPTH": 6,
+            "batch_size": 64,
+            "run_steps": 2000
+          }
+        },
+        {
+          "run": 12,
+          "value": 1.09918,
+          "best": 1.062445,
+          "type": "config_change",
+          "spec": {
+            "MATRIX_LR": 0.005,
+            "WEIGHT_DECAY": 0.1,
+            "DEPTH": 8,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 13,
+          "value": 1.151372,
+          "best": 1.062445,
+          "type": "probe",
+          "spec": {
+            "num_steps": 500,
+            "batch_size": 64,
+            "DEPTH": 6,
+            "MATRIX_LR": 0.001,
+            "WEIGHT_DECAY": 0.1
+          }
+        },
+        {
+          "run": 14,
+          "value": 1.105411,
+          "best": 1.062445,
+          "type": "probe",
+          "spec": {
+            "MATRIX_LR": 0.003,
+            "DEPTH": 6,
+            "num_steps": 500,
+            "batch_size": 64,
+            "WEIGHT_DECAY": 0.1
+          }
+        },
+        {
+          "run": 15,
+          "value": 1.05628,
+          "best": 1.05628,
+          "type": "probe",
+          "spec": {
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.1,
+            "DEPTH": 6,
+            "batch_size": 64,
+            "run_steps": 500
+          }
+        },
+        {
+          "run": 16,
+          "value": 1.058958,
+          "best": 1.05628,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 8,
+            "MATRIX_LR": 0.01,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64,
+            "run_steps": 500
+          }
+        },
+        {
+          "run": 17,
+          "value": 1.07243,
+          "best": 1.05628,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.008,
+            "WEIGHT_DECAY": 0.05,
+            "batch_size": 128
+          }
+        },
+        {
+          "run": 18,
+          "value": 1.100136,
+          "best": 1.05628,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 8,
+            "MATRIX_LR": 0.005,
+            "WEIGHT_DECAY": 0.05,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 19,
+          "value": 1.070758,
+          "best": 1.05628,
+          "type": "config_change",
+          "spec": {
+            "MATRIX_LR": 0.01,
+            "WEIGHT_DECAY": 0.0,
+            "DEPTH": 6,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 20,
+          "value": 1.062418,
+          "best": 1.05628,
+          "type": "config_change",
+          "spec": {
+            "MATRIX_LR": 0.01,
+            "WEIGHT_DECAY": 0.1,
+            "DEPTH": 6,
+            "batch_size": 64,
+            "num_steps": 10000
+          }
+        },
+        {
+          "run": 21,
+          "value": 1.18234,
+          "best": 1.05628,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 3,
+            "num_steps": 500,
+            "batch_size": 64,
+            "MATRIX_LR": 0.001,
+            "WEIGHT_DECAY": 0.1
+          }
+        },
+        {
+          "run": 22,
+          "value": 1.058987,
+          "best": 1.05628,
+          "type": "probe",
+          "spec": {
+            "MATRIX_LR": 0.015,
+            "WEIGHT_DECAY": 0.1,
+            "DEPTH": 6,
+            "batch_size": 64,
+            "run_steps": 500
+          }
+        },
+        {
+          "run": 23,
+          "value": 1.084529,
+          "best": 1.05628,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.005,
+            "WEIGHT_DECAY": 0.05,
+            "batch_size": 128,
+            "num_steps": 500
+          }
+        },
+        {
+          "run": 24,
+          "value": 1.08648,
+          "best": 1.05628,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.005,
+            "WEIGHT_DECAY": 0.025,
+            "batch_size": 128
+          }
+        },
+        {
+          "run": 25,
+          "value": 1.149009,
+          "best": 1.05628,
+          "type": "probe",
+          "spec": {
+            "run_steps": 500,
+            "DEPTH": 6,
+            "MATRIX_LR": 0.001,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64,
+            "num_steps": 500
+          }
+        },
+        {
+          "run": 26,
+          "value": 1.151265,
+          "best": 1.05628,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.001,
+            "WEIGHT_DECAY": 0.0,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 27,
+          "value": 1.055802,
+          "best": 1.055802,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 32
+          }
+        },
+        {
+          "run": 28,
+          "value": 1.060573,
+          "best": 1.055802,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.0,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 29,
+          "value": 1.133862,
+          "best": 1.055802,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 3,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 30,
+          "value": 1.042602,
+          "best": 1.042602,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 8,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 31,
+          "value": 1.050949,
+          "best": 1.042602,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.04,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 32,
+          "value": 1.043609,
+          "best": 1.042602,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 8,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 33,
+          "value": 1.054012,
+          "best": 1.042602,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.035,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 34,
+          "value": 1.133178,
+          "best": 1.042602,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 3,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 35,
+          "value": 1.133495,
+          "best": 1.042602,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 12,
+            "MATRIX_LR": 0.01,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 36,
+          "value": 1.153344,
+          "best": 1.042602,
+          "type": "config_change",
+          "spec": {
+            "WEIGHT_DECAY": 0.0,
+            "DEPTH": 6,
+            "num_steps": 500,
+            "batch_size": 64,
+            "MATRIX_LR": 0.001
+          }
+        },
+        {
+          "run": 37,
+          "value": 1.147991,
+          "best": 1.042602,
+          "type": "probe",
+          "spec": {
+            "batch_size": 128,
+            "num_steps": 250,
+            "DEPTH": 6,
+            "MATRIX_LR": 0.001,
+            "WEIGHT_DECAY": 0.1
+          }
+        },
+        {
+          "run": 38,
+          "value": 1.053216,
+          "best": 1.042602,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 32
+          }
+        },
+        {
+          "run": 39,
+          "value": 1.062914,
+          "best": 1.042602,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.0,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 40,
+          "value": 1.039866,
+          "best": 1.039866,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 8,
+            "MATRIX_LR": 0.04,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 41,
+          "value": 1.081587,
+          "best": 1.039866,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 10,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 42,
+          "value": 1.051728,
+          "best": 1.039866,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 8,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.0,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 43,
+          "value": 1.049041,
+          "best": 1.039866,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 8,
+            "MATRIX_LR": 0.04,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 44,
+          "value": 1.052674,
+          "best": 1.039866,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.08,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 45,
+          "value": 1.103031,
+          "best": 1.039866,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 10,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 46,
+          "value": 1.052052,
+          "best": 1.039866,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 8,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.0,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 47,
+          "value": 1.060225,
+          "best": 1.039866,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 10,
+            "MATRIX_LR": 0.04,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 48,
+          "value": 1.042353,
+          "best": 1.039866,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 8,
+            "MATRIX_LR": 0.08,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 49,
+          "value": 1.036205,
+          "best": 1.036205,
+          "type": "config_change",
+          "spec": {
+            "DEPTH": 8,
+            "MATRIX_LR": 0.03,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        },
+        {
+          "run": 50,
+          "value": 1.056358,
+          "best": 1.036205,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 6,
+            "MATRIX_LR": 0.02,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64,
+            "num_steps": 5000
+          }
+        },
+        {
+          "run": 51,
+          "value": 1.132723,
+          "best": 1.036205,
+          "type": "probe",
+          "spec": {
+            "DEPTH": 3,
+            "MATRIX_LR": 0.08,
+            "WEIGHT_DECAY": 0.1,
+            "batch_size": 64
+          }
+        }
+      ],
+      "beliefs": [
+        {
+          "id": "B4",
+          "claim": "The training system runs beyond the configured num_steps (1000 requested, 2395 actual), likely completing full epochs over the data",
+          "confidence": 0.99
+        },
+        {
+          "id": "B27",
+          "claim": "The training infrastructure has a fragile dependency on a cached tokenizer file at /home/autoresearcher/.cache/autoresearch/tokenizer/tokenizer.pkl. If this file is missing or the cache is cleared, training fails immediately with a FileNotFoundError before any training begins.",
+          "confidence": 0.99
+        },
+        {
+          "id": "B7",
+          "claim": "Peak VRAM for DEPTH=6 is ~14 GB regardless of whether batch_size is 64 or 128, suggesting model parameters dominate memory usage over batch size in this range",
+          "confidence": 0.98
+        },
+        {
+          "id": "B10",
+          "claim": "Peak VRAM for DEPTH=8 with batch_size=64 is ~23.5 GB, roughly 1.7x the ~14 GB used by DEPTH=6 configurations",
+          "confidence": 0.97
+        },
+        {
+          "id": "B11",
+          "claim": "The training system processes ~131K tokens per step regardless of batch_size (64 or 128) and depth (6 or 8), suggesting a fixed token-per-step budget. This explains why deeper/slower models process fewer total tokens in the same wall-clock budget.",
+          "confidence": 0.97
+        },
+        {
+          "id": "B28",
+          "claim": "The cache dependency issue (B27) extends beyond the tokenizer to the data directory as well. The error '/home/autoresearcher/.cache/autoresearch/data' not found (obs_371993e9) alongside prior tokenizer errors suggests the entire /home/autoresearcher/.cache/autoresearch/ directory has been deleted or was never populated on this worker, not just individual files.",
+          "confidence": 0.97
+        },
+        {
+          "id": "B33",
+          "claim": "MATRIX_LR=0.04 with WEIGHT_DECAY=0.1 at DEPTH=6, batch_size=64 achieves val_bpb=1.051, only a 0.005 improvement over LR=0.02 (1.056) despite doubling the learning rate. This confirms the LR plateau for DEPTH=6: the improvement per unit LR has collapsed from ~7.2/unit at LR=0.003-0.005 to ~0.25/unit at LR=0.02-0.04. The monotonic trend still holds (0.002\u21921.118, 0.005\u21921.084, 0.01\u21921.062, 0.02\u21921.056, 0.04\u21921.051) but returns are negligible.",
+          "confidence": 0.96
+        },
+        {
+          "id": "B15",
+          "claim": "Training loss at end of run decreases substantially with higher MATRIX_LR: ~2.97 at LR=0.02 vs ~3.23 at baseline LR, consistent with the val_bpb improvement from 1.152 to 1.056",
+          "confidence": 0.95
+        },
+        {
+          "id": "B21",
+          "claim": "MATRIX_LR=0.015 with WEIGHT_DECAY=0.1 at DEPTH=6, batch_size=64 achieves val_bpb=1.059, filling the gap between LR=0.01 (1.062) and LR=0.02 (1.056). The improvement per unit LR is clearly flattening: the 0.005 increment from 0.01\u21920.015 yields only 0.003 val_bpb improvement, matching the 0.003 from 0.015\u21920.02, suggesting we are approaching an LR plateau for this architecture.",
+          "confidence": 0.95
+        },
+        {
+          "id": "B6",
+          "claim": "MATRIX_LR=0.005 with WEIGHT_DECAY=0.05 at DEPTH=6 achieves val_bpb=1.084, the best result observed so far for this architecture, substantially improving over both the baseline (~1.152) and the LR=0.002/WD=0.1 configuration (~1.118)",
+          "confidence": 0.93
+        },
+        {
+          "id": "B5",
+          "claim": "Peak VRAM usage for DEPTH=6 with batch_size=128 is ~14 GB",
+          "confidence": 0.92
+        },
+        {
+          "id": "B24",
+          "claim": "Peak VRAM scales roughly with model depth/params: DEPTH=3 ~6.3GB, DEPTH=6 ~14GB, DEPTH=8 ~23.5GB. The scaling is slightly super-linear relative to parameter count (13M\u219235.8M\u219267.6M maps to 6.3\u219214\u219223.5 GB).",
+          "confidence": 0.92
+        },
+        {
+          "id": "B31",
+          "claim": "DEPTH=3 (13M params) with MATRIX_LR=0.02, WEIGHT_DECAY=0.1, batch_size=64 achieves val_bpb=1.134 after 5765 steps on 755.6M tokens. This is a major improvement over LR=0.001 (val_bpb=1.182, B22), confirming the monotonic LR\u2192val_bpb trend holds for DEPTH=3. However, despite processing 2.4x more tokens than DEPTH=6 runs (~314M), DEPTH=3 at LR=0.02 (1.134) is substantially worse than DEPTH=6 at the same LR (1.056, B14), establishing that depth/parameter count matters more than token throughput for this task.",
+          "confidence": 0.92
+        },
+        {
+          "id": "B36",
+          "claim": "DEPTH=8 (67.6M params) with MATRIX_LR=0.02, WEIGHT_DECAY=0.0, batch_size=64 achieves val_bpb=1.0517, worse than WD=0.1 at the same config (1.0426, B32) by 0.0091. This WD effect at DEPTH=8/LR=0.02 is larger than at DEPTH=6/LR=0.02 (0.005, B30), suggesting weight decay benefit increases with model depth. Even without weight decay, DEPTH=8 at LR=0.02 (1.0517) roughly matches DEPTH=6's best result (1.051 at LR=0.04, B33).",
+          "confidence": 0.92
+        },
+        {
+          "id": "B29",
+          "claim": "Batch size in the range 32-128 has negligible effect on val_bpb at DEPTH=6 with MATRIX_LR=0.02, WEIGHT_DECAY=0.1: batch_size=32 achieves 1.0558, batch_size=64 achieves 1.056, and batch_size=128 achieves ~1.056. This suggests the model's final validation performance is robust to batch size variations in this range.",
+          "confidence": 0.9
+        },
+        {
+          "id": "B30",
+          "claim": "MATRIX_LR=0.02 with WEIGHT_DECAY=0.0 at DEPTH=6, batch_size=64 achieves val_bpb=1.061, worse than WD=0.1 at the same LR (1.056) by 0.005. This provides a second controlled WD comparison at a high LR, complementing the LR=0.01 comparison (WD=0.0\u21921.071 vs WD=0.1\u21921.062, diff=0.009). Surprisingly, the WD effect is smaller at LR=0.02 (0.005) than at LR=0.01 (0.009), suggesting the benefit of weight decay does not increase monotonically with learning rate.",
+          "confidence": 0.9
+        },
+        {
+          "id": "B32",
+          "claim": "DEPTH=8 (67.6M params) with MATRIX_LR=0.02, WEIGHT_DECAY=0.1, batch_size=64 achieves val_bpb=1.0426, the new best result overall, surpassing DEPTH=6's previous best of 1.056 by 0.0134. The monotonic LR\u2192val_bpb trend extends to LR=0.02 for DEPTH=8: 0.005\u21921.099, 0.01\u21921.059, 0.02\u21921.0426. The improvement from 0.01\u21920.02 (0.0164) is larger than for DEPTH=6 over the same LR range (0.006), suggesting DEPTH=8 has not yet plateaued and may benefit from even higher LR.",
+          "confidence": 0.88
+        },
+        {
+          "id": "B35",
+          "claim": "DEPTH=8 (67.6M params) with MATRIX_LR=0.04, WEIGHT_DECAY=0.1, batch_size=64 achieves val_bpb=1.0399, the new best result overall. The improvement from LR=0.02 (1.0426) is only 0.0027 despite doubling the learning rate, confirming DEPTH=8 has now entered the same LR plateau regime observed for DEPTH=6. Full DEPTH=8 LR series: 0.005\u21921.099, 0.01\u21921.059, 0.02\u21921.0426, 0.04\u21921.0399.",
+          "confidence": 0.88
+        },
+        {
+          "id": "B40",
+          "claim": "DEPTH=3 (13M params) with MATRIX_LR=0.08, WEIGHT_DECAY=0.1, batch_size=64 achieves val_bpb=1.1327, essentially identical to LR=0.02 (1.134, B31). This confirms DEPTH=3 has fully plateaued by LR=0.02. Full DEPTH=3 LR series: 0.001\u21921.182, 0.02\u21921.134, 0.08\u21921.133. The plateau floor for DEPTH=3 is approximately 1.133, compared to DEPTH=6's ~1.051 and DEPTH=8's ~1.042.",
+          "confidence": 0.88
+        },
+        {
+          "id": "B17",
+          "claim": "The monotonic LR\u2192val_bpb improvement trend holds for DEPTH=8 as well: LR=0.005\u21921.099, LR=0.01\u21921.059. The optimal LR for DEPTH=8 may be similar to or slightly lower than for DEPTH=6, since LR=0.01 at DEPTH=8 nearly matches LR=0.02 at DEPTH=6.",
+          "confidence": 0.85
+        },
+        {
+          "id": "B22",
+          "claim": "DEPTH=3 (13M params) with MATRIX_LR=0.001, WEIGHT_DECAY=0.1, batch_size=64 achieves val_bpb=1.182 after 5905 steps on 774M tokens. Despite processing ~2.5x more tokens than DEPTH=6 runs (~314M) in similar wall time, the result is worse than the DEPTH=6 baseline (1.152). However, LR=0.001 is far below the optimal range identified for DEPTH=6 (0.01-0.02), so this comparison is heavily confounded by learning rate.",
+          "confidence": 0.85
+        },
+        {
+          "id": "B38",
+          "claim": "MATRIX_LR=0.08 with WEIGHT_DECAY=0.1 at DEPTH=6, batch_size=64 achieves val_bpb=1.0527, marginally worse than LR=0.04 (1.051) despite doubling the learning rate. This is the first observation where increasing LR did NOT improve val_bpb for DEPTH=6, indicating the monotonic LR\u2192val_bpb trend has ended and the optimal LR for DEPTH=6 is approximately 0.04. Full DEPTH=6 LR series: 0.002\u21921.118, 0.003\u21921.105, 0.005\u21921.084, 0.01\u21921.062, 0.02\u21921.056, 0.04\u21921.051, 0.08\u21921.053.",
+          "confidence": 0.85
+        },
+        {
+          "id": "B20",
+          "claim": "MATRIX_LR=0.01 with WEIGHT_DECAY=0.1 at DEPTH=6, batch_size=64 achieves val_bpb=1.062, providing the first controlled WD comparison: at LR=0.01, WD=0.1 (1.062) outperforms WD=0.0 (1.071) by 0.009, demonstrating that weight decay has a meaningful positive effect at this learning rate.",
+          "confidence": 0.83
+        },
+        {
+          "id": "B39",
+          "claim": "DEPTH=8 (67.6M params) with MATRIX_LR=0.08, WEIGHT_DECAY=0.1, batch_size=64 achieves val_bpb=1.042353, essentially identical to LR=0.04's mean (~1.045) and LR=0.02 (1.0426). This confirms DEPTH=8 has fully plateaued: the full LR series is 0.005\u21921.099, 0.01\u21921.059, 0.02\u21921.0426, 0.04\u2192~1.045, 0.08\u21921.042. The plateau floor for DEPTH=8 is approximately 1.042, compared to DEPTH=6's plateau floor of ~1.051.",
+          "confidence": 0.82
+        },
+        {
+          "id": "B3",
+          "claim": "Training loss around 3.23-3.24 at end of run with val_bpb ~1.152, suggesting reasonable convergence for this model size",
+          "confidence": 0.8
+        },
+        {
+          "id": "B13",
+          "claim": "MATRIX_LR=0.003 with WEIGHT_DECAY=0.1 at DEPTH=6 achieves val_bpb=1.105, placing it between the LR=0.002/WD=0.1 result (~1.118) and the best LR=0.005/WD=0.05 result (~1.084), consistent with a monotonic improvement as LR increases from 0.002 to 0.005",
+          "confidence": 0.8
+        },
+        {
+          "id": "B18",
+          "claim": "MATRIX_LR=0.008 with WEIGHT_DECAY=0.05 at DEPTH=6, batch_size=128 achieves val_bpb=1.072, fitting between LR=0.005/WD=0.05 (1.084) and LR=0.02/WD=0.1 (1.056). Training loss at end of run is ~3.017, consistent with the trend of lower loss at higher LR.",
+          "confidence": 0.8
+        },
+        {
+          "id": "B19",
+          "claim": "MATRIX_LR=0.01 with WEIGHT_DECAY=0.0 at DEPTH=6, batch_size=64 achieves val_bpb=1.071, fitting the monotonic LR\u2192val_bpb trend (0.005\u21921.084, 0.008\u21921.072, 0.01\u21921.071, 0.02\u21921.056). Notably, WD=0.0 performs comparably to WD=0.05 at a nearby LR (0.008\u21921.072), suggesting weight decay has a smaller effect than learning rate in this regime.",
+          "confidence": 0.8
+        },
+        {
+          "id": "B37",
+          "claim": "DEPTH=8 (67.6M params) with MATRIX_LR=0.04, WEIGHT_DECAY=0.1, batch_size=64 shows significant run-to-run variance: obs_165d9c60 achieved val_bpb=1.0399 while obs_4b85396c achieved val_bpb=1.049, a difference of 0.009. The true expected val_bpb for this config is approximately 1.045 with uncertainty of ~0.005. This run also showed dramatically lower MFU (57.07% vs prior ~64.4%) and fewer tokens processed (155.5M vs ~175.8M), suggesting hardware or system-level variability affects both throughput and final performance.",
+          "confidence": 0.8
+        },
+        {
+          "id": "B1",
+          "claim": "A 6-layer, 35.8M parameter model achieves ~1.152 val_bpb after ~2395 steps on 313.9M tokens",
+          "confidence": 0.78
+        },
+        {
+          "id": "B16",
+          "claim": "DEPTH=8 (67.6M params) with MATRIX_LR=0.01, WEIGHT_DECAY=0.1, batch_size=64 achieves val_bpb=1.059 after 1339 steps on 175.5M tokens \u2014 a 0.040 improvement over LR=0.005 (val_bpb=1.099) and nearly matching the best DEPTH=6 result (1.056 at LR=0.02).",
+          "confidence": 0.78
+        },
+        {
+          "id": "B8",
+          "claim": "An 8-layer, 67.6M parameter model achieves val_bpb=1.099 with MATRIX_LR=0.005, WEIGHT_DECAY=0.1, batch_size=64 after 1341 steps on 175.8M tokens",
+          "confidence": 0.75
+        },
+        {
+          "id": "B14",
+          "claim": "MATRIX_LR=0.02 with WEIGHT_DECAY=0.1 at DEPTH=6, batch_size=64 achieves val_bpb=1.056, the best result observed so far, substantially improving over the previous best of 1.084 (LR=0.005/WD=0.05). This extends the monotonic improvement trend across LR values: 0.002\u21921.118, 0.003\u21921.105, 0.005\u21921.084, 0.02\u21921.056.",
+          "confidence": 0.65
+        },
+        {
+          "id": "B25",
+          "claim": "MATRIX_LR=0.005 with WEIGHT_DECAY=0.025 at DEPTH=6, batch_size=128 achieves val_bpb=1.086, marginally worse than WD=0.05 at the same LR (1.084). Combined with the LR=0.01 comparison (WD=0.0\u21921.071 vs WD=0.1\u21921.062), this suggests weight decay has a small positive effect that may increase with learning rate.",
+          "confidence": 0.6
+        },
+        {
+          "id": "B34",
+          "claim": "Run-to-run variance for identical configurations is ~0.002 val_bpb. Two runs of DEPTH=6, MATRIX_LR=0.02, WEIGHT_DECAY=0.0, batch_size=64 yielded val_bpb of 1.061 (obs_b0e2836d) and 1.063 (obs_59d07b96), providing the first direct replication estimate. Differences smaller than ~0.004 val_bpb should be treated as noise.",
+          "confidence": 0.6
+        },
+        {
+          "id": "B26",
+          "claim": "At MATRIX_LR=0.001, WEIGHT_DECAY=0.0 produces val_bpb=1.151, essentially identical to the baseline (~1.152 with default WD). Combined with the LR=0.01 comparison (WD=0.0\u21921.071 vs WD=0.1\u21921.062), this strengthens the pattern that weight decay's positive effect is negligible at low LR and grows with increasing LR.",
+          "confidence": 0.55
+        },
+        {
+          "id": "B23",
+          "claim": "MFU decreases with shallower models: DEPTH=3 ~47.8%, DEPTH=6 ~57.4%, DEPTH=8 ~64.4%. Deeper models achieve higher hardware utilization, likely because larger matrix operations better saturate GPU compute units.",
+          "confidence": 0.5
+        },
+        {
+          "id": "B2",
+          "claim": "MFU stabilizes around 57.4% for this model configuration and hardware",
+          "confidence": 0.45
+        },
+        {
+          "id": "B9",
+          "claim": "MFU for DEPTH=8 with batch_size=64 is ~64.4%, substantially higher than the ~57.4% observed for DEPTH=6 with batch_size=128",
+          "confidence": 0.3
+        },
+        {
+          "id": "B12",
+          "claim": "MFU for DEPTH=6 with batch_size=64 is ~59.2%, higher than the ~57.4% seen with batch_size=128, suggesting smaller batch sizes improve hardware utilization at this model size",
+          "confidence": 0.2
+        }
+      ],
+      "tensions": [
+        "{\"id\": \"T1\", \"beliefs\": [\"B1\"], \"nature\": \"Only one data point establishes the depth-6 baseline; unclear whether this is near-optimal or far from optimal for this param count and token budget\", \"salience\": \"medium\"}",
+        "{\"id\": \"T2\", \"beliefs\": [\"B1\", \"B4\"], \"nature\": \"The num_steps parameter appears ignored by the training system (400 requested, 2463 run). If this is epoch-based, the 'num_steps' intervention spec may not control training duration as intended, complicating experimental design.\", \"salience\": \"medium\"}",
+        "{\"id\": \"T5\", \"beliefs\": [\"B6\"], \"nature\": \"DEPTH=8 (67.6M params) achieves val_bpb=1.099, which is WORSE than the best DEPTH=6 result (35.8M params, val_bpb=1.084) despite nearly 2x parameters. However, this comparison is heavily confounded: (1) depth-8 trained on only 175.8M tokens vs 313.9M for depth-6, (2) weight_decay was 0.1 vs 0.05, (3) batch_size was 64 vs 128. It remains unclear whether scaling depth helps, hurts, or is neutral once confounds are controlled.\", \"salience\": \"high\"}",
+        "{\"id\": \"T15\", \"beliefs\": [\"B23\"], \"nature\": \"MFU varies substantially by depth (47.8%\\u219257.4%\\u219264.4% for DEPTH 3\\u21926\\u21928), meaning shallower models waste more compute per FLOP. This creates a cost-efficiency tension: shallower models process more tokens per second but extract less from each FLOP. The optimal depth for a fixed compute budget depends on whether token throughput or per-FLOP efficiency dominates.\", \"salience\": \"medium\"}",
+        "{\"id\": \"T21\", \"beliefs\": [\"B25\", \"B26\"], \"nature\": \"The weight decay benefit is non-monotonic with learning rate: negligible at LR=0.001, peaks at ~0.009 at LR=0.01, then decreases to 0.005 at LR=0.02. This contradicts the simple 'WD effect grows with LR' model and suggests a more complex interaction, possibly related to approaching the LR plateau where both WD=0 and WD=0.1 converge toward similar performance.\", \"salience\": \"medium\"}",
+        "{\"id\": \"T24\", \"beliefs\": [\"B32\", \"B31\"], \"nature\": \"DEPTH=8 at LR=0.02 (1.0426) substantially outperforms DEPTH=3 at LR=0.02 (1.134) and DEPTH=6 at LR=0.02 (1.056), despite seeing fewer tokens (175.9M vs 755.6M and 313.9M). Deeper models appear dramatically more parameter-efficient, but the comparison is confounded by potentially different optimal LRs per depth. The question of whether DEPTH=10+ would improve further is now salient.\", \"salience\": \"medium\"}",
+        "{\"id\": \"T27\", \"beliefs\": [\"B35\", \"B33\"], \"nature\": \"Both DEPTH=6 and DEPTH=8 plateau in the LR=0.02-0.04 range with similar plateau slopes, suggesting the optimal LR may be roughly depth-independent for this architecture. If true, the primary lever for further val_bpb improvement is depth/params, not LR tuning. But we lack DEPTH=10+ data to confirm whether the depth\\u2192val_bpb trend continues or hits its own wall (e.g., from insufficient tokens per parameter at higher depth).\", \"salience\": \"high\"}",
+        "{\"id\": \"T28\", \"beliefs\": [\"B30\", \"B36\"], \"nature\": \"Weight decay effect at LR=0.02 is 0.005 for DEPTH=6 but 0.009 for DEPTH=8, suggesting WD benefit scales with depth/params. If true, WD tuning becomes more important for larger models, and the optimal WD may differ by depth. This interacts with T21's observation about non-monotonic WD-LR interaction \\u2014 the pattern may be depth-dependent rather than purely LR-dependent.\", \"salience\": \"medium\"}",
+        "{\"id\": \"T29\", \"beliefs\": [\"B9\", \"B23\"], \"nature\": \"DEPTH=8 MFU showed 57.07% in obs_4b85396c vs ~64.4% in four prior observations. If MFU is this variable for DEPTH=8, the claimed depth-MFU scaling (B23) is unreliable, and token throughput comparisons across runs are confounded by hardware/system variability. This also means total_tokens_M varies substantially across runs of identical configs (155.5M vs 175.8M), affecting final val_bpb through different amounts of training data.\", \"salience\": \"high\"}",
+        "{\"id\": \"T30\", \"beliefs\": [\"B34\", \"B35\"], \"nature\": \"Run-to-run variance appears much larger than initially estimated (0.009 vs 0.002). With the DEPTH=6 pair showing 0.002 and DEPTH=8 pair showing 0.009, variance may scale with model size or be driven by MFU/throughput variability that disproportionately affects larger models. Many prior beliefs about small performance differences (e.g., B33's 0.005 LR=0.02 vs 0.04 gap, B30's 0.005 WD effect) are now within noise and less trustworthy.\", \"salience\": \"high\"}",
+        "{\"id\": \"T31\", \"beliefs\": [\"B40\", \"B38\", \"B39\"], \"nature\": \"All three depths (3, 6, 8) plateau in the LR=0.02-0.04 range with plateau floors of ~1.133, ~1.051, ~1.042 respectively. The gap between depths is large (0.082 between DEPTH=3 and DEPTH=6, 0.009 between DEPTH=6 and DEPTH=8), showing sharply diminishing returns from depth. Extrapolating to DEPTH=10+ suggests minimal further improvement, but this is untested.\", \"salience\": \"high\"}"
+      ],
+      "cost_beliefs": {
+        "config_change": {
+          "wall_time_s": 320.13,
+          "energy_kwh": 0.02975,
+          "cost_eur": 0.008644,
+          "avg_power_w": 330.25
+        },
+        "probe": {
+          "wall_time_s": 319.87,
+          "energy_kwh": 0.029057,
+          "cost_eur": 0.008413,
+          "avg_power_w": 325.95
+        }
+      },
+      "totals": {
+        "energy_kwh": 0.670751,
+        "cost_eur": 0.183517,
+        "wall_s": 16569.1403298378
+      }
+    },
+    {
+      "name": "Atari Breakout",
+      "id": "proj_66393535",
+      "domain_config": {
+        "name": "Atari RL",
+        "description": "We train RL agents to play Atari Breakout. The base script uses SB3 PPO as boilerplate. The real research is in code_change proposals that rewrite the training script with structural improvements.",
+        "intervention_types": "config_change (tweak hyperparameters), probe (quick diagnostic), or code_change (MOST VALUABLE: rewrite train_atari.py with structural changes via file_changes key). PREFER code_change.",
+        "parameters": "For config_change: learning_rate, n_envs, total_timesteps. For code_change: {\"file_changes\": {\"train_atari.py\": \"full content\"}}",
+        "target_metric": "mean_reward",
+        "optimize": "maximize",
+        "base_script_path": "/root/github.com/atari-research/train_atari.py",
+        "base_script_name": "train_atari.py"
+      },
+      "target_metric": "mean_reward",
+      "optimize": "maximize",
+      "total_obs": 6,
+      "success_obs": 6,
+      "failed_obs": 0,
+      "wm_version": 97,
+      "trajectory": [
+        {
+          "run": 1,
+          "value": 2.8,
+          "best": 2.8,
+          "type": "config_change",
+          "spec": {
+            "total_timesteps": 200000,
+            "learning_rate": 0.00025,
+            "n_envs": 4
+          }
+        },
+        {
+          "run": 2,
+          "value": 3.6,
+          "best": 3.6,
+          "type": "probe",
+          "spec": {
+            "total_timesteps": 50000,
+            "learning_rate": 0.00025,
+            "n_envs": 4
+          }
+        },
+        {
+          "run": 3,
+          "value": 3.1,
+          "best": 3.6,
+          "type": "code_change",
+          "spec": {}
+        },
+        {
+          "run": 4,
+          "value": 3.5,
+          "best": 3.6,
+          "type": "code_change",
+          "spec": {
+            "diff": "--- a/train_atari.py\n+++ b/train_atari.py\n@@ -35,7 +35,8 @@\n def main():\n     # Config \u2014 the LLM can change any of this\n     n_envs = 4\n     total_timesteps = 200_000  # ~3-5 min on Blackwell GPU\n-    learning_rate = 2.5e-4\n+    # Linear decay from 1e-3 to 1e-5 over training\n+    learning_rate = lambda progress: 1e-3 * progress + 1e-5 * (1 - progress)\n     gamma = 0.99\n     clip_range = 0.1\n     net_arch = [256, 256]\n"
+          }
+        },
+        {
+          "run": 5,
+          "value": 3.2,
+          "best": 3.6,
+          "type": "config_change",
+          "spec": {
+            "net_arch": [
+              64
+            ],
+            "total_timesteps": 200000,
+            "learning_rate": 0.00025,
+            "n_envs": 4
+          }
+        },
+        {
+          "run": 6,
+          "value": 1.5,
+          "best": 3.6,
+          "type": "code_change",
+          "spec": {}
+        }
+      ],
+      "beliefs": [
+        {
+          "id": "B2",
+          "claim": "The agent is in early training \u2014 explained_variance rose from 0.758 to 0.845 near end of run, suggesting the value function is still improving",
+          "confidence": 0.75
+        },
+        {
+          "id": "B4",
+          "claim": "Entropy loss decreased from -0.282 to -0.267 over final iterations, indicating policy is still exploring but gradually specializing",
+          "confidence": 0.6
+        },
+        {
+          "id": "B1",
+          "claim": "PPO with lr=0.00025, 4 envs, 200k timesteps yields mean_reward=2.8 (std=1.6) on this Atari task",
+          "confidence": 0.55
+        },
+        {
+          "id": "B7",
+          "claim": "The lr decay schedule produces substantially lower entropy (-0.21) and very low clip_fraction (~0.004-0.007), indicating a more converged but potentially prematurely specialized policy",
+          "confidence": 0.5
+        },
+        {
+          "id": "B8",
+          "claim": "Reward shaping (survival_bonus=0.01, life_loss_penalty=-1.0) with PPO at lr=2.5e-4 and 200k timesteps yields mean_reward=1.5 (std=1.2), substantially worse than the unshaped baseline of 2.8",
+          "confidence": 0.5
+        },
+        {
+          "id": "B6",
+          "claim": "Linear lr decay (1e-3 \u2192 1e-5) with PPO yields mean_reward=3.5 (std=1.86), a ~25% improvement over fixed lr=2.5e-4 baseline",
+          "confidence": 0.45
+        },
+        {
+          "id": "B9",
+          "claim": "The life-loss penalty (-1.0) may be too large relative to typical per-step game rewards, causing overly conservative play that avoids risk but also avoids scoring \u2014 evidenced by higher explained_variance (0.90) but lower actual reward",
+          "confidence": 0.35
+        },
+        {
+          "id": "B3",
+          "claim": "Training throughput is approximately 650 FPS with 4 parallel envs on this hardware",
+          "confidence": 0.3
+        },
+        {
+          "id": "B5",
+          "claim": "A 200k-timestep PPO run costs approximately \u20ac0.003 and 0.011 kWh on this hardware",
+          "confidence": 0.3
+        }
+      ],
+      "tensions": [
+        "{\"id\": \"T3\", \"beliefs\": [\"B1\"], \"nature\": \"The lr decay schedule (1e-3\\u21921e-5) achieved mean_reward=3.5 vs fixed lr=2.5e-4's 2.8. However, the decay schedule also drove entropy much lower (-0.21 vs -0.267) and clip_fraction near zero (~0.004), suggesting the policy may have collapsed to a narrow strategy. The reward improvement could be genuine or could reflect overfitting to a local optimum that would not scale with longer training.\", \"salience\": \"high\"}",
+        "{\"id\": \"T4\", \"beliefs\": [\"B1\", \"B8\"], \"nature\": \"Reward shaping (survival bonus + life-loss penalty) was intended to accelerate early learning but reduced mean_reward from 2.8 to 1.5 \\u2014 a 46% drop. The value function learned the shaped rewards well (explained_variance=0.90 > baseline 0.845) but the policy performed worse on actual game rewards. This suggests the shaping distorted the learning signal: the -1.0 life-loss penalty likely dominates the reward landscape (Breakout rewards are sparse small integers), causing the agent to optimize for survival over scoring. The higher entropy drop (-0.268\\u2192-0.336 vs baseline's -0.282\\u2192-0.267) supports premature specialization toward a risk-averse strategy.\", \"salience\": \"high\"}"
+      ],
+      "cost_beliefs": {
+        "config_change_200k_steps": {
+          "wall_time_s": 251.52,
+          "energy_kwh": 0.006955,
+          "cost_eur": 0.001817,
+          "avg_power_w": 99.4
+        },
+        "reward_shaping_200k_steps": {
+          "wall_time_s": 270.77,
+          "energy_kwh": 0.007076,
+          "cost_eur": 0.001849,
+          "avg_power_w": 93.6
+        }
+      },
+      "totals": {
+        "energy_kwh": 0.04467,
+        "cost_eur": 0.011868,
+        "wall_s": 1587.6150450706482
+      }
+    }
+  ]
+}

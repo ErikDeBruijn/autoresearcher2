@@ -48,7 +48,7 @@ class DomainConfig:
     diversity_hint: str = "Mix of config_change (full run), probe (quick test), and code_change (when the hypothesis requires structural changes)"
     hardware: str = ""
     base_script: str = ""  # Current training script content — shown to LLM for code_change proposals
-    base_script_name: str = "train.py"  # Filename for the base script
+    base_script_name: str = "script.py"  # Filename for the base script
 
 
 def domain_config_from_project(project: dict) -> DomainConfig:
@@ -81,7 +81,7 @@ def domain_config_from_project(project: dict) -> DomainConfig:
         diversity_hint=dc.get("diversity_hint", DomainConfig.diversity_hint),
         hardware=dc.get("hardware", ""),
         base_script=base_script,
-        base_script_name=dc.get("base_script_name", "train.py"),
+        base_script_name=dc.get("base_script_name", "script.py"),
     )
 
 
@@ -94,7 +94,7 @@ def build_generator_prompt(world_model: WorldModel, n_proposals: int = 5, domain
     base_script_section = ""
     if domain.base_script:
         base_script_section = f"""
-## CURRENT TRAINING SCRIPT ({domain.base_script_name})
+## CURRENT EXPERIMENT SCRIPT ({domain.base_script_name})
 
 This is the script that gets executed. For code_change proposals, you MUST provide the COMPLETE modified version of this script in intervention_spec.file_changes.
 
