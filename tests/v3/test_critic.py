@@ -3,6 +3,7 @@ import pytest
 from autoresearcher2.v3.world_model import WorldModel
 from autoresearcher2.v3.proposal import Proposal
 from autoresearcher2.v3.critic import critique_proposals, build_critic_prompt
+from autoresearcher2.v3.generator import DomainConfig
 
 
 def make_world_model():
@@ -119,3 +120,13 @@ def test_critic_respects_n_select():
     accepted = critique_proposals(wm, proposals, n_select=1, llm_call_fn=mock_llm)
     assert len(accepted) == 1
     assert accepted[0].id == "prop_cheap_probe"
+
+
+def test_critic_prompt_uses_domain_config():
+    """Critic prompt should include domain name when DomainConfig is provided."""
+    wm = make_world_model()
+    proposals = make_proposals()
+    domain = DomainConfig(name="Drug Discovery", description="Screening compounds for binding affinity")
+    prompt = build_critic_prompt(wm, proposals, n_select=2, domain=domain)
+    assert "Drug Discovery" in prompt
+    assert "binding affinity" in prompt

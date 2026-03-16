@@ -152,12 +152,12 @@ For each proposal, reason in this order:
 
 ## COST AWARENESS
 
-Our measured cost data (from real power monitoring — energy_kwh, cost_eur, avg_power_w, wall_time_s are actual measurements):
+Our measured cost data (wall_time_s and any domain-specific cost fields are actual measurements{f" from {domain.hardware}" if domain.hardware else ""}):
 {json.dumps(world_model.cost_beliefs, indent=2, default=str)}
 
-Every experiment has real costs: electricity (€), GPU time (minutes), and wall clock time (which blocks other experiments). A cheap probe that tests a shaky belief is often better than an expensive experiment confirming what we already know. Consider:
-- cost_to_test: how much energy (kWh) and money (€) does this require based on similar past experiments?
-- wall_time: how long will this block the GPU? Shorter experiments allow more learning per hour.
+Every experiment has real costs: time and resources. A cheap probe that tests a shaky belief is often better than an expensive experiment confirming what we already know. Consider:
+- cost_to_test: how much time and resources does this require based on similar past experiments?
+- wall_time: how long will this block the worker? Shorter experiments allow more learning per hour.
 - cost_of_being_wrong: what if our current belief is wrong and we don't test it?
 - Is there a shorter/faster way to get approximate evidence?
 

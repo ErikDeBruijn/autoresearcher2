@@ -30,7 +30,7 @@ DELTA_SCHEMA = {
     "tensions_added": [{"beliefs": ["B_ids"], "nature": "str", "salience": "high|medium|low"}],
     "tensions_resolved": [{"id": "str", "resolution": "str", "reasoning": "str"}],
     "salience_updated": {"high_learntropy": ["obs_ids"], "stale_beliefs": ["B_ids"]},
-    "cost_beliefs_updated": {"intervention_type": {"wall_time_s": "float", "cost_unit": "float"}},
+    "cost_beliefs_updated": {"intervention_type": {"wall_time_s": "float", "energy_kwh": "float", "cost_eur": "float", "avg_power_w": "float"}},
 }
 
 
