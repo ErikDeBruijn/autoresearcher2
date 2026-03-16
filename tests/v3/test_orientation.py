@@ -153,15 +153,48 @@ def test_orientation_prompt_domain_agnostic_with_non_ml_domain():
 
     prompt = build_orientation_prompt(wm, obs, domain=domain)
 
-    # The prompt should NOT contain ML-specific terms
-    ml_terms = ["energy_kwh", "cost_eur", "avg_power_w", "GPU", "power monitoring", "Shelly meter"]
+    # Extract the instruction section (between UPDATE INSTRUCTIONS and REQUIRED OUTPUT)
+    # This is where hardcoded ML language would live — data sections may contain
+    # field names from the Observation model, which is fine.
+    instruction_section = prompt.split("UPDATE INSTRUCTIONS")[1].split("REQUIRED OUTPUT")[0]
+
+    # The instruction text should NOT contain ML-specific terms
+    ml_terms = ["GPU", "power monitoring", "Shelly meter", "GPU sensors"]
     for term in ml_terms:
-        assert term.lower() not in prompt.lower(), (
-            f"ML-specific term '{term}' found in orientation prompt for non-ML domain"
+        assert term.lower() not in instruction_section.lower(), (
+            f"ML-specific term '{term}' found in orientation instructions for non-ML domain"
         )
 
     # The prompt SHOULD reference the domain
     assert "microbiology" in prompt.lower() or "lab experiment" in prompt.lower()
+
+
+def test_orientation_prompt_includes_hardware_hint():
+    """When domain has hardware, it should appear in the cost measurement hint."""
+    wm = make_world_model()
+    obs = make_observation()
+    domain = DomainConfig(
+        name="ML training",
+        description="We train neural networks.",
+        hardware="Shelly meter + GPU sensors",
+    )
+    prompt = build_orientation_prompt(wm, obs, domain=domain)
+    assert "Shelly meter + GPU sensors" in prompt
+
+
+def test_orient_passes_domain_to_prompt():
+    """orient() should accept and pass domain config through."""
+    wm = make_world_model()
+    obs = make_observation()
+    domain = DomainConfig(name="chemistry experiment", description="We mix chemicals.")
+    captured_prompts = []
+
+    def mock_llm(prompt):
+        captured_prompts.append(prompt)
+        return {"beliefs_revised": [{"id": "B1", "new_confidence": 0.65, "reason": "test"}]}
+
+    orient(wm, obs, mock_llm, domain=domain)
+    assert "chemistry experiment" in captured_prompts[0]
 
 
 def test_orientation_prompt_default_domain_is_generic():

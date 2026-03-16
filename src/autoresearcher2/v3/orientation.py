@@ -17,6 +17,7 @@ import logging
 
 from autoresearcher2.v3.world_model import WorldModel
 from autoresearcher2.v3.observation import Observation
+from autoresearcher2.v3.generator import DomainConfig
 
 logger = logging.getLogger(__name__)
 
@@ -29,17 +30,35 @@ DELTA_SCHEMA = {
     "tensions_added": [{"beliefs": ["B_ids"], "nature": "str", "salience": "high|medium|low"}],
     "tensions_resolved": [{"id": "str", "resolution": "str", "reasoning": "str"}],
     "salience_updated": {"high_learntropy": ["obs_ids"], "stale_beliefs": ["B_ids"]},
-    "cost_beliefs_updated": {"intervention_type": {"wall_time_s": "float", "energy_kwh": "float", "cost_eur": "float", "avg_power_w": "float"}},
+    "cost_beliefs_updated": {"intervention_type": {"wall_time_s": "float", "cost_unit": "float"}},
 }
 
 
-def build_orientation_prompt(world_model: WorldModel, observation: Observation) -> str:
-    """Build evidence-first prompt for the orientation step."""
+def build_orientation_prompt(
+    world_model: WorldModel,
+    observation: Observation,
+    domain: DomainConfig = None,
+) -> str:
+    """Build evidence-first prompt for the orientation step.
+
+    Args:
+        world_model: Current epistemic state
+        observation: New reality contact
+        domain: Optional domain configuration for domain-appropriate language
+    """
+    domain = domain or DomainConfig()
     obs_json = json.dumps(observation.to_dict(), indent=2, default=str)
     wm_json = json.dumps(world_model.to_dict(), indent=2, default=str)
     schema_json = json.dumps(DELTA_SCHEMA, indent=2)
 
+    hardware_hint = ""
+    if domain.hardware:
+        hardware_hint = f"\n- Check the observation's real cost measurements (from {domain.hardware}). Update cost_beliefs with these measured values — they are ground truth, not estimates."
+    else:
+        hardware_hint = "\n- Check the observation's cost measurements (wall_time_s and any domain-specific cost fields). Update cost_beliefs with measured values where available."
+
     return f"""You are updating a research system's world model after a new experimental observation.
+Domain: {domain.name} — {domain.description}
 
 ## 1. NEW OBSERVATION (facts — what just happened)
 
@@ -57,8 +76,7 @@ Consider:
 - Does this observation confirm or contradict any existing beliefs? Adjust confidence accordingly.
 - Does it create new tensions between beliefs?
 - Does it resolve existing tensions?
-- Does it reveal something surprising (high learntropy)?
-- Check the observation's real cost measurements: energy_kwh, cost_eur, avg_power_w, and wall_time_s. These come from actual power monitoring (Shelly meter + GPU sensors). Update cost_beliefs with these MEASURED values — they are ground truth, not estimates.
+- Does it reveal something surprising (high learntropy)?{hardware_hint}
 - Are any beliefs now stale (not tested recently)?
 - Should we add new beliefs or expectations based on this evidence?
 
@@ -76,20 +94,21 @@ Respond with ONLY a JSON object matching this schema (no other text):
 Include only fields that actually changed. Empty arrays for unchanged categories."""
 
 
-def orient(world_model: WorldModel, observation: Observation, llm_call_fn) -> dict:
+def orient(world_model: WorldModel, observation: Observation, llm_call_fn, domain: DomainConfig = None) -> dict:
     """Run the orientation step: update world model based on new observation.
 
     Args:
         world_model: Current epistemic state (will be mutated)
         observation: New reality contact
         llm_call_fn: Function that takes a prompt string and returns parsed JSON dict
+        domain: Optional domain configuration for domain-appropriate language
 
     Returns:
         The delta that was applied (includes 'learntropy' score)
     """
     from autoresearcher2.v3.learntropy import compute_learntropy
 
-    prompt = build_orientation_prompt(world_model, observation)
+    prompt = build_orientation_prompt(world_model, observation, domain=domain)
 
     try:
         response = llm_call_fn(prompt)
