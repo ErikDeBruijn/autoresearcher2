@@ -6,16 +6,20 @@ function that any v3 component can use.
 
 import json
 import logging
+import os
 import re
 import subprocess
 
 logger = logging.getLogger(__name__)
 
+_DEFAULT_SSH_HOST = os.environ.get("AUTORESEARCHER_SSH_HOST", "root@dllm-experiment.home")
+_DEFAULT_SSH_KEY = os.environ.get("AUTORESEARCHER_SSH_KEY", "~/.ssh/pve03_key")
+
 
 def call_llm(
     prompt: str,
-    ssh_host: str = "root@dllm-experiment.home",
-    ssh_key: str = "~/.ssh/pve03_key",
+    ssh_host: str = _DEFAULT_SSH_HOST,
+    ssh_key: str = _DEFAULT_SSH_KEY,
     timeout: int = 180,
     local: bool = False,
 ) -> str:
@@ -54,8 +58,8 @@ def call_llm(
 
 def call_llm_json(
     prompt: str,
-    ssh_host: str = "root@dllm-experiment.home",
-    ssh_key: str = "~/.ssh/pve03_key",
+    ssh_host: str = _DEFAULT_SSH_HOST,
+    ssh_key: str = _DEFAULT_SSH_KEY,
     timeout: int = 180,
     local: bool = False,
 ) -> dict:

@@ -9,6 +9,7 @@ These are passed as execute_fn to Worker.
 """
 import json
 import logging
+import os
 import re
 import subprocess
 import time
@@ -18,6 +19,9 @@ import urllib.error
 from autoresearcher2.v3.proposal import Proposal
 
 logger = logging.getLogger(__name__)
+
+_DEFAULT_SSH_HOST = os.environ.get("AUTORESEARCHER_SSH_HOST", "root@dllm-experiment.home")
+_DEFAULT_SSH_KEY = os.environ.get("AUTORESEARCHER_SSH_KEY", "~/.ssh/pve03_key")
 
 
 def _make_run_cmd(ssh_host: str | None = None, ssh_key: str | None = None, timeout: int = 900):
@@ -178,8 +182,8 @@ def with_cost_tracking(execute_fn, cuda_device: str | None = None):
 
 
 def make_trainpy_executor(
-    ssh_host: str = "root@dllm-experiment.home",
-    ssh_key: str = "~/.ssh/pve03_key",
+    ssh_host: str = _DEFAULT_SSH_HOST,
+    ssh_key: str = _DEFAULT_SSH_KEY,
     remote_dir: str = "~/github.com/karpathy/autoresearch",
     cuda_device: str = "1",
     timeout: int = 900,
