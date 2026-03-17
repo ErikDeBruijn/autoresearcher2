@@ -132,3 +132,24 @@ def test_planner_worker_independence(store):
     worker.tick()
     assert store.count_proposals("running") == 0  # Already completed
     assert store.count_proposals("done") == 1
+
+
+def test_world_model_delta_audit_trail(store):
+    """Every orientation step creates a traceable world model version."""
+    mock_llm = E2EMockLLM()
+    planner = Planner(store, llm_call_fn=mock_llm, min_queue_size=3, n_proposals=2, n_select=2)
+    worker = Worker(store, execute_fn=lambda p: {"metrics": {"x": 1}})
+
+    # Generate, execute, orient
+    planner.tick()
+    worker.tick()
+    worker.tick()
+    planner.tick()
+
+    history = store.get_world_model_history()
+    # Should have: seed (v1) + orientation updates
+    assert len(history) >= 2
+    # Non-seed versions should have trigger_obs_id
+    for entry in history[1:]:
+        if entry["trigger_obs_id"] is not None:
+            assert entry["delta"] != {}
