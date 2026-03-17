@@ -1,17 +1,8 @@
 """Tests for multi-project support in Store."""
 import json
 import pytest
-from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.proposal import Proposal
 from autoresearcher2.v3.observation import Observation
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
 
 
 # --- Project CRUD ---

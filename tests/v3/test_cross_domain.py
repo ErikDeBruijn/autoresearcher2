@@ -7,7 +7,6 @@ Tests that the generator-critic loop handles:
 4. Mixed intervention types (code_change, probe, schema_extension)
 """
 import pytest
-from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
 from autoresearcher2.v3.world_model import WorldModel
@@ -34,14 +33,6 @@ def make_domain_llm(domain_name, proposals_spec):
         return {}
 
     return llm_call
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
 
 
 def run_domain_cycle(store, domain_llm, execute_fn, cycles=2):

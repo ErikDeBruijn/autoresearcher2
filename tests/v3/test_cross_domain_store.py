@@ -4,7 +4,6 @@ Verifies the full v4 pipeline works for non-NanoGPT domains:
 generator with DomainConfig → critic → worker → orientation → repeat.
 """
 import pytest
-from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
 from autoresearcher2.v3.generator import DomainConfig
@@ -26,14 +25,6 @@ def make_domain_llm(domain_proposals):
             return {"rankings": []}
         return {}
     return llm_call
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "test.db")
-    s.init()
-    yield s
-    s.close()
 
 
 def test_atari_full_cycle_with_store(store):

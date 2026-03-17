@@ -4,7 +4,6 @@ Criteria 12: Cost beliefs improve after observations
 Criteria 13: Deliberation efficiency (skip full cycle for cheap probes)
 """
 import pytest
-from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
 from autoresearcher2.v3.world_model import WorldModel
@@ -46,14 +45,6 @@ class CostLearningLLM:
         elif "ranking" in prompt.lower() or "evaluate" in prompt.lower():
             return {"rankings": []}
         return {}
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
 
 
 def test_cost_beliefs_improve_after_runs(store):

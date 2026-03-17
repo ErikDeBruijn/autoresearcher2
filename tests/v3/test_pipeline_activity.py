@@ -4,18 +4,9 @@ The planner broadcasts its current phase (orienting, critiquing, generating)
 so the UI can show pulsing indicators on the relevant kanban columns.
 """
 import pytest
-from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.proposal import Proposal
 from autoresearcher2.v3.observation import Observation
 from autoresearcher2.v3.planner import Planner
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
 
 
 # --- Store layer: pipeline_activity table ---

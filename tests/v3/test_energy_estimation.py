@@ -6,16 +6,7 @@ from tracked observations. This ensures total cost display is meaningful
 even when gpu-cost-tracker was added after experiments started.
 """
 import pytest
-from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.observation import Observation
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
 
 
 def _make_obs(store, wall_time_s, energy_kwh=None, cost_eur=None, avg_power_w=None, success=True):

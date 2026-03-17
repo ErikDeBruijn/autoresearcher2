@@ -1,16 +1,7 @@
 """Tests for Worker — claims todo items and executes interventions."""
 import pytest
-from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.worker import Worker
 from autoresearcher2.v3.proposal import Proposal
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
 
 
 def _add_todo(store, intent="test experiment", rank=1):

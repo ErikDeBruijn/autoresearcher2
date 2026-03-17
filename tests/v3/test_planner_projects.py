@@ -1,6 +1,5 @@
 """Tests for project-scoped Planner behavior."""
 import pytest
-from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
 
@@ -21,14 +20,6 @@ def make_mock_llm(proposals):
             return {"rankings": []}
         return {}
     return llm_call
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
 
 
 def test_planner_generates_for_own_project(store):

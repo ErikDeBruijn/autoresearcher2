@@ -7,14 +7,6 @@ from autoresearcher2.v3.proposal import Proposal
 from autoresearcher2.v3.observation import Observation
 
 
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
-
-
 # --- Context manager protocol ---
 
 def test_context_manager_closes_connection(tmp_path):

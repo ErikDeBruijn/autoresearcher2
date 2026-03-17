@@ -2,17 +2,8 @@
 import json
 from unittest.mock import patch, MagicMock
 import pytest
-from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.observation import Observation
 from autoresearcher2.v3.cost_tracker import _start_cost_job, _stop_cost_job
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
 
 
 def test_observation_with_cost_fields(store):

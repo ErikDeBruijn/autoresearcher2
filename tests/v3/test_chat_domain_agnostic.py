@@ -13,15 +13,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "web"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
 from api import _build_chat_system_prompt
-from autoresearcher2.v3.store import Store
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
 
 
 def test_chat_prompt_no_nanogpt_for_custom_domain(store):

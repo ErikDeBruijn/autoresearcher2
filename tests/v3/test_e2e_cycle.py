@@ -4,7 +4,6 @@ Tests v3.2 criterion: observation → orientation → generator → critic →
 worker → observation completes without manual intervention.
 """
 import pytest
-from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
 
@@ -51,14 +50,6 @@ class E2EMockLLM:
             return {"rankings": []}  # Fallback: accept first n
         else:
             return {}
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
 
 
 def test_full_ooda_cycle(store):

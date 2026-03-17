@@ -3,7 +3,6 @@
 Same tests as test_e2e_cycle.py but using Store instead of Workspace.
 """
 import pytest
-from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
 
@@ -48,14 +47,6 @@ class E2EMockLLM:
         elif "ranking" in prompt.lower() or "evaluate" in prompt.lower():
             return {"rankings": []}
         return {}
-
-
-@pytest.fixture
-def store(tmp_path):
-    s = Store(tmp_path / "research.db")
-    s.init()
-    yield s
-    s.close()
 
 
 def test_full_ooda_cycle_sqlite(store):
