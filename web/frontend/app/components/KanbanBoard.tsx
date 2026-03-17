@@ -145,7 +145,7 @@ export default function KanbanBoard() {
     const metricConfig: Record<string, { metric: string; maximize: boolean }> = {};
     for (const p of projects) {
       metricConfig[p.id] = {
-        metric: p.domain_config?.target_metric || "val_bpb",
+        metric: p.domain_config?.target_metric || "target_metric",
         maximize: p.domain_config?.optimize === "maximize",
       };
     }
@@ -177,7 +177,7 @@ export default function KanbanBoard() {
       project_name: proj?.name,
       project_color: proj?.color,
       is_record: recordIds.has(p.id),
-      target_metric: proj?.domain_config?.target_metric || "val_bpb",
+      target_metric: proj?.domain_config?.target_metric || "target_metric",
       optimize: proj?.domain_config?.optimize || "minimize",
     };
   }, [projectMap, recordIds]);
@@ -232,7 +232,7 @@ export default function KanbanBoard() {
       if (Array.isArray(stage)) allProposals.push(...stage);
     }
     const parts = activeProjects.map((proj) => {
-      const metric = proj.domain_config?.target_metric || "val_bpb";
+      const metric = proj.domain_config?.target_metric || "target_metric";
       const maximize = proj.domain_config?.optimize === "maximize";
       let best: number | null = null;
       for (const p of allProposals) {

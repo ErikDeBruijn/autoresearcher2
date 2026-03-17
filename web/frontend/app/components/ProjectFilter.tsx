@@ -313,7 +313,7 @@ export default function ProjectFilter({
           // Compute best metric per project (respects target_metric and optimize direction)
           const best: Record<string, number> = {};
           for (const p of projects) {
-            const metric = p.domain_config?.target_metric || "val_bpb";
+            const metric = p.domain_config?.target_metric || "target_metric";
             const maximize = p.domain_config?.optimize === "maximize";
             const projObs = obs.filter((o) => o.project_id === p.id && o.outcome_success);
             for (const o of projObs) {
@@ -335,7 +335,7 @@ export default function ProjectFilter({
 
   if (projects.length === 0) return null;
 
-  const getTargetMetric = (p: Project) => p.domain_config?.target_metric || "val_bpb";
+  const getTargetMetric = (p: Project) => p.domain_config?.target_metric || "target_metric";
 
   const getProjectEmoji = (name: string) => {
     const lower = name.toLowerCase();

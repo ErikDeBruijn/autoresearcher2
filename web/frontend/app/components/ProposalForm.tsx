@@ -111,7 +111,7 @@ export default function ProposalForm({ onClose }: { onClose: () => void }) {
               onChange={(e) => setSpecText(e.target.value)}
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm font-mono"
               rows={3}
-              placeholder='{"DEPTH": "8", "MATRIX_LR": "0.04"}'
+              placeholder='{"param1": "value1", "param2": "value2"}'
             />
           </div>
           {error && <p className="text-red-400 text-xs">{error}</p>}
