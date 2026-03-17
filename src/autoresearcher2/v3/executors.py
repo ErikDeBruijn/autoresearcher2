@@ -97,6 +97,7 @@ def make_sed_patch_executor(
     script_name: str = "train.py",
     extra_files: list[str] = None,
     symlinks: list[str] = None,
+    run_command: str = "uv run",
 ):
     """Create an executor that patches a script's top-level assignments via sed.
 
@@ -116,6 +117,8 @@ def make_sed_patch_executor(
         metric_patterns: Dict of {metric_name: regex_pattern} to extract from output.
             Each pattern should have one capture group for the numeric value.
             Defaults to empty (no metrics parsed).
+        run_command: Command prefix to run the script (default: "uv run").
+            Examples: "python", "poetry run", "uv run".
     """
     if metric_patterns is None:
         metric_patterns = {}
@@ -177,7 +180,7 @@ def make_sed_patch_executor(
         # Run script
         start = time.time()
         rc, out = run_cmd(
-            f"cd {work_dir} && CUDA_VISIBLE_DEVICES={cuda_device} uv run {script_name} 2>&1"
+            f"cd {work_dir} && CUDA_VISIBLE_DEVICES={cuda_device} {run_command} {script_name} 2>&1"
         )
         wall_time = time.time() - start
 
