@@ -29,6 +29,14 @@ from autoresearcher2.v3.executors import make_trainpy_executor, make_shell_execu
 from autoresearcher2.v3.cost_tracker import with_cost_tracking
 from autoresearcher2.v3.llm_call import call_llm_json
 
+# NanoGPT-specific metric patterns for train.py output parsing
+NANOGPT_METRIC_PATTERNS = {
+    "val_bpb": r"val_bpb:\s+([\d.]+)",
+    "total_tokens_M": r"total_tokens_M:\s+([\d.]+)",
+    "num_steps": r"num_steps:\s+(\d+)",
+    "num_params_M": r"num_params_M:\s+([\d.]+)",
+}
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
@@ -192,6 +200,7 @@ def main():
                     ssh_key=args.ssh_key,
                     cuda_device=cuda_dev,
                     local=args.local_llm,
+                    metric_patterns=NANOGPT_METRIC_PATTERNS,
                 ),
                 cuda_device=cuda_dev,
             )

@@ -83,14 +83,6 @@ def _apply_code_changes(run_cmd, spec: dict, work_dir: str) -> None:
                 raise RuntimeError(f"Failed to write {safe_name}: {out[-300:]}")
             logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
 
-NANOGPT_METRIC_PATTERNS = {
-    "val_bpb": r"val_bpb:\s+([\d.]+)",
-    "total_tokens_M": r"total_tokens_M:\s+([\d.]+)",
-    "num_steps": r"num_steps:\s+(\d+)",
-    "num_params_M": r"num_params_M:\s+([\d.]+)",
-}
-
-
 def make_trainpy_executor(
     ssh_host: str = _DEFAULT_SSH_HOST,
     ssh_key: str = _DEFAULT_SSH_KEY,
@@ -111,10 +103,11 @@ def make_trainpy_executor(
     Args:
         metric_patterns: Dict of {metric_name: regex_pattern} to extract from output.
             Each pattern should have one capture group for the numeric value.
-            Defaults to NANOGPT_METRIC_PATTERNS.
+            Defaults to empty (no metrics parsed). Callers should pass
+            domain-specific patterns.
     """
     if metric_patterns is None:
-        metric_patterns = NANOGPT_METRIC_PATTERNS
+        metric_patterns = {}
 
     run_cmd = _make_run_cmd(
         ssh_host=None if local else ssh_host,

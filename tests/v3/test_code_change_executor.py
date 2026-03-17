@@ -13,6 +13,12 @@ from unittest.mock import patch, MagicMock
 from autoresearcher2.v3.proposal import Proposal
 from autoresearcher2.v3.executors import make_trainpy_executor, make_dry_run_executor
 
+# Test-local metric patterns (domain-specific patterns live in calling scripts)
+_TEST_METRIC_PATTERNS = {
+    "val_bpb": r"val_bpb:\s+([\d.]+)",
+    "num_steps": r"num_steps:\s+(\d+)",
+}
+
 
 @pytest.fixture
 def train_env(tmp_path):
@@ -49,6 +55,7 @@ def test_code_change_writes_files(train_env):
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,
+            metric_patterns=_TEST_METRIC_PATTERNS,
         )
         result = executor(proposal)
 
@@ -99,6 +106,7 @@ def test_code_change_sanitizes_filename(train_env):
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,
+            metric_patterns=_TEST_METRIC_PATTERNS,
         )
         # Should not crash — filename gets sanitized to something safe
         # But training will fail since train.py wasn't modified
@@ -138,6 +146,7 @@ def test_code_change_multiple_files(train_env):
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,
+            metric_patterns=_TEST_METRIC_PATTERNS,
         )
         result = executor(proposal)
 
@@ -164,6 +173,7 @@ def test_config_change_still_works(train_env):
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,
+            metric_patterns=_TEST_METRIC_PATTERNS,
         )
         result = executor(proposal)
 
@@ -187,6 +197,7 @@ def test_unsupported_type_still_dry_runs(train_env):
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,
+            metric_patterns=_TEST_METRIC_PATTERNS,
         )
         result = executor(proposal)
 
@@ -210,6 +221,7 @@ def test_code_change_with_single_quotes(train_env):
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,
+            metric_patterns=_TEST_METRIC_PATTERNS,
         )
         result = executor(proposal)
 
