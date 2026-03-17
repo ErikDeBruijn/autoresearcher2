@@ -46,6 +46,24 @@ def _parse_metrics(output: str, patterns: dict[str, str]) -> dict[str, float]:
     return metrics
 
 
+def _build_result(output: str, metric_patterns: dict[str, str], wall_time: float) -> dict:
+    """Build executor result dict from command output."""
+    artifact_paths = {}
+    for m in re.finditer(r"artifact_(\w+):\s+(.+)", output):
+        artifact_paths[m.group(1)] = m.group(2).strip()
+
+    result = {
+        "metrics": _parse_metrics(output, metric_patterns),
+        "compute_cost": wall_time / 3600,
+        "raw_log": output[-2000:] if len(output) > 2000 else output,
+    }
+
+    if artifact_paths:
+        result["artifact_paths"] = artifact_paths
+
+    return result
+
+
 def _apply_code_changes(run_cmd, spec: dict, work_dir: str) -> None:
     """Apply code changes from a proposal spec to a working directory.
 
@@ -185,21 +203,7 @@ def make_sed_patch_executor(
         if rc != 0:
             raise RuntimeError(f"{script_name} failed (exit {rc}): {out[-500:]}")
 
-        # Parse artifact paths from stdout (format: "artifact_<name>: /path/to/file")
-        artifact_paths = {}
-        for m in re.finditer(r"artifact_(\w+):\s+(.+)", out):
-            artifact_paths[m.group(1)] = m.group(2).strip()
-
-        result = {
-            "metrics": _parse_metrics(out, metric_patterns),
-            "compute_cost": wall_time / 3600,  # Rough: hours of GPU
-            "raw_log": out[-2000:] if len(out) > 2000 else out,
-        }
-
-        if artifact_paths:
-            result["artifact_paths"] = artifact_paths
-
-        return result
+        return _build_result(out, metric_patterns, wall_time)
 
     return execute
 
@@ -266,23 +270,7 @@ def make_shell_executor(
         if rc != 0:
             raise RuntimeError(f"Command failed (exit {rc}): {out[-500:]}")
 
-        metrics = _parse_metrics(out, metric_patterns)
-
-        # Parse artifact paths from stdout (format: "artifact_<name>: /path/to/file")
-        artifact_paths = {}
-        for m in re.finditer(r"artifact_(\w+):\s+(.+)", out):
-            artifact_paths[m.group(1)] = m.group(2).strip()
-
-        exec_result = {
-            "metrics": metrics,
-            "compute_cost": wall_time / 3600,
-            "raw_log": out[-2000:] if len(out) > 2000 else out,
-        }
-
-        if artifact_paths:
-            exec_result["artifact_paths"] = artifact_paths
-
-        return exec_result
+        return _build_result(out, metric_patterns, wall_time)
 
     return execute
 
