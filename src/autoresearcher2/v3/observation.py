@@ -4,10 +4,8 @@ An observation is evidence, not understanding. It records what was done,
 what came out, and under what conditions. Append-only — never mutated.
 """
 
-import json
 import time
 import uuid
-from pathlib import Path
 
 
 class Observation:
@@ -89,14 +87,3 @@ class Observation:
         obs.artifact_paths = data.get("artifact_paths", {})
         return obs
 
-    def save(self, path):
-        """Save to JSON file."""
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(self.to_dict(), indent=2, default=str))
-
-    @classmethod
-    def load(cls, path):
-        """Load from JSON file."""
-        data = json.loads(Path(path).read_text())
-        return cls.from_dict(data)

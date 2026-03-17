@@ -4,10 +4,8 @@ Cognitive order: epistemic intent → rationale → expected learning →
 intervention → executable spec. Not action-first.
 """
 
-import json
 import time
 import uuid
-from pathlib import Path
 
 
 class Proposal:
@@ -114,14 +112,3 @@ class Proposal:
         p.observation_id = data.get("observation_id")
         return p
 
-    def save(self, path):
-        """Save to JSON file."""
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(self.to_dict(), indent=2, default=str))
-
-    @classmethod
-    def load(cls, path):
-        """Load from JSON file."""
-        data = json.loads(Path(path).read_text())
-        return cls.from_dict(data)

@@ -7,10 +7,7 @@ state that gets updated via evidence-anchored deltas.
 JSON serialization is the persistence form, not the essence.
 """
 
-import json
-import shutil
 import time
-from pathlib import Path
 
 
 class WorldModel:
@@ -139,20 +136,3 @@ class WorldModel:
         wm._next_tension_id = data.get("_next_tension_id", len(wm.tensions) + 1)
         return wm
 
-    def save(self, path, history_dir=None):
-        """Save to JSON file. Optionally archive previous version."""
-        path = Path(path)
-        if history_dir and path.exists():
-            history_dir = Path(history_dir)
-            history_dir.mkdir(parents=True, exist_ok=True)
-            old = json.loads(path.read_text())
-            old_version = old.get("version", 0)
-            shutil.copy2(path, history_dir / f"world_model_v{old_version}.json")
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(self.to_dict(), indent=2, default=str))
-
-    @classmethod
-    def load(cls, path):
-        """Load from JSON file."""
-        data = json.loads(Path(path).read_text())
-        return cls.from_dict(data)

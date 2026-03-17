@@ -48,17 +48,6 @@ def test_proposal_serialize_roundtrip():
     assert p2.status == "backlog"
 
 
-def test_proposal_save_load(tmp_path):
-    p = Proposal(
-        intent="test", rationale="test", expected_learning="test",
-        intervention_type="probe", intervention_spec={"run_steps": 100},
-    )
-    path = tmp_path / f"{p.id}.json"
-    p.save(path)
-    p2 = Proposal.load(path)
-    assert p2.id == p.id
-    assert p2.intervention_type == "probe"
-
 
 def test_proposal_set_critic_decision():
     p = Proposal(

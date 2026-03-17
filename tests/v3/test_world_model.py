@@ -1,5 +1,4 @@
 """Tests for WorldModel — structured epistemic state."""
-import json
 import pytest
 from autoresearcher2.v3.world_model import WorldModel
 
@@ -70,17 +69,6 @@ def test_serialize_roundtrip():
     assert wm2.cost_beliefs == wm.cost_beliefs
 
 
-def test_save_and_load(tmp_path):
-    wm = WorldModel()
-    wm.add_belief(claim="test", confidence=0.7, evidence_for=[])
-    path = tmp_path / "world_model.json"
-    wm.save(path)
-    wm2 = WorldModel.load(path)
-    assert wm2.beliefs[0]["claim"] == "test"
-    # Verify it's valid JSON
-    data = json.loads(path.read_text())
-    assert data["version"] == 0
-
 
 def test_apply_delta_revise_belief():
     wm = WorldModel()
@@ -146,24 +134,6 @@ def test_apply_delta_cost_beliefs():
     wm.apply_delta(delta)
     assert wm.cost_beliefs["config_change"]["wall_time_s"] == 300
 
-
-def test_save_with_history(tmp_path):
-    wm = WorldModel()
-    wm.add_belief(claim="test", confidence=0.5, evidence_for=[])
-    path = tmp_path / "world_model.json"
-    history = tmp_path / "history"
-    wm.save(path)
-
-    wm.apply_delta({"beliefs_revised": [{"id": "B1", "new_confidence": 0.9, "reason": "updated"}]})
-    wm.save(path, history_dir=history)
-
-    assert (history / "world_model_v0.json").exists()
-    # Current file should be v1
-    current = json.loads(path.read_text())
-    assert current["version"] == 1
-    # History file should be v0
-    old = json.loads((history / "world_model_v0.json").read_text())
-    assert old["version"] == 0
 
 
 def test_apply_delta_missing_fields_is_safe():

@@ -44,20 +44,6 @@ def test_observation_serialize_roundtrip():
     assert obs2.outcome_metrics == {"loss": 2.3}
 
 
-def test_observation_save_load(tmp_path):
-    obs = Observation(
-        intervention_type="config_change",
-        intervention_spec={"x": "1"},
-        outcome_metrics={"y": 0.5},
-        outcome_success=True,
-        wall_time_s=60.0,
-    )
-    path = tmp_path / f"{obs.id}.json"
-    obs.save(path)
-    obs2 = Observation.load(path)
-    assert obs2.id == obs.id
-    assert obs2.wall_time_s == 60.0
-
 
 def test_observation_with_raw_log():
     obs = Observation(
