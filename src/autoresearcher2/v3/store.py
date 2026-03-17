@@ -639,6 +639,11 @@ class Store:
         )
         self.conn.commit()
 
+    def get_proposal(self, proposal_id: str) -> Proposal | None:
+        """Get a single proposal by ID from any stage."""
+        row = self.conn.execute("SELECT * FROM queue WHERE id = ?", (proposal_id,)).fetchone()
+        return self._row_to_proposal(row) if row else None
+
     def _row_to_proposal(self, row) -> Proposal:
         p = Proposal(
             intent=row["intent"],

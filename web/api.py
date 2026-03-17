@@ -481,19 +481,18 @@ async def cancel_proposal(proposal_id: str):
 async def promote_proposal(proposal_id: str, target_stage: str = "todo"):
     """Move a proposal to a different stage."""
     with get_store() as store:
-        # Find the proposal
-        for stage in QUEUE_STAGES:
-            for p in store.list_proposals(stage):
-                if p.id == proposal_id:
-                    store.move_proposal(p, target_stage)
-                    await manager.broadcast({
-                        "type": "proposal_moved",
-                        "proposal_id": proposal_id,
-                        "from_stage": stage,
-                        "to_stage": target_stage,
-                    })
-                    return {"status": "ok", "proposal_id": proposal_id, "new_stage": target_stage}
-        raise HTTPException(status_code=404, detail=f"Proposal {proposal_id} not found")
+        p = store.get_proposal(proposal_id)
+        if not p:
+            raise HTTPException(status_code=404, detail=f"Proposal {proposal_id} not found")
+        from_stage = p.status
+        store.move_proposal(p, target_stage)
+        await manager.broadcast({
+            "type": "proposal_moved",
+            "proposal_id": proposal_id,
+            "from_stage": from_stage,
+            "to_stage": target_stage,
+        })
+        return {"status": "ok", "proposal_id": proposal_id, "new_stage": target_stage}
 
 
 @app.delete("/api/proposals/{proposal_id}")
