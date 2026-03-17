@@ -249,16 +249,14 @@ class Store:
     # --- Projects ---
 
     def create_project(self, name: str, description: str = None,
-                       domain_config: dict = None, executor_script: str = None,
-                       docker_image: str = None) -> str:
+                       domain_config: dict = None) -> str:
         pid = f"proj_{uuid.uuid4().hex[:8]}"
         self.conn.execute(
-            """INSERT INTO projects (id, name, description, domain_config,
-               executor_script, docker_image, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            """INSERT INTO projects (id, name, description, domain_config, created_at)
+               VALUES (?, ?, ?, ?, ?)""",
             (pid, name, description,
              json.dumps(domain_config) if domain_config else None,
-             executor_script, docker_image, time.time()),
+             time.time()),
         )
         self.conn.commit()
         return pid
@@ -283,8 +281,7 @@ class Store:
         return [self._row_to_project(r) for r in rows]
 
     def update_project(self, project_id: str, **kwargs):
-        allowed = {"name", "description", "domain_config", "executor_script",
-                    "docker_image", "active", "priority"}
+        allowed = {"name", "description", "domain_config", "active", "priority"}
         updates = {}
         for k, v in kwargs.items():
             if k not in allowed:
@@ -305,8 +302,6 @@ class Store:
             "name": row["name"],
             "description": row["description"],
             "domain_config": json.loads(row["domain_config"]) if row["domain_config"] else None,
-            "executor_script": row["executor_script"],
-            "docker_image": row["docker_image"],
             "created_at": row["created_at"],
             "active": bool(row["active"]),
             "priority": row["priority"],
