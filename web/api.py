@@ -689,7 +689,7 @@ async def chat(req: ChatRequest):
                 "--allowedTools", "Bash(research-*)",
             ],
             input=prompt_json,
-            capture_output=True, text=True, timeout=120,
+            capture_output=True, text=True, timeout=300,
             env=env,
         )
         if result.returncode != 0:
