@@ -337,12 +337,7 @@ export default function ProjectFilter({
 
   const getTargetMetric = (p: Project) => p.domain_config?.target_metric || "target_metric";
 
-  const getProjectEmoji = (name: string) => {
-    const lower = name.toLowerCase();
-    if (lower.includes("atari") || lower.includes("breakout") || lower.includes("pong")) return "👾";
-    if (lower.includes("gpt") || lower.includes("llm") || lower.includes("nano")) return "💬";
-    return "🔬";
-  };
+  const getProjectEmoji = () => "🔬";
 
   return (
     <div className="bg-gray-900 border-b border-gray-800">

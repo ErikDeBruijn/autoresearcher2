@@ -214,12 +214,7 @@ export default function KanbanBoard() {
 
   // Update page title with active projects and their best scores
   useEffect(() => {
-    const getEmoji = (name: string) => {
-      const lower = name.toLowerCase();
-      if (lower.includes("atari") || lower.includes("breakout") || lower.includes("pong")) return "🕹️";
-      if (lower.includes("gpt") || lower.includes("llm") || lower.includes("nano")) return "💬";
-      return "🔬";
-    };
+    const getEmoji = () => "🔬";
 
     const activeProjects = projects.filter((p) => p.active);
     if (activeProjects.length === 0) {

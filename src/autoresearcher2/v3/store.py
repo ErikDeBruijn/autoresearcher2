@@ -217,7 +217,6 @@ class Store:
 
     def set_pipeline_activity(self, phase: str = None, project_id: str = None, proposal_id: str = None):
         """Update pipeline activity (what the planner is currently doing)."""
-        import time
         self.conn.execute(
             "UPDATE pipeline_activity SET phase=?, project_id=?, proposal_id=?, started_at=COALESCE(started_at, ?), updated_at=? WHERE id=1",
             (phase, project_id, proposal_id, time.time(), time.time()),
@@ -226,7 +225,6 @@ class Store:
 
     def clear_pipeline_activity(self):
         """Clear pipeline activity (planner is idle)."""
-        import time
         self.conn.execute(
             "UPDATE pipeline_activity SET phase=NULL, project_id=NULL, proposal_id=NULL, started_at=NULL, updated_at=? WHERE id=1",
             (time.time(),),
