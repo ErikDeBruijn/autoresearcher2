@@ -291,7 +291,7 @@ def make_shell_executor(
 
     Args:
         command_template: Shell command to run. intervention_spec keys are
-            available as env vars (e.g. DEPTH=8, MATRIX_LR=0.04).
+            available as env vars (e.g. param1=value1, param2=value2).
         metric_patterns: Dict of {metric_name: regex_pattern} to extract from output.
             Each pattern should have one capture group for the numeric value.
         timeout: Max seconds for the command.

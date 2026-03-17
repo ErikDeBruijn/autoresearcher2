@@ -121,8 +121,8 @@ Two formats are supported (pick one):
 Rules:
 - NEVER put text descriptions in intervention_spec — only working code (diff or full file)
 - The script must print metrics in "key: value" format so they can be parsed
-- Required output: mean_reward, std_reward, wall_time_s, fps
-- You can change ANYTHING: algorithm, network architecture, reward shaping, preprocessing, etc.
+- Required output: the target metric(s) defined in the domain config, plus wall_time_s
+- You can change ANYTHING within the experiment's parameter space
 """
 
     return f"""You are a curious researcher generating experiment proposals for a research system.

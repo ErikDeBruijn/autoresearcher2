@@ -562,32 +562,14 @@ async def delete_proposal(proposal_id: str):
 
 # --- Chat endpoint ---
 
-# Example domain templates for project creation (users can supply any domain_config dict)
-DOMAIN_CONFIGS = {
-    "nanogpt": {
-        "name": "NanoGPT training",
-        "description": "We run NanoGPT training experiments.",
-        "target_metric": "val_bpb",
-        "optimize": "minimize",
-        "intervention_types": "config_change, probe, code_change",
-        "parameters": "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size",
-    },
-    "atari-rl": {
-        "name": "Atari RL",
-        "description": "We optimize Atari game agents using reinforcement learning.",
-        "target_metric": "mean_reward",
-        "optimize": "maximize",
-        "intervention_types": "config_change, probe, code_change",
-        "parameters": "game, learning_rate, network_size, algorithm, n_envs, total_timesteps",
-    },
-    "generic": {
-        "name": "generic optimization",
-        "description": "We run experiments to optimize a target metric.",
-        "target_metric": "target_metric",
-        "optimize": "minimize",
-        "intervention_types": "config_change, probe, code_change",
-        "parameters": "any key-value pairs relevant to the domain",
-    },
+# Default domain config for new projects (users provide full config via chat or API)
+_DEFAULT_DOMAIN_CONFIG = {
+    "name": "research experiment",
+    "description": "We run experiments to optimize a target metric.",
+    "target_metric": "target_metric",
+    "optimize": "minimize",
+    "intervention_types": "config_change, probe, code_change",
+    "parameters": "any key-value pairs relevant to the domain",
 }
 
 
@@ -618,7 +600,7 @@ def _execute_chat_commands(response_text: str) -> str:
             # User/LLM provided a full custom domain config
             pass
         else:
-            domain_cfg = dict(DOMAIN_CONFIGS.get(domain_type, DOMAIN_CONFIGS["generic"]))
+            domain_cfg = dict(_DEFAULT_DOMAIN_CONFIG)
         if parameters:
             domain_cfg["parameters"] = parameters
 
@@ -764,7 +746,7 @@ You have CLI tools available. Use the Bash tool to run them:
 - `research-status`
 - `research-submit-proposal --project proj_id --intent "Test X" --type config_change --spec '{{"param": "value"}}'`
 
-Available domain templates: {", ".join(DOMAIN_CONFIGS.keys())}. You can also pass a custom domain_config dict. When creating a project, ask the user what they want to optimize and which parameters to vary before calling the tool."""
+When creating a project, ask the user what they want to optimize and which parameters to vary, then construct a domain_config dict from their answers."""
     return system
 
 

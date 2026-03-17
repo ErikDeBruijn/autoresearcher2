@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "web"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
-from api import _build_chat_system_prompt, DOMAIN_CONFIGS
+from api import _build_chat_system_prompt, _DEFAULT_DOMAIN_CONFIG
 from autoresearcher2.v3.store import Store
 
 

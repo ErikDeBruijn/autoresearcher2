@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "web"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
-from api import _execute_chat_commands, DOMAIN_CONFIGS
+from api import _execute_chat_commands, _DEFAULT_DOMAIN_CONFIG
 from autoresearcher2.v3.store import Store
 
 
@@ -37,28 +37,28 @@ def test_no_command_passthrough():
 
 def test_create_project_with_code_fence(store):
     """CREATE_PROJECT in code fence is detected and executed."""
-    response = """I'll create an Atari project for you.
+    response = """I'll create a research project for you.
 
 ```command
-CREATE_PROJECT {"name": "Atari Breakout", "description": "Train RL agents on Breakout", "domain_type": "atari-rl", "parameters": "game,learning_rate,network_size"}
+CREATE_PROJECT {"name": "Optimization Study", "description": "Optimize target parameters", "parameters": "learning_rate,batch_size,depth"}
 ```
 
-This will set up the project with RL-focused parameters."""
+This will set up the project with the specified parameters."""
 
     with patch("api.get_store", return_value=store):
         result = _execute_chat_commands(response)
 
     assert "Project created" in result
-    assert "Atari Breakout" in result
+    assert "Optimization Study" in result
     assert "```command" not in result  # Command block replaced
 
     # Verify project was actually created in store
     projects = store.list_projects()
     assert len(projects) == 1
-    assert projects[0]["name"] == "Atari Breakout"
-    assert projects[0]["description"] == "Train RL agents on Breakout"
+    assert projects[0]["name"] == "Optimization Study"
+    assert projects[0]["description"] == "Optimize target parameters"
     cfg = projects[0]["domain_config"]
-    assert cfg["parameters"] == "game,learning_rate,network_size"
+    assert cfg["parameters"] == "learning_rate,batch_size,depth"
 
 
 def test_create_project_without_code_fence(store):
@@ -74,22 +74,22 @@ def test_create_project_without_code_fence(store):
     assert projects[0]["name"] == "Quick Test"
 
 
-def test_domain_config_applied(store):
-    """Domain type maps to correct DomainConfig."""
-    response = '```command\nCREATE_PROJECT {"name": "GPT Test", "domain_type": "nanogpt"}\n```'
+def test_default_domain_config_applied(store):
+    """When no domain_config is provided, default config is used."""
+    response = '```command\nCREATE_PROJECT {"name": "Test Project", "domain_type": "generic"}\n```'
 
     with patch("api.get_store", return_value=store):
         _execute_chat_commands(response)
 
     projects = store.list_projects()
     cfg = projects[0]["domain_config"]
-    assert "NanoGPT" in cfg["name"]
+    assert cfg["name"] == "research experiment"
     assert "config_change" in cfg["intervention_types"]
 
 
 def test_custom_parameters_override(store):
-    """Custom parameters override domain defaults."""
-    response = '```command\nCREATE_PROJECT {"name": "Custom", "domain_type": "nanogpt", "parameters": "lr,depth,width"}\n```'
+    """Custom parameters override default config."""
+    response = '```command\nCREATE_PROJECT {"name": "Custom", "parameters": "lr,depth,width"}\n```'
 
     with patch("api.get_store", return_value=store):
         _execute_chat_commands(response)
@@ -127,7 +127,25 @@ You can now start adding proposals to this project."""
     assert "Project created" in result
 
 
-def test_domain_configs_all_have_code_change():
-    """All domain configs include code_change as an intervention type."""
-    for name, cfg in DOMAIN_CONFIGS.items():
-        assert "code_change" in cfg["intervention_types"], f"{name} missing code_change"
+def test_default_domain_config_has_code_change():
+    """Default domain config includes code_change as an intervention type."""
+    assert "code_change" in _DEFAULT_DOMAIN_CONFIG["intervention_types"]
+
+
+def test_full_domain_config_dict(store):
+    """_execute_chat_commands works with a full domain_config dict (no template lookup)."""
+    response = '''```command
+CREATE_PROJECT {"name": "Custom Experiment", "description": "Optimize enzyme activity", "domain_config": {"name": "Enzyme optimization", "description": "Optimize enzyme activity via mutations.", "target_metric": "activity_score", "optimize": "maximize", "intervention_types": "config_change, probe", "parameters": "mutation_site, temperature, pH"}}
+```'''
+
+    with patch("api.get_store", return_value=store):
+        result = _execute_chat_commands(response)
+
+    assert "Project created" in result
+    assert "Custom Experiment" in result
+    projects = store.list_projects()
+    assert len(projects) == 1
+    cfg = projects[0]["domain_config"]
+    assert cfg["name"] == "Enzyme optimization"
+    assert cfg["target_metric"] == "activity_score"
+    assert cfg["optimize"] == "maximize"
