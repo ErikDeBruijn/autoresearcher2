@@ -8,6 +8,8 @@ import re as _re
 import subprocess
 import time
 import sys
+import urllib.request
+from datetime import datetime as _dt
 from pathlib import Path
 from contextlib import asynccontextmanager
 
@@ -15,12 +17,15 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import FileResponse
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.proposal import Proposal
+from autoresearcher2.v3.executors import COST_TRACKER_URL
 
 # --- Config ---
 DB_PATH = Path(__file__).parent.parent / "research_v4.db"
@@ -703,14 +708,10 @@ async def chat(req: ChatRequest):
 
 # --- Worker management ---
 
-from autoresearcher2.v3.executors import COST_TRACKER_URL
-
 
 @app.get("/api/workers/status")
 def get_worker_status():
     """Check research loop status and GPU power from gpu-cost-tracker service."""
-
-    import urllib.request
     try:
         result = subprocess.run(
             ["systemctl", "is-active", "autoresearcher"],
@@ -805,7 +806,6 @@ async def websocket_endpoint(ws: WebSocket):
 
 
 # --- Report generation ---
-from starlette.responses import FileResponse
 
 
 REPORT_DIR = Path(__file__).parent.parent / "artifacts" / "reports"
@@ -869,7 +869,6 @@ def download_report(regenerate: bool = True):
     pdf = _find_latest_pdf()
     if not pdf:
         raise HTTPException(status_code=404, detail="No report found")
-    from datetime import datetime as _dt
     fname = f"autoresearcher-report-{_dt.now().strftime('%Y-%m-%d')}.pdf"
     return FileResponse(pdf, media_type="application/pdf", filename=fname)
 
@@ -898,7 +897,6 @@ def get_artifact(obs_id: str, artifact_name: str):
 
 
 # --- Serve frontend static files with cache control ---
-from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class CacheControlMiddleware(BaseHTTPMiddleware):
