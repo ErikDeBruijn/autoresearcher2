@@ -510,16 +510,6 @@ async def delete_proposal(proposal_id: str):
 
 # --- Chat endpoint ---
 
-# Default domain config for new projects (users provide full config via chat or API)
-_DEFAULT_DOMAIN_CONFIG = {
-    "name": "research experiment",
-    "description": "We run experiments to optimize a target metric.",
-    "target_metric": "target_metric",
-    "optimize": "minimize",
-    "intervention_types": "config_change, probe, code_change",
-    "parameters": "any key-value pairs relevant to the domain",
-}
-
 def _execute_chat_commands(response_text: str) -> str:
     """Detect and execute structured commands in LLM chat response."""
     # Look for CREATE_PROJECT command
@@ -539,14 +529,10 @@ def _execute_chat_commands(response_text: str) -> str:
         domain_type = cmd.get("domain_type", "generic")
         parameters = cmd.get("parameters", "")
 
-        # Accept a full domain_config dict, or fall back to template lookup
         domain_cfg = cmd.get("domain_config")
-        if domain_cfg and isinstance(domain_cfg, dict):
-            # User/LLM provided a full custom domain config
-            pass
-        else:
-            domain_cfg = dict(_DEFAULT_DOMAIN_CONFIG)
-        if parameters:
+        if not isinstance(domain_cfg, dict):
+            domain_cfg = {"parameters": parameters} if parameters else None
+        elif parameters:
             domain_cfg["parameters"] = parameters
 
         with get_store() as store:

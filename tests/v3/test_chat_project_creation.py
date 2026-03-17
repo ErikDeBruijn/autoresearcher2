@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "web"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
-from api import _execute_chat_commands, _DEFAULT_DOMAIN_CONFIG
+from api import _execute_chat_commands
 from autoresearcher2.v3.store import Store
 
 
@@ -74,29 +74,15 @@ def test_create_project_without_code_fence(store):
     assert projects[0]["name"] == "Quick Test"
 
 
-def test_default_domain_config_applied(store):
-    """When no domain_config is provided, default config is used."""
+def test_no_domain_config_creates_project_with_none(store):
+    """When no domain_config is provided, project is created with domain_config=None."""
     response = '```command\nCREATE_PROJECT {"name": "Test Project", "domain_type": "generic"}\n```'
 
     with patch("api.get_store", return_value=store):
         _execute_chat_commands(response)
 
     projects = store.list_projects()
-    cfg = projects[0]["domain_config"]
-    assert cfg["name"] == "research experiment"
-    assert "config_change" in cfg["intervention_types"]
-
-
-def test_custom_parameters_override(store):
-    """Custom parameters override default config."""
-    response = '```command\nCREATE_PROJECT {"name": "Custom", "parameters": "lr,depth,width"}\n```'
-
-    with patch("api.get_store", return_value=store):
-        _execute_chat_commands(response)
-
-    projects = store.list_projects()
-    cfg = projects[0]["domain_config"]
-    assert cfg["parameters"] == "lr,depth,width"
+    assert projects[0]["domain_config"] is None
 
 
 def test_invalid_json_handled():
@@ -125,11 +111,6 @@ You can now start adding proposals to this project."""
     assert "Great choice!" in result
     assert "start adding proposals" in result
     assert "Project created" in result
-
-
-def test_default_domain_config_has_code_change():
-    """Default domain config includes code_change as an intervention type."""
-    assert "code_change" in _DEFAULT_DOMAIN_CONFIG["intervention_types"]
 
 
 def test_full_domain_config_dict(store):
