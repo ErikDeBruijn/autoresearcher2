@@ -569,7 +569,6 @@ def _build_chat_system_prompt(store: Store) -> str:
     Reads projects, world model, and observations to construct a prompt
     that is domain-agnostic -- no hardcoded metric names or domain types.
     """
-    wm = store.load_world_model()
     observations = store.list_observations()
     counts = {
         stage: store.count_proposals(stage)
@@ -583,31 +582,57 @@ def _build_chat_system_prompt(store: Store) -> str:
         except (ValueError, TypeError):
             return str(val)
 
-    beliefs_text = "\n".join(
-        f"  - [{fmt_num(b['confidence'])}] {b['claim']}"
-        for b in wm.beliefs
-    )
-    tensions_text = "\n".join(
-        f"  - [{fmt_num(t['salience'])}] {t['nature']}"
-        for t in wm.tensions
-    ) or "  None"
-
-    # Build project descriptions with their metrics and optimization targets
-    projects_text_lines = []
+    # Build per-project sections with their own world models
+    project_sections = []
     metric_lines = []
     project_descriptions = []
+    max_version = 0
     for p in projects:
+        pid = p["id"]
+        wm = store.load_world_model(project_id=pid)
+        max_version = max(max_version, wm.version)
         dc = p.get("domain_config") or {}
         metric = dc.get("target_metric", "target_metric")
         optimize = dc.get("optimize", "minimize")
         desc = dc.get("description", p.get("description", ""))
-        projects_text_lines.append(
-            f"  - {p['name']} (id={p['id']}, active={p.get('active', True)}, metric={metric}, {optimize})"
+
+        beliefs_text = "\n".join(
+            f"    - [{fmt_num(b['confidence'])}] {b['claim']}"
+            for b in wm.beliefs
+        ) or "    None"
+        tensions_text = "\n".join(
+            f"    - [{fmt_num(t['salience'])}] {t['nature']}"
+            for t in wm.tensions
+        ) or "    None"
+
+        project_sections.append(
+            f"  ### {p['name']} (id={pid}, active={p.get('active', True)}, metric={metric}, {optimize}, v{wm.version})\n"
+            f"  Beliefs:\n{beliefs_text}\n"
+            f"  Tensions:\n{tensions_text}"
         )
         metric_lines.append(f"  - {p['name']}: {optimize} {metric}")
         if desc:
             project_descriptions.append(desc)
-    projects_text = "\n".join(projects_text_lines) or "  No projects yet"
+
+    # Fallback: if no projects, load default world model
+    if not project_sections:
+        wm = store.load_world_model()
+        max_version = wm.version
+        beliefs_text = "\n".join(
+            f"  - [{fmt_num(b['confidence'])}] {b['claim']}"
+            for b in wm.beliefs
+        ) or "  None"
+        tensions_text = "\n".join(
+            f"  - [{fmt_num(t['salience'])}] {t['nature']}"
+            for t in wm.tensions
+        ) or "  None"
+        project_sections.append(
+            f"  Default World Model:\n"
+            f"  Beliefs:\n{beliefs_text}\n"
+            f"  Tensions:\n{tensions_text}"
+        )
+
+    projects_text = "\n\n".join(project_sections)
     metric_guidance = ("Optimization targets:\n" + "\n".join(metric_lines)) if metric_lines else "No target metrics configured yet."
 
     # Format observations using actual metrics from their projects
@@ -643,22 +668,16 @@ def _build_chat_system_prompt(store: Store) -> str:
     system = f"""You are a research assistant for AutoResearcher2, an autonomous experiment system.
 {domain_context}
 
-Current state (World Model v{wm.version}):
+Current state (World Model v{max_version}):
 
-Beliefs:
-{beliefs_text}
-
-Tensions:
-{tensions_text}
+Projects:
+{projects_text}
 
 Recent observations (last 5):
 {obs_text}
 
 Queue: {queue_text}
 Total experiments: {len(observations)}, Success rate: {sum(1 for o in observations if o.outcome_success)}/{len(observations)}
-
-Existing projects:
-{projects_text}
 
 {metric_guidance}
 
