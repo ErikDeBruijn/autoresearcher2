@@ -89,6 +89,7 @@ class Proposal:
             "started_at": self.started_at,
             "finished_at": self.finished_at,
             "observation_id": self.observation_id,
+            "project_id": self.project_id,
         }
 
     @classmethod
@@ -110,5 +111,6 @@ class Proposal:
         p.started_at = data.get("started_at")
         p.finished_at = data.get("finished_at")
         p.observation_id = data.get("observation_id")
+        p.project_id = data.get("project_id")
         return p
 

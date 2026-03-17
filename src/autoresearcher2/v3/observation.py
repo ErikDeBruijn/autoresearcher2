@@ -84,6 +84,7 @@ class Observation:
             avg_power_w=data.get("avg_power_w"),
         )
         obs.created_at = data.get("created_at", time.time())
+        obs.project_id = data.get("project_id")
         obs.artifact_paths = data.get("artifact_paths", {})
         return obs
 
