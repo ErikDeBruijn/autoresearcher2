@@ -39,6 +39,16 @@ def _make_run_cmd(ssh_host: str | None = None, ssh_key: str | None = None, timeo
     return run_cmd
 
 
+def _parse_metrics(output: str, patterns: dict[str, str]) -> dict[str, float]:
+    """Extract named metrics from command output using regex patterns."""
+    metrics = {}
+    for name, pattern in patterns.items():
+        m = re.search(pattern, output)
+        if m:
+            metrics[name] = float(m.group(1))
+    return metrics
+
+
 def _apply_code_changes(run_cmd, spec: dict, work_dir: str) -> None:
     """Apply code changes from a proposal spec to a working directory.
 
@@ -270,15 +280,8 @@ def make_trainpy_executor(
         if rc != 0:
             raise RuntimeError(f"train.py failed (exit {rc}): {out[-500:]}")
 
-        # Parse metrics from output using configurable patterns
-        metrics = {}
-        for name, pattern in metric_patterns.items():
-            m = re.search(pattern, out)
-            if m:
-                metrics[name] = float(m.group(1))
-
         result = {
-            "metrics": metrics,
+            "metrics": _parse_metrics(out, metric_patterns),
             "compute_cost": wall_time / 3600,  # Rough: hours of GPU
             "raw_log": out[-2000:] if len(out) > 2000 else out,
         }
@@ -349,11 +352,7 @@ def make_shell_executor(
         if rc != 0:
             raise RuntimeError(f"Command failed (exit {rc}): {out[-500:]}")
 
-        metrics = {}
-        for name, pattern in metric_patterns.items():
-            m = re.search(pattern, out)
-            if m:
-                metrics[name] = float(m.group(1))
+        metrics = _parse_metrics(out, metric_patterns)
 
         # Parse artifact paths from stdout (format: "artifact_<name>: /path/to/file")
         artifact_paths = {}

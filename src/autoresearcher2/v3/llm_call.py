@@ -6,14 +6,12 @@ function that any v3 component can use.
 
 import json
 import logging
-import os
 import re
 import subprocess
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_SSH_HOST = os.environ.get("AUTORESEARCHER_SSH_HOST", "root@dllm-experiment.local")
-_DEFAULT_SSH_KEY = os.environ.get("AUTORESEARCHER_SSH_KEY", "~/.ssh/pve03_key")
+from autoresearcher2.v3.executors import _DEFAULT_SSH_HOST, _DEFAULT_SSH_KEY
 
 
 def call_llm(
