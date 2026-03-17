@@ -4,6 +4,8 @@ Serves the SQLite Store via REST API + WebSocket for live updates.
 """
 import asyncio
 import json
+import re as _re
+import subprocess
 import time
 import sys
 from pathlib import Path
@@ -22,6 +24,7 @@ from autoresearcher2.v3.proposal import Proposal
 
 # --- Config ---
 DB_PATH = Path(__file__).parent.parent / "research_v4.db"
+QUEUE_STAGES = ("backlog", "todo", "running", "done", "reviewed")
 
 # --- WebSocket manager ---
 class ConnectionManager:
@@ -56,7 +59,7 @@ async def poll_store_changes():
             with get_store() as store:
                 counts = {
                     stage: store.count_proposals(stage)
-                    for stage in ("backlog", "todo", "running", "done", "reviewed")
+                    for stage in QUEUE_STAGES
                 }
             if counts != last_counts:
                 last_counts = counts
@@ -108,7 +111,6 @@ class ChatMessage(BaseModel):
 @app.get("/api/health")
 def health():
     """Health check: service uptime, DB accessible, last experiment time."""
-    import os
     with get_store() as store:
         try:
             obs = store.list_observations()
@@ -236,7 +238,7 @@ def get_queue():
         delta_by_obs = {h["trigger_obs_id"]: h for h in wm_history if h["trigger_obs_id"]}
 
         stages: dict[str, list] = {}
-        for stage in ("backlog", "todo", "running", "done", "reviewed"):
+        for stage in QUEUE_STAGES:
             proposals = store.list_proposals(stage)
             items = []
             for p in proposals:
@@ -290,7 +292,7 @@ def get_queue_counts():
     with get_store() as store:
         return {
             stage: store.count_proposals(stage)
-            for stage in ("backlog", "todo", "running", "done", "reviewed")
+            for stage in QUEUE_STAGES
         }
 
 
@@ -416,7 +418,7 @@ def get_stats():
         # Queue counts
         counts = {
             stage: store.count_proposals(stage)
-            for stage in ("backlog", "todo", "running", "done", "reviewed")
+            for stage in QUEUE_STAGES
         }
 
         # Intervention type breakdown
@@ -485,7 +487,7 @@ async def promote_proposal(proposal_id: str, target_stage: str = "todo"):
     """Move a proposal to a different stage."""
     with get_store() as store:
         # Find the proposal
-        for stage in ("backlog", "todo", "running", "done", "reviewed"):
+        for stage in QUEUE_STAGES:
             for p in store.list_proposals(stage):
                 if p.id == proposal_id:
                     store.move_proposal(p, target_stage)
@@ -522,9 +524,6 @@ _DEFAULT_DOMAIN_CONFIG = {
     "intervention_types": "config_change, probe, code_change",
     "parameters": "any key-value pairs relevant to the domain",
 }
-
-
-import re as _re
 
 def _execute_chat_commands(response_text: str) -> str:
     """Detect and execute structured commands in LLM chat response."""
@@ -583,7 +582,7 @@ def _build_chat_system_prompt(store: Store) -> str:
     observations = store.list_observations()
     counts = {
         stage: store.count_proposals(stage)
-        for stage in ("backlog", "todo", "running", "done", "reviewed")
+        for stage in QUEUE_STAGES
     }
     projects = store.list_projects()
 
@@ -705,7 +704,7 @@ class ChatRequest(BaseModel):
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
     """Chat with LLM about the research, grounded in current Store data."""
-    import subprocess
+
 
     # Build context from Store
     with get_store() as store:
@@ -755,7 +754,7 @@ from autoresearcher2.v3.executors import COST_TRACKER_URL
 @app.get("/api/workers/status")
 def get_worker_status():
     """Check research loop status and GPU power from gpu-cost-tracker service."""
-    import subprocess
+
     import urllib.request
     try:
         result = subprocess.run(
@@ -811,7 +810,7 @@ def get_worker_status():
 @app.post("/api/workers/start")
 def start_worker():
     """Start the autoresearcher systemd service."""
-    import subprocess
+
     try:
         subprocess.run(["systemctl", "start", "autoresearcher"], timeout=10, check=True)
         return {"status": "started"}
@@ -824,7 +823,7 @@ def start_worker():
 @app.post("/api/workers/stop")
 def stop_worker():
     """Stop the autoresearcher systemd service."""
-    import subprocess
+
     try:
         subprocess.run(["systemctl", "stop", "autoresearcher"], timeout=10, check=True)
         return {"status": "stopped"}
@@ -949,7 +948,6 @@ def get_artifact(obs_id: str, artifact_name: str):
 
 
 # --- Serve frontend static files with cache control ---
-from starlette.responses import Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
