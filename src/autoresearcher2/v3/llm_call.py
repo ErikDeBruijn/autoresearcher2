@@ -6,6 +6,7 @@ function that any v3 component can use.
 
 import json
 import logging
+import re
 import subprocess
 
 logger = logging.getLogger(__name__)
@@ -94,15 +95,10 @@ def parse_json_response(raw: str) -> dict:
     except json.JSONDecodeError:
         pass
 
-    # Try to find JSON block in markdown
-    for marker in ["```json", "```"]:
-        if marker in raw:
-            start = raw.index(marker) + len(marker)
-            end = raw.index("```", start)
-            try:
-                return json.loads(raw[start:end].strip())
-            except (json.JSONDecodeError, ValueError):
-                pass
+    # Fall through to text extraction (handles markdown fences, brace matching)
+    parsed = _extract_json_from_text(raw)
+    if parsed is not None:
+        return parsed
 
     raise ValueError(f"Could not parse JSON from response: {raw[:200]}")
 
@@ -118,7 +114,6 @@ def _extract_json_from_text(text: str) -> dict | None:
         pass
 
     # Strategy 2: extract from markdown code fences
-    import re
     fence_pattern = re.compile(r'```(?:json)?\s*\n?(.*?)\n?```', re.DOTALL)
     match = fence_pattern.search(text)
     if match:
