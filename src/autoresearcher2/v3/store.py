@@ -543,7 +543,7 @@ class Store:
         Args:
             worker_id: Worker identifier for tracking.
             project_ids: If set, only claim from these project IDs.
-                         Use to restrict CPU workers to Atari, GPU workers to NanoGPT, etc.
+                         Use to restrict workers to specific project domains.
         """
         for _attempt in range(3):
             if project_ids is not None:
