@@ -23,12 +23,6 @@ class WorldModel:
         self.expectations = []
         self.tensions = []
         self.cost_beliefs = {}
-        self.probe_fidelity = []
-        self.salience = {
-            "high_learntropy": [],
-            "unresolved_tensions": [],
-            "stale_beliefs": [],
-        }
         self._next_belief_id = 1
         self._next_tension_id = 1
 
@@ -127,8 +121,6 @@ class WorldModel:
             "expectations": self.expectations,
             "tensions": self.tensions,
             "cost_beliefs": self.cost_beliefs,
-            "probe_fidelity": self.probe_fidelity,
-            "salience": self.salience,
             "_next_belief_id": self._next_belief_id,
             "_next_tension_id": self._next_tension_id,
         }
@@ -143,12 +135,6 @@ class WorldModel:
         wm.expectations = data.get("expectations", [])
         wm.tensions = data.get("tensions", [])
         wm.cost_beliefs = data.get("cost_beliefs", {})
-        wm.probe_fidelity = data.get("probe_fidelity", [])
-        wm.salience = data.get("salience", {
-            "high_learntropy": [],
-            "unresolved_tensions": [],
-            "stale_beliefs": [],
-        })
         wm._next_belief_id = data.get("_next_belief_id", len(wm.beliefs) + 1)
         wm._next_tension_id = data.get("_next_tension_id", len(wm.tensions) + 1)
         return wm
