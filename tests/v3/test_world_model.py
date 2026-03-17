@@ -7,7 +7,6 @@ def test_empty_world_model():
     wm = WorldModel()
     assert wm.version == 0
     assert wm.beliefs == []
-    assert wm.expectations == []
     assert wm.tensions == []
     assert wm.cost_beliefs == {}
 
@@ -34,16 +33,10 @@ def test_add_multiple_beliefs_unique_ids():
     assert b1 != b2
 
 
-def test_add_expectation():
+def test_no_expectations_attribute():
+    """expectations was never used in the pipeline — it should not exist on WorldModel."""
     wm = WorldModel()
-    wm.add_expectation(
-        condition={"DEPTH": "8", "MATRIX_LR": "0.04"},
-        prediction="outcome > 1.03",
-        confidence=0.7,
-        basis=["B1"],
-    )
-    assert len(wm.expectations) == 1
-    assert wm.expectations[0]["confidence"] == 0.7
+    assert not hasattr(wm, "expectations")
 
 
 def test_add_tension():

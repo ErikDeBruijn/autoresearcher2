@@ -211,8 +211,9 @@ def test_orientation_prompt_default_domain_is_generic():
     assert "GPU sensors" not in instruction_section
 
 
-def test_delta_schema_has_no_expectations_revised():
-    """expectations_revised was never handled in apply_delta — remove from schema."""
+def test_delta_schema_has_no_expectations():
+    """expectations were never used in the pipeline — removed from schema entirely."""
+    assert "expectations_added" not in DELTA_SCHEMA
     assert "expectations_revised" not in DELTA_SCHEMA
 
 

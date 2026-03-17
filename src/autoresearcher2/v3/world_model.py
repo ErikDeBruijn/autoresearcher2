@@ -11,13 +11,12 @@ import time
 
 
 class WorldModel:
-    """Structured epistemic state: beliefs, expectations, tensions, costs."""
+    """Structured epistemic state: beliefs, tensions, costs."""
 
     def __init__(self):
         self.version = 0
         self.updated_at = time.time()
         self.beliefs = []
-        self.expectations = []
         self.tensions = []
         self.cost_beliefs = {}
         self._next_belief_id = 1
@@ -37,15 +36,6 @@ class WorldModel:
             "last_tested": time.time(),
         })
         return bid
-
-    def add_expectation(self, condition, prediction, confidence, basis):
-        """Add an expectation: if condition then prediction."""
-        self.expectations.append({
-            "if": condition,
-            "then": prediction,
-            "confidence": confidence,
-            "basis": list(basis),
-        })
 
     def add_tension(self, belief_ids, nature, salience):
         """Add a tension between beliefs. Returns the tension ID."""
@@ -115,7 +105,6 @@ class WorldModel:
             "version": self.version,
             "updated_at": self.updated_at,
             "beliefs": self.beliefs,
-            "expectations": self.expectations,
             "tensions": self.tensions,
             "cost_beliefs": self.cost_beliefs,
             "_next_belief_id": self._next_belief_id,
@@ -129,7 +118,6 @@ class WorldModel:
         wm.version = data["version"]
         wm.updated_at = data["updated_at"]
         wm.beliefs = data["beliefs"]
-        wm.expectations = data.get("expectations", [])
         wm.tensions = data.get("tensions", [])
         wm.cost_beliefs = data.get("cost_beliefs", {})
         wm._next_belief_id = data.get("_next_belief_id", len(wm.beliefs) + 1)

@@ -25,7 +25,6 @@ DELTA_SCHEMA = {
     "beliefs_added": [{"claim": "str", "confidence": "0.0-1.0", "evidence_for": ["obs_id"]}],
     "beliefs_revised": [{"id": "str", "new_confidence": "0.0-1.0", "new_evidence_for": ["obs_id"], "reason": "str"}],
     "beliefs_retired": [{"id": "str", "reason": "str"}],
-    "expectations_added": [{"if": "condition", "then": "prediction", "confidence": "0.0-1.0", "basis": ["ids"]}],
     "tensions_added": [{"beliefs": ["B_ids"], "nature": "str", "salience": "high|medium|low"}],
     "tensions_resolved": [{"id": "str", "resolution": "str", "reasoning": "str"}],
     "cost_beliefs_updated": {"intervention_type": {"wall_time_s": "float", "energy_kwh": "float", "cost_eur": "float", "avg_power_w": "float"}},
@@ -68,7 +67,7 @@ Domain: {domain.name} — {domain.description}
 
 ## 3. UPDATE INSTRUCTIONS
 
-Reason step by step about what this observation means for our beliefs, expectations, tensions, salience, and cost estimates.
+Reason step by step about what this observation means for our beliefs, tensions, and cost estimates.
 
 Consider:
 - Does this observation confirm or contradict any existing beliefs? Adjust confidence accordingly.
@@ -76,7 +75,7 @@ Consider:
 - Does it resolve existing tensions?
 - Does it reveal something surprising (high learntropy)?{hardware_hint}
 - Are any beliefs now stale (not tested recently)?
-- Should we add new beliefs or expectations based on this evidence?
+- Should we add new beliefs based on this evidence?
 
 Important:
 - Be conservative with confidence changes. A single observation shifts confidence modestly.
