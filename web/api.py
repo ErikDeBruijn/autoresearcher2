@@ -164,6 +164,11 @@ def get_projects():
             proj["cost_eur"] = round(cost, 4)
             proj["wall_time_s"] = round(wall_time, 1)
             proj["experiment_count"] = len(proj_obs)
+            # Compute expected gain for Auto priority display
+            try:
+                proj["expected_gain"] = round(store.compute_expected_gain(proj["id"]), 3)
+            except Exception:
+                proj["expected_gain"] = None
 
         return projects
     finally:
@@ -211,6 +216,7 @@ class ProjectUpdate(BaseModel):
     description: str | None = None
     active: bool | None = None
     domain_config: dict | None = None
+    priority: str | None = None
 
 
 @app.patch("/api/projects/{project_id}")
@@ -225,6 +231,17 @@ async def update_project(project_id: str, data: ProjectUpdate):
         project = store.get_project(project_id)
         await manager.broadcast({"type": "project_updated", "project": project})
         return project
+    finally:
+        store.close()
+
+
+@app.get("/api/projects/{project_id}/expected_gain")
+def get_expected_gain(project_id: str):
+    """Compute expected learning gain for a project."""
+    store = get_store()
+    try:
+        gain = store.compute_expected_gain(project_id)
+        return {"project_id": project_id, "expected_gain": round(gain, 3)}
     finally:
         store.close()
 
@@ -245,12 +262,21 @@ def get_queue():
             for p in proposals:
                 d = p.to_dict()
                 d["project_id"] = p.project_id
-                # Add worker_id from DB for running proposals
+                # Add worker_id and started_at from DB for running proposals
                 if stage == "running":
                     row = store.conn.execute(
-                        "SELECT worker_id FROM queue WHERE id = ?", (p.id,)
+                        "SELECT worker_id, started_at FROM queue WHERE id = ?", (p.id,)
                     ).fetchone()
                     d["worker_id"] = row["worker_id"] if row else None
+                    d["started_at"] = row["started_at"] if row else None
+                # Add stage timestamps for all proposals
+                row = store.conn.execute(
+                    "SELECT promoted_at, started_at, finished_at FROM queue WHERE id = ?", (p.id,)
+                ).fetchone()
+                if row:
+                    d["promoted_at"] = row["promoted_at"]
+                    d["started_at"] = d.get("started_at") or row["started_at"]
+                    d["finished_at"] = row["finished_at"]
                 # Add observation and world model delta for done/reviewed
                 if stage in ("done", "reviewed") and p.observation_id:
                     obs = store.load_observation(p.observation_id)
@@ -263,6 +289,7 @@ def get_queue():
                             "energy_kwh": obs.energy_kwh,
                             "cost_eur": obs.cost_eur,
                             "avg_power_w": obs.avg_power_w,
+                            "artifact_paths": obs.artifact_paths or {},
                         }
                     # Find the world model update triggered by this observation
                     wm_update = delta_by_obs.get(p.observation_id)
@@ -402,6 +429,14 @@ def get_stats():
                 "max_time_s": max(times) if times else 0,
             }
 
+        # Active workers: those currently running proposals
+        active_worker_ids = set()
+        running_rows = store.conn.execute(
+            "SELECT DISTINCT worker_id FROM queue WHERE stage = 'running' AND worker_id IS NOT NULL"
+        ).fetchall()
+        for row in running_rows:
+            active_worker_ids.add(row["worker_id"])
+
         # Learntropy from world model history
         learntropy_trace = []
         for h in history:
@@ -439,6 +474,7 @@ def get_stats():
             "tension_count": len(wm.tensions),
             "queue_counts": counts,
             "workers": workers,
+            "active_worker_ids": list(active_worker_ids),
             "learntropy_trace": learntropy_trace,
             "intervention_types": type_counts,
             "total_energy_kwh": round(total_energy_kwh, 4),
@@ -465,6 +501,24 @@ async def create_proposal(data: ProposalCreate):
         store.save_proposal(p)
         await manager.broadcast({"type": "proposal_created", "proposal": p.to_dict()})
         return p.to_dict()
+    finally:
+        store.close()
+
+
+@app.post("/api/proposals/{proposal_id}/cancel")
+async def cancel_proposal(proposal_id: str):
+    """Cancel a running proposal: move it back to backlog."""
+    store = get_store()
+    try:
+        if store.cancel_proposal(proposal_id):
+            await manager.broadcast({
+                "type": "proposal_moved",
+                "proposal_id": proposal_id,
+                "from_stage": "running",
+                "to_stage": "backlog",
+            })
+            return {"status": "ok", "proposal_id": proposal_id}
+        raise HTTPException(status_code=404, detail=f"Proposal {proposal_id} not found in running stage")
     finally:
         store.close()
 
@@ -804,6 +858,107 @@ async def websocket_endpoint(ws: WebSocket):
                 await ws.send_json({"type": "pong"})
     except WebSocketDisconnect:
         manager.disconnect(ws)
+
+
+# --- Report generation ---
+import subprocess as _subprocess
+from starlette.responses import FileResponse
+
+
+REPORT_DIR = Path(__file__).parent.parent / "artifacts" / "reports"
+REPORT_SCRIPT = Path(__file__).parent.parent / "scripts" / "generate_report.py"
+
+
+@app.post("/api/report")
+async def generate_report():
+    """Run generate_report.py --db ... --no-llm and return the PDF path."""
+    try:
+        result = _subprocess.run(
+            ["uv", "run", "python", str(REPORT_SCRIPT), "--db", str(DB_PATH), "--no-llm"],
+            capture_output=True, text=True, timeout=120,
+            cwd=str(Path(__file__).parent.parent),
+        )
+        if result.returncode != 0:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Report generation failed: {result.stderr[-500:]}",
+            )
+        # Find latest PDF in artifacts/reports/
+        pdf = _find_latest_pdf()
+        if not pdf:
+            raise HTTPException(status_code=500, detail="Report generated but no PDF found")
+        return {"status": "ok", "path": str(pdf)}
+    except _subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="Report generation timed out")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def _find_latest_pdf() -> Path | None:
+    """Return the most recently modified PDF in REPORT_DIR (searches subdirectories)."""
+    if not REPORT_DIR.exists():
+        return None
+    pdfs = sorted(REPORT_DIR.glob("**/*.pdf"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return pdfs[0] if pdfs else None
+
+
+@app.get("/api/report/latest")
+def get_latest_report():
+    """Return metadata about the latest generated report."""
+    pdf = _find_latest_pdf()
+    if not pdf:
+        raise HTTPException(status_code=404, detail="No report found")
+    return {"path": str(pdf), "filename": pdf.name, "size_bytes": pdf.stat().st_size}
+
+
+@app.get("/api/report/download")
+def download_report(regenerate: bool = True):
+    """Generate (if needed) and serve the PDF report.
+
+    With regenerate=True (default), always regenerates for fresh data.
+    """
+    if regenerate:
+        result = _subprocess.run(
+            ["uv", "run", "python", str(REPORT_SCRIPT), "--db", str(DB_PATH), "--no-llm"],
+            capture_output=True, text=True, timeout=120,
+            cwd=str(Path(__file__).parent.parent),
+        )
+        if result.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"Report generation failed: {result.stderr[-300:]}")
+    pdf = _find_latest_pdf()
+    if not pdf:
+        raise HTTPException(status_code=404, detail="No report found")
+    from datetime import datetime as _dt
+    fname = f"autoresearcher-report-{_dt.now().strftime('%Y-%m-%d')}.pdf"
+    return FileResponse(pdf, media_type="application/pdf", filename=fname)
+
+
+# --- Artifact serving ---
+
+
+@app.get("/api/artifacts/{obs_id}/{artifact_name}")
+def get_artifact(obs_id: str, artifact_name: str):
+    """Serve an artifact file (video, image, etc.) for an observation."""
+    store = get_store()
+    try:
+        obs = store.load_observation(obs_id)
+        if not obs or not obs.artifact_paths:
+            raise HTTPException(status_code=404, detail="Artifact not found")
+        path = obs.artifact_paths.get(artifact_name)
+        if not path:
+            raise HTTPException(status_code=404, detail=f"Artifact '{artifact_name}' not found")
+        file_path = Path(path)
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="Artifact file missing from disk")
+        # Determine media type
+        suffix = file_path.suffix.lower()
+        media_types = {".mp4": "video/mp4", ".webm": "video/webm", ".gif": "image/gif", ".png": "image/png", ".jpg": "image/jpeg"}
+        media_type = media_types.get(suffix, "application/octet-stream")
+        return FileResponse(file_path, media_type=media_type)
+    finally:
+        store.close()
 
 
 # --- Serve frontend static files with cache control ---

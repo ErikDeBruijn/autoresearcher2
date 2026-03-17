@@ -81,3 +81,33 @@ def test_observation_immutable_id():
     data = obs.to_dict()
     obs2 = Observation.from_dict(data)
     assert obs2.id == original_id
+
+
+def test_observation_artifact_paths():
+    """Observations can store artifact paths (videos, models)."""
+    obs = Observation(
+        intervention_type="config_change",
+        intervention_spec={"game": "Breakout"},
+        outcome_metrics={"mean_reward": 3.6},
+        outcome_success=True,
+        wall_time_s=300.0,
+    )
+    obs.artifact_paths = {"video": "/tmp/breakout.mp4", "model": "/tmp/model.zip"}
+    data = obs.to_dict()
+    assert data["artifact_paths"]["video"] == "/tmp/breakout.mp4"
+    obs2 = Observation.from_dict(data)
+    assert obs2.artifact_paths["video"] == "/tmp/breakout.mp4"
+    assert obs2.artifact_paths["model"] == "/tmp/model.zip"
+
+
+def test_observation_artifact_paths_default_empty():
+    """Artifact paths default to empty dict."""
+    obs = Observation(
+        intervention_type="config_change",
+        intervention_spec={"x": "1"},
+        outcome_success=True,
+    )
+    assert obs.artifact_paths == {}
+    data = obs.to_dict()
+    obs2 = Observation.from_dict(data)
+    assert obs2.artifact_paths == {}

@@ -77,6 +77,8 @@ def main():
                         help="DEPRECATED: use --cuda-devices instead")
     parser.add_argument("--cuda-devices", type=str, default=None,
                         help="Comma-separated CUDA device IDs (e.g. '0,1')")
+    parser.add_argument("--cpu-workers", type=int, default=0,
+                        help="Number of CPU-only workers for CPU-bound projects (e.g. Atari)")
     parser.add_argument("--init", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--local-llm", action="store_true", help="Call claude locally instead of via SSH")
@@ -118,21 +120,71 @@ def main():
     # Planner gets its own Store connection for thread safety
     planner_store = Store(args.database)
 
-    # Build project-specific executors, then dispatch per proposal
-    # Look up Atari project ID from active projects
-    atari_project_id = None
-    for proj in store.list_projects(active_only=True):
-        if "atari" in proj["name"].lower():
-            atari_project_id = proj["id"]
-            break
+    # All projects run on GPU — both NanoGPT and Atari/RL use GPU workers.
+    # Atari Breakout uses CnnPolicy which requires GPU for reasonable speed.
+    gpu_project_ids = [proj["id"] for proj in store.list_projects(active_only=False)]
+    # RL project IDs (for executor dispatch)
+    rl_project_ids = [
+        proj["id"] for proj in store.list_projects(active_only=False)
+        if "atari" in proj["name"].lower() or "cartpole" in proj["name"].lower()
+        or "rl " in proj["name"].lower() or "breakout" in proj["name"].lower()
+    ]
 
-    worker_configs = []
+    worker_configs = []  # (worker_id, execute_fn, project_ids, post_complete_fn)
+
+    atari_base = "/root/github.com/atari-research"
+    record_script = "/root/github.com/erikdebruijn/autoresearcher2/scripts/record_video.py"
+
+    # Track best mean_reward per project for conditional video recording
+    atari_best_reward: dict[str | None, float] = {}
+
+    def atari_post_complete(proposal, obs):
+        """Record gameplay video only when a new best reward is achieved."""
+        metrics = obs.outcome_metrics or {}
+        reward = metrics.get("mean_reward")
+        if reward is None:
+            return
+        pid = getattr(proposal, "project_id", None)
+        prev_best = atari_best_reward.get(pid)
+        if prev_best is not None and reward <= prev_best:
+            logger.info("Atari reward %.1f <= best %.1f, skipping video", reward, prev_best)
+            return
+        atari_best_reward[pid] = reward
+        logger.info("New Atari record! reward=%.1f (prev=%.1f), recording video...",
+                    reward, prev_best or 0)
+        try:
+            result = subprocess.run(
+                ["bash", "-c",
+                 f"cd {atari_base} && source .venv/bin/activate && "
+                 f"python {record_script} 2>&1"],
+                capture_output=True, text=True, timeout=120,
+            )
+            if result.returncode == 0:
+                logger.info("Video recorded: %s", result.stdout[-200:])
+                import re as _re
+                m = _re.search(r"artifact_video:\s+(.+)", result.stdout)
+                if m:
+                    video_path = m.group(1).strip()
+                    artifact_paths = dict(obs.artifact_paths or {})
+                    artifact_paths["video"] = video_path
+                    video_store = Store(args.database)
+                    video_store.update_observation_artifacts(obs.id, artifact_paths)
+                    video_store.close()
+            else:
+                logger.warning("Video recording failed: %s", result.stderr[-200:])
+        except Exception:
+            logger.warning("Video recording error", exc_info=True)
+
+    # --- GPU workers: one per CUDA device ---
+    # Each GPU worker handles both NanoGPT and Atari Breakout projects.
+    # Atari Breakout uses CnnPolicy which needs GPU for reasonable speed.
     for i, cuda_dev in enumerate(cuda_devices):
-        worker_id = f"worker_{hostname}_{i}"
+        worker_id = f"{hostname}_GPU{cuda_dev}"
+        post_complete = None
         if args.dry_run:
             execute_fn = make_dry_run_executor()
         else:
-            # NanoGPT executor (default)
+            # NanoGPT executor
             nanogpt_exec = make_trainpy_executor(
                 ssh_host=args.ssh_host,
                 ssh_key=args.ssh_key,
@@ -140,45 +192,47 @@ def main():
                 local=args.local_llm,
             )
 
-            executors = {None: nanogpt_exec}  # Default for unassigned proposals
+            # Atari Breakout executor (GPU-accelerated)
+            atari_dir = f"{atari_base}_gpu{cuda_dev}"
+            subprocess.run(
+                ["bash", "-c",
+                 f"mkdir -p {atari_dir} && "
+                 f"test -L {atari_dir}/.venv || ln -s {atari_base}/.venv {atari_dir}/.venv && "
+                 f"cp {atari_base}/train_atari.py {atari_dir}/train_atari.py"],
+                capture_output=True, text=True, timeout=30,
+            )
+            atari_exec = make_shell_executor(
+                command_template=(
+                    f"cd {atari_dir} && "
+                    "source .venv/bin/activate && "
+                    f"CUDA_VISIBLE_DEVICES={cuda_dev} python train_atari.py 2>&1"
+                ),
+                metric_patterns={
+                    "mean_reward": r"mean_reward:\s+([\d.]+)",
+                    "std_reward": r"std_reward:\s+([\d.]+)",
+                    "fps": r"fps:\s+([\d.]+)",
+                },
+                timeout=900,
+                cuda_device=cuda_dev,
+                work_dir=atari_dir,
+                base_script=f"{atari_base}/train_atari.py",
+                max_timesteps=500_000,
+                max_n_envs=8,
+            )
 
-            # Atari executor (if project exists)
-            if atari_project_id:
-                atari_dir = f"/root/github.com/atari-research_gpu{cuda_dev}"
-                atari_base = "/root/github.com/atari-research"
-                # Create per-GPU working dir if needed
-                subprocess.run(
-                    ["bash", "-c", f"test -d {atari_dir} || cp -r {atari_base} {atari_dir}"],
-                    capture_output=True, text=True, timeout=30,
-                )
-                atari_exec = make_shell_executor(
-                    command_template=(
-                        f"cd {atari_dir} && "
-                        "source .venv/bin/activate && "
-                        f"CUDA_VISIBLE_DEVICES={cuda_dev} python train_atari.py 2>&1"
-                    ),
-                    metric_patterns={
-                        "mean_reward": r"mean_reward:\s+([\d.]+)",
-                        "std_reward": r"std_reward:\s+([\d.]+)",
-                        "fps": r"fps:\s+([\d.]+)",
-                    },
-                    timeout=600,
-                    cuda_device=cuda_dev,
-                    work_dir=atari_dir,
-                    base_script=f"{atari_base}/train_atari.py",
-                )
-                executors[atari_project_id] = atari_exec
-
-            # Map all known NanoGPT projects to nanogpt executor
-            for proj in store.list_projects(active_only=True):
-                if proj["id"] not in executors:
-                    executors[proj["id"]] = nanogpt_exec
-
+            # Dispatch: RL projects → atari executor, everything else → NanoGPT
+            executors = {None: nanogpt_exec}
+            for pid in gpu_project_ids:
+                if pid in rl_project_ids:
+                    executors[pid] = atari_exec
+                else:
+                    executors[pid] = nanogpt_exec
             execute_fn = make_dispatch_executor(executors)
+            post_complete = atari_post_complete
 
-        worker_configs.append((worker_id, execute_fn))
+        worker_configs.append((worker_id, execute_fn, gpu_project_ids, post_complete))
 
-    worker_ids = [wid for wid, _ in worker_configs]
+    worker_ids = [wid for wid, _, _, _ in worker_configs]
     logger.info("Starting v4 research loop (dry_run=%s, gpus=%s, workers=%s)",
                 args.dry_run, cuda_devices, worker_ids)
 
@@ -196,18 +250,69 @@ def main():
         planners: dict[str | None, Planner] = {}
         cycle = 0
 
-        def get_or_create_planner(project_id, domain=None):
+        PRIORITY_SLOTS = {
+            "exclusive": {"n_proposals": 5, "n_select": 3},
+            "high":      {"n_proposals": 5, "n_select": 3},
+            "normal":    {"n_proposals": 3, "n_select": 2},
+            "low":       {"n_proposals": 2, "n_select": 1},
+        }
+
+        def get_priority_slots(proj):
+            priority = proj.get("priority", "auto")
+            if priority == "paused":
+                return None
+            if priority in PRIORITY_SLOTS:
+                return PRIORITY_SLOTS[priority]
+            # auto: compute expected_gain
+            gain = planner_store.compute_expected_gain(proj["id"])
+            if gain >= 0.5:
+                return {"n_proposals": 5, "n_select": 3}
+            if gain >= 0.2:
+                return {"n_proposals": 3, "n_select": 2}
+            return {"n_proposals": 2, "n_select": 1}
+
+        def get_or_create_planner(project_id, domain=None, n_proposals=None, n_select=None):
             if project_id not in planners:
                 planners[project_id] = Planner(
                     planner_store, llm_call_fn=llm_fn,
                     min_queue_size=args.min_queue,
-                    min_todo=len(args.cuda_devices.split(",")),
-                    n_proposals=args.n_proposals,
-                    n_select=args.n_select,
+                    min_todo=len(cuda_devices),
+                    n_proposals=n_proposals or args.n_proposals,
+                    n_select=n_select or args.n_select,
                     project_id=project_id,
                     domain=domain,
                 )
+            else:
+                # Update slots dynamically per cycle
+                p = planners[project_id]
+                if n_proposals:
+                    p.n_proposals = n_proposals
+                if n_select:
+                    p.n_select = n_select
             return planners[project_id]
+
+        def build_domain(proj):
+            dc = proj.get("domain_config")
+            if not dc:
+                return None
+            base_script = ""
+            base_script_name = dc.get("base_script_name", "train.py")
+            base_script_path = dc.get("base_script_path", "")
+            if base_script_path:
+                try:
+                    with open(base_script_path) as f:
+                        base_script = f.read()
+                except FileNotFoundError:
+                    logger.warning("Base script not found: %s", base_script_path)
+            return DomainConfig(
+                name=dc.get("name", proj["name"]),
+                description=dc.get("description", proj.get("description", "")),
+                intervention_types=dc.get("intervention_types", "config_change or probe"),
+                parameters=dc.get("parameters", ""),
+                diversity_hint=dc.get("diversity_hint", ""),
+                base_script=base_script,
+                base_script_name=base_script_name,
+            )
 
         while not stop.is_set():
             cycle += 1
@@ -217,35 +322,28 @@ def main():
                 if reclaimed > 0:
                     logger.info("Reclaimed %d stale running proposals", reclaimed)
 
-                # Tick planner for each active project
+                # Tick planner for each active project, respecting priority
                 active_projects = planner_store.list_projects(active_only=True)
+
+                # Exclusive mode: if any project is exclusive, only run that one
+                exclusive = [p for p in active_projects if p.get("priority") == "exclusive"]
+                if exclusive:
+                    active_projects = exclusive[:1]
+
                 for proj in active_projects:
-                    domain = None
-                    if proj.get("domain_config"):
-                        dc = proj["domain_config"]
-                        # Load base script from disk if path is configured
-                        base_script = ""
-                        base_script_name = dc.get("base_script_name", "train.py")
-                        base_script_path = dc.get("base_script_path", "")
-                        if base_script_path:
-                            try:
-                                with open(base_script_path) as f:
-                                    base_script = f.read()
-                            except FileNotFoundError:
-                                logger.warning("Base script not found: %s", base_script_path)
-                        domain = DomainConfig(
-                            name=dc.get("name", proj["name"]),
-                            description=dc.get("description", proj.get("description", "")),
-                            intervention_types=dc.get("intervention_types", "config_change or probe"),
-                            parameters=dc.get("parameters", ""),
-                            diversity_hint=dc.get("diversity_hint", ""),
-                            base_script=base_script,
-                            base_script_name=base_script_name,
-                        )
-                    planner = get_or_create_planner(proj["id"], domain)
+                    slots = get_priority_slots(proj)
+                    if slots is None:
+                        continue  # paused
+                    domain = build_domain(proj)
+                    planner = get_or_create_planner(
+                        proj["id"], domain,
+                        n_proposals=slots["n_proposals"],
+                        n_select=slots["n_select"],
+                    )
                     summary = planner.tick()
                     if any(v > 0 for v in summary.values()):
-                        logger.info("Planner [%s] cycle %d: %s", proj["name"], cycle, summary)
+                        logger.info("Planner [%s] (%s) cycle %d: %s",
+                                   proj["name"], proj.get("priority", "auto"), cycle, summary)
 
                 # Also tick default planner for unassigned proposals (backwards compat)
                 default_planner = get_or_create_planner(None)
@@ -277,10 +375,11 @@ def main():
             # Wait before next planning cycle, but wake up early if stopped
             stop.wait(timeout=args.planner_interval)
 
-    def run_worker(worker_id, execute_fn):
+    def run_worker(worker_id, execute_fn, project_ids=None, post_complete_fn=None):
         """Worker thread: continuously claim and execute experiments."""
         worker_store = Store(args.database)
-        worker = Worker(worker_store, execute_fn=execute_fn, worker_id=worker_id)
+        worker = Worker(worker_store, execute_fn=execute_fn, worker_id=worker_id,
+                        project_ids=project_ids, post_complete_fn=post_complete_fn)
         executed = 0
         try:
             while not stop.is_set():
@@ -307,8 +406,8 @@ def main():
         threads.append(planner_thread)
         planner_thread.start()
 
-        for wid, exe_fn in worker_configs:
-            t = threading.Thread(target=run_worker, args=(wid, exe_fn), name=wid, daemon=True)
+        for wid, exe_fn, proj_ids, post_fn in worker_configs:
+            t = threading.Thread(target=run_worker, args=(wid, exe_fn, proj_ids, post_fn), name=wid, daemon=True)
             threads.append(t)
             t.start()
 

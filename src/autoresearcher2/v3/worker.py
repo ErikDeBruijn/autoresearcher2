@@ -26,14 +26,18 @@ class Worker:
         workspace: Workspace,
         execute_fn=None,
         worker_id: str = "worker_0",
+        project_ids: list[str] | None = None,
+        post_complete_fn=None,
     ):
         self.workspace = workspace
         self.execute_fn = execute_fn
         self.worker_id = worker_id
+        self.project_ids = project_ids
+        self.post_complete_fn = post_complete_fn
 
     def tick(self) -> dict | None:
         """Try to claim and execute one todo item. Returns observation dict or None."""
-        proposal = self.workspace.claim_next_todo(self.worker_id)
+        proposal = self.workspace.claim_next_todo(self.worker_id, project_ids=self.project_ids)
         if proposal is None:
             return None
 
@@ -57,6 +61,8 @@ class Worker:
                 cost_eur=result.get("cost_eur"),
                 avg_power_w=result.get("avg_power_w"),
             )
+            if result.get("artifact_paths"):
+                obs.artifact_paths = result["artifact_paths"]
         except Exception as e:
             wall_time = time.time() - start
             logger.error("[%s] Execution failed: %s", self.worker_id, e)
@@ -72,6 +78,12 @@ class Worker:
         self.workspace.complete_proposal(proposal, obs)
         logger.info("[%s] Completed %s: success=%s, %.1fs",
                     self.worker_id, proposal.id, obs.outcome_success, wall_time)
+
+        if self.post_complete_fn and obs.outcome_success:
+            try:
+                self.post_complete_fn(proposal, obs)
+            except Exception:
+                logger.warning("[%s] post_complete_fn failed", self.worker_id, exc_info=True)
 
         return obs.to_dict()
 

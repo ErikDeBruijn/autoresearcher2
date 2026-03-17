@@ -43,6 +43,7 @@ export default function StatsBar() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [workerStatus, setWorkerStatus] = useState<WorkerStatus | null>(null);
 
+
   useEffect(() => {
     const fetchStats = () =>
       fetch(`${API}/api/stats`)
@@ -111,6 +112,17 @@ export default function StatsBar() {
         <span className="font-mono text-emerald-400">{stats.total_cost_eur.toFixed(2)}€</span>
         <span className="font-mono text-gray-500">{(stats.total_energy_kwh * 1000).toFixed(0)}Wh</span>
       </div>
+
+      <a
+        href={`${API}/api/report/download`}
+        download
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-2 py-0.5 text-xs font-mono rounded border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors no-underline"
+        title="Generate and download PDF report"
+      >
+        PDF
+      </a>
 
       <div className="flex items-center gap-3 ml-auto">
         {workerStatus?.energy?.price_eur_per_kwh != null && (

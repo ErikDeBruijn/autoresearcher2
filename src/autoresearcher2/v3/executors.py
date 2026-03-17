@@ -119,9 +119,18 @@ def make_trainpy_executor(
     # Per-GPU working directory to avoid concurrent sed-patching of same train.py
     train_dir = f"{base_dir}_gpu{cuda_device}"
 
-    # Create per-worker copy if it doesn't exist
+    # Create lightweight per-worker dir: symlink venv/data/config, copy only train.py
     rc, out = run_cmd(
-        f"test -d {train_dir} || cp -r {base_dir} {train_dir}"
+        f"test -d {train_dir} || ("
+        f"mkdir -p {train_dir} && "
+        f"ln -sf {base_dir}/.venv {train_dir}/.venv && "
+        f"ln -sf {base_dir}/data {train_dir}/data && "
+        f"ln -sf {base_dir}/pyproject.toml {train_dir}/pyproject.toml && "
+        f"ln -sf {base_dir}/uv.lock {train_dir}/uv.lock && "
+        f"ln -sf {base_dir}/.python-version {train_dir}/.python-version && "
+        f"cp {base_dir}/train.py {train_dir}/train.py && "
+        f"cp {base_dir}/prepare.py {train_dir}/prepare.py"
+        f")"
     )
     if rc != 0:
         logger.warning("Failed to create per-GPU dir %s: %s", train_dir, out)
@@ -234,6 +243,8 @@ def make_shell_executor(
     cuda_device: str = None,
     work_dir: str = None,
     base_script: str = None,
+    max_timesteps: int = None,
+    max_n_envs: int = None,
 ):
     """Generic executor that runs a shell command with intervention_spec as env vars.
 
@@ -250,6 +261,8 @@ def make_shell_executor(
         ssh_key: SSH key path (only used with ssh_host).
         work_dir: Working directory for code_change file writes. Required for code_change.
         base_script: Path to the base training script to reset before each run.
+        max_timesteps: If set, cap total_timesteps in code_change Python files to this value.
+        max_n_envs: If set, cap n_envs in code_change Python files to this value.
     """
     import base64 as b64mod
 
@@ -270,6 +283,10 @@ def make_shell_executor(
         spec = proposal.intervention_spec
         itype = proposal.intervention_type
 
+        # Always reset base script before any run (prevents stale scripts from prior code_changes)
+        if base_script:
+            run_cmd(f"cp {base_script} {work_dir}/$(basename {base_script})")
+
         # Handle code_change: apply diff or write file_changes before running
         if itype == "code_change" and work_dir:
             diff_content = spec.get("diff")
@@ -277,10 +294,6 @@ def make_shell_executor(
 
             if not diff_content and not file_changes:
                 raise ValueError("code_change requires 'diff' or 'file_changes' in intervention_spec")
-
-            # Always reset base script first
-            if base_script:
-                run_cmd(f"cp {base_script} {work_dir}/$(basename {base_script})")
 
             if diff_content:
                 # Apply unified diff via patch
@@ -294,8 +307,49 @@ def make_shell_executor(
                 logger.info("code_change: applied diff (%d bytes)", len(diff_content))
             else:
                 # Write full file replacements
+                # Inject a wall-time guard into Python scripts to prevent runaways
+                timeout_guard = (
+                    "import signal,sys\n"
+                    f"signal.signal(signal.SIGALRM,lambda s,f:(print('WALL TIME LIMIT EXCEEDED',file=sys.stderr),sys.exit(1)))\n"
+                    f"signal.alarm({timeout - 30})\n"
+                )
                 for filename, content in file_changes.items():
                     safe_name = filename.replace("/", "_").replace("..", "_")
+                    # Inject timeout guard after imports for .py files
+                    if safe_name.endswith(".py") and "signal.alarm" not in content:
+                        # Insert after the last top-level import block
+                        lines = content.split("\n")
+                        insert_idx = 0
+                        for i, line in enumerate(lines):
+                            stripped = line.strip()
+                            if stripped.startswith("import ") or stripped.startswith("from "):
+                                insert_idx = i + 1
+                            elif stripped and not stripped.startswith("#") and not stripped.startswith('"""') and not stripped.startswith("'''") and insert_idx > 0:
+                                break
+                        if insert_idx > 0:
+                            lines.insert(insert_idx, timeout_guard)
+                            content = "\n".join(lines)
+                            logger.info("code_change: injected %ds wall-time guard into %s", timeout - 30, safe_name)
+                    # Cap total_timesteps and n_envs if limits are set
+                    if safe_name.endswith(".py"):
+                        if max_timesteps:
+                            capped = re.sub(
+                                r'(total_timesteps\s*=\s*)(\d[\d_]*)',
+                                lambda m: m.group(1) + str(max_timesteps) if int(m.group(2).replace('_', '')) > max_timesteps else m.group(0),
+                                content,
+                            )
+                            if capped != content:
+                                logger.info("code_change: capped total_timesteps to %d in %s", max_timesteps, safe_name)
+                                content = capped
+                        if max_n_envs:
+                            capped = re.sub(
+                                r'(n_envs\s*=\s*)(\d+)',
+                                lambda m: m.group(1) + str(max_n_envs) if int(m.group(2)) > max_n_envs else m.group(0),
+                                content,
+                            )
+                            if capped != content:
+                                logger.info("code_change: capped n_envs to %d in %s", max_n_envs, safe_name)
+                                content = capped
                     b64 = b64mod.b64encode(content.encode()).decode()
                     rc, out = run_cmd(
                         f"python3 -c \"import base64; open('{work_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
@@ -338,11 +392,19 @@ def make_shell_executor(
             if m:
                 metrics[name] = float(m.group(1))
 
+        # Parse artifact paths from stdout (format: "artifact_<name>: /path/to/file")
+        artifact_paths = {}
+        for m in re.finditer(r"artifact_(\w+):\s+(.+)", out):
+            artifact_paths[m.group(1)] = m.group(2).strip()
+
         exec_result = {
             "metrics": metrics,
             "compute_cost": wall_time / 3600,
             "raw_log": out[-2000:] if len(out) > 2000 else out,
         }
+
+        if artifact_paths:
+            exec_result["artifact_paths"] = artifact_paths
 
         if cost_data:
             exec_result["energy_kwh"] = cost_data.get("energy_kwh")

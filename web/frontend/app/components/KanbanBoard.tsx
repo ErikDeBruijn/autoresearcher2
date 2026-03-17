@@ -34,12 +34,16 @@ function WorkerSlot({
   info,
   selectedObservationId,
   onSelectObservation,
+  onDragStart,
+  onDragEnd,
 }: {
   workerId: string;
   proposals: ProposalWithWorker[];
   info?: WorkerInfo;
   selectedObservationId?: string;
   onSelectObservation?: (obsId: string) => void;
+  onDragStart?: (e: React.DragEvent, proposalId: string) => void;
+  onDragEnd?: () => void;
 }) {
   const active = proposals.length > 0;
   return (
@@ -54,7 +58,15 @@ function WorkerSlot({
       {proposals.length > 0 ? (
         <div className="space-y-2">
           {proposals.map((p) => (
-            <ProposalCard key={p.id} proposal={p} isHighlighted={!!selectedObservationId && p.observation_id === selectedObservationId} onSelectObservation={onSelectObservation} />
+            <div
+              key={p.id}
+              draggable
+              onDragStart={(e) => onDragStart?.(e, p.id)}
+              onDragEnd={onDragEnd}
+              className="cursor-grab active:cursor-grabbing"
+            >
+              <ProposalCard proposal={p} isHighlighted={!!selectedObservationId && p.observation_id === selectedObservationId} onSelectObservation={onSelectObservation} />
+            </div>
           ))}
         </div>
       ) : (
@@ -75,6 +87,7 @@ export default function KanbanBoard() {
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [trashOver, setTrashOver] = useState(false);
   const [pipelineActivity, setPipelineActivity] = useState<{ phase?: string; proposal_id?: string } | null>(null);
+  const [activeWorkerIds, setActiveWorkerIds] = useState<Set<string>>(new Set());
 
   const toggleProject = useCallback((projectId: string) => {
     setVisibleProjects((prev) => {
@@ -88,32 +101,74 @@ export default function KanbanBoard() {
     });
   }, []);
 
+  const toggleProjectActive = useCallback(async (projectId: string, active: boolean) => {
+    // Optimistic update
+    setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, active } : p));
+    try {
+      await fetch(`${API}/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active }),
+      });
+    } catch (e) {
+      console.error("Failed to toggle project active state", e);
+      // Revert on failure
+      setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, active: !active } : p));
+    }
+  }, []);
+
+  const setProjectPriority = useCallback(async (projectId: string, priority: string) => {
+    // Optimistic update
+    setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, priority } : p));
+    try {
+      await fetch(`${API}/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priority }),
+      });
+    } catch (e) {
+      console.error("Failed to set project priority", e);
+    }
+  }, []);
+
   // Build project lookup for enriching proposals with name/color
   const projectMap = new Map(projects.map((p, i) => [p.id, { ...p, color: getProjectColor(i) }]));
 
-  // Compute which proposals set a new record (running minimum val_bpb per project)
+  // Compute which proposals set a new record (per project, using target metric + optimize direction)
   const recordIds = useMemo(() => {
     const allProposals: ProposalWithWorker[] = [];
     for (const stage of Object.values(queue)) {
       if (Array.isArray(stage)) allProposals.push(...stage);
     }
-    // Sort by created_at ascending
+
+    // Build per-project metric config
+    const metricConfig: Record<string, { metric: string; maximize: boolean }> = {};
+    for (const p of projects) {
+      metricConfig[p.id] = {
+        metric: p.domain_config?.target_metric || "val_bpb",
+        maximize: p.domain_config?.optimize === "maximize",
+      };
+    }
+
     const sorted = allProposals
-      .filter((p) => p.observation?.outcome_success && p.observation?.outcome_metrics?.val_bpb != null)
+      .filter((p) => p.observation?.outcome_success && p.observation?.outcome_metrics)
       .sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
 
     const records = new Set<string>();
     const bestByProject: Record<string, number> = {};
     for (const p of sorted) {
       const pid = p.project_id || "__none__";
-      const val = p.observation!.outcome_metrics!.val_bpb;
-      if (bestByProject[pid] === undefined || val < bestByProject[pid]) {
+      const cfg = p.project_id ? metricConfig[p.project_id] : { metric: "val_bpb", maximize: false };
+      if (!cfg) continue;
+      const val = p.observation!.outcome_metrics![cfg.metric];
+      if (val == null) continue;
+      if (bestByProject[pid] === undefined || (cfg.maximize ? val > bestByProject[pid] : val < bestByProject[pid])) {
         bestByProject[pid] = val;
         records.add(p.id);
       }
     }
     return records;
-  }, [queue]);
+  }, [queue, projects]);
 
   const enrichProposal = useCallback((p: ProposalWithWorker): ProposalWithWorker => {
     const proj = p.project_id ? projectMap.get(p.project_id) : null;
@@ -122,6 +177,8 @@ export default function KanbanBoard() {
       project_name: proj?.name,
       project_color: proj?.color,
       is_record: recordIds.has(p.id),
+      target_metric: proj?.domain_config?.target_metric || "val_bpb",
+      optimize: proj?.domain_config?.optimize || "minimize",
     };
   }, [projectMap, recordIds]);
 
@@ -140,6 +197,7 @@ export default function KanbanBoard() {
       ]);
       setQueue(queueRes);
       setWorkers(statsRes.workers || {});
+      setActiveWorkerIds(new Set(statsRes.active_worker_ids || []));
       setPipelineActivity(statsRes.pipeline_activity || null);
       setProjects(projectsRes);
       setLoading(false);
@@ -154,6 +212,43 @@ export default function KanbanBoard() {
     return () => clearInterval(id);
   }, [fetchData]);
 
+  // Update page title with active projects and their best scores
+  useEffect(() => {
+    const getEmoji = (name: string) => {
+      const lower = name.toLowerCase();
+      if (lower.includes("atari") || lower.includes("breakout") || lower.includes("pong")) return "🕹️";
+      if (lower.includes("gpt") || lower.includes("llm") || lower.includes("nano")) return "💬";
+      return "🔬";
+    };
+
+    const activeProjects = projects.filter((p) => p.active);
+    if (activeProjects.length === 0) {
+      document.title = "AR2";
+      return;
+    }
+    // Compute best score per active project from queue data
+    const allProposals: ProposalWithWorker[] = [];
+    for (const stage of Object.values(queue)) {
+      if (Array.isArray(stage)) allProposals.push(...stage);
+    }
+    const parts = activeProjects.map((proj) => {
+      const metric = proj.domain_config?.target_metric || "val_bpb";
+      const maximize = proj.domain_config?.optimize === "maximize";
+      let best: number | null = null;
+      for (const p of allProposals) {
+        if (p.project_id !== proj.id) continue;
+        const val = p.observation?.outcome_metrics?.[metric];
+        if (val != null && p.observation?.outcome_success) {
+          if (best === null || (maximize ? val > best : val < best)) best = val;
+        }
+      }
+      const emoji = getEmoji(proj.name);
+      const score = best != null ? best.toFixed(4) : "";
+      return `${emoji}${score}`;
+    });
+    document.title = `AR2 ${parts.join(" ")}`;
+  }, [projects, queue]);
+
   const moveProposal = async (proposalId: string, targetStage: string) => {
     await fetch(`${API}/api/proposals/${proposalId}/promote?target_stage=${targetStage}`, {
       method: "POST",
@@ -166,8 +261,9 @@ export default function KanbanBoard() {
     fetchData();
   };
 
-  const handleDragStart = (e: React.DragEvent, proposalId: string) => {
+  const handleDragStart = (e: React.DragEvent, proposalId: string, fromStage?: string) => {
     e.dataTransfer.setData("text/plain", proposalId);
+    e.dataTransfer.setData("application/x-stage", fromStage || "");
     e.dataTransfer.effectAllowed = "move";
     setDragging(true);
   };
@@ -192,11 +288,23 @@ export default function KanbanBoard() {
     }
   };
 
+  const cancelProposal = async (proposalId: string) => {
+    await fetch(`${API}/api/proposals/${proposalId}/cancel`, { method: "POST" });
+    fetchData();
+  };
+
   const handleDrop = (e: React.DragEvent, stageKey: string) => {
     e.preventDefault();
     const proposalId = e.dataTransfer.getData("text/plain");
+    const fromStage = e.dataTransfer.getData("application/x-stage");
     if (proposalId && DROP_TARGETS.has(stageKey)) {
-      moveProposal(proposalId, stageKey);
+      if (fromStage === "running") {
+        if (window.confirm("Cancel this running experiment and move it back to Proposed?")) {
+          cancelProposal(proposalId);
+        }
+      } else {
+        moveProposal(proposalId, stageKey);
+      }
     }
     setDragOverStage(null);
     setDragging(false);
@@ -225,9 +333,10 @@ export default function KanbanBoard() {
   // Build worker slots for the Running column (always unfiltered)
   const runningProposals = ((queue["running"] || []) as ProposalWithWorker[]).map(enrichProposal);
 
-  // Determine worker IDs: known workers from stats + any from running proposals
+  // Determine worker IDs: active workers + any from running proposals
+  // (excludes old/retired workers that only have historical data)
   const workerIds = new Set<string>();
-  Object.keys(workers).forEach((w) => workerIds.add(w));
+  activeWorkerIds.forEach((w) => workerIds.add(w));
   runningProposals.forEach((p) => {
     if (p.worker_id) workerIds.add(p.worker_id);
   });
@@ -242,7 +351,7 @@ export default function KanbanBoard() {
     (p) => !p.worker_id || !workerIds.has(p.worker_id)
   );
 
-  const isDraggable = (stageKey: string) => stageKey === "backlog" || stageKey === "todo";
+  const isDraggable = (stageKey: string) => stageKey === "backlog" || stageKey === "todo" || stageKey === "running";
   const isDropTarget = (stageKey: string) => DROP_TARGETS.has(stageKey);
 
   return (
@@ -251,6 +360,8 @@ export default function KanbanBoard() {
         projects={projects}
         visibleProjects={visibleProjects}
         onToggle={toggleProject}
+        onToggleActive={toggleProjectActive}
+        onSetPriority={setProjectPriority}
         selectedObservationId={selectedObservationId}
         onSelectObservation={setSelectedObservationId}
       />
@@ -296,6 +407,8 @@ export default function KanbanBoard() {
                       info={workers[wid]}
                       selectedObservationId={selectedObservationId}
                       onSelectObservation={setSelectedObservationId}
+                      onDragStart={(e, id) => handleDragStart(e, id, "running")}
+                      onDragEnd={handleDragEnd}
                     />
                   ))}
                   {unassigned.length > 0 && (

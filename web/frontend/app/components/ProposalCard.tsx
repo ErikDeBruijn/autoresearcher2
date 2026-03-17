@@ -10,6 +10,7 @@ interface ObservationData {
   energy_kwh: number | null;
   cost_eur: number | null;
   avg_power_w: number | null;
+  artifact_paths: Record<string, string> | null;
 }
 
 interface WorldModelUpdate {
@@ -36,6 +37,11 @@ interface Proposal {
   project_name?: string;
   project_color?: string;
   is_record?: boolean;
+  target_metric?: string;
+  optimize?: string;
+  started_at?: number | null;
+  promoted_at?: number | null;
+  finished_at?: number | null;
 }
 
 const typeColors: Record<string, string> = {
@@ -108,15 +114,27 @@ export default function ProposalCard({
         <span className={`text-xs px-1.5 py-0.5 rounded border ${typeColors[proposal.intervention_type] || "bg-gray-800 text-gray-400 border-gray-600"}`}>
           {proposal.intervention_type}
         </span>
-        <span className="text-xs text-gray-500">{timeAgo(proposal.created_at)}</span>
+        <span className="text-xs text-gray-500">{timeAgo(
+          proposal.status === "running" ? (proposal.started_at || proposal.created_at)
+          : proposal.status === "done" || proposal.status === "reviewed" ? (proposal.finished_at || proposal.created_at)
+          : (proposal.promoted_at || proposal.created_at)
+        )}</span>
         {proposal.is_record && (
           <span className="text-xs text-amber-400">🥇 New best</span>
         )}
-        {proposal.observation?.outcome_metrics?.val_bpb != null && (
-          <span className="text-xs font-mono font-bold text-cyan-300">
-            val_bpb: {proposal.observation.outcome_metrics.val_bpb.toFixed(4)}
-          </span>
+        {proposal.observation?.artifact_paths?.video && (
+          <span className="text-xs text-gray-500" title="Has gameplay video">🎬</span>
         )}
+        {proposal.observation?.outcome_metrics && (() => {
+          const metric = proposal.target_metric || "val_bpb";
+          const val = proposal.observation!.outcome_metrics![metric];
+          if (val == null) return null;
+          return (
+            <span className="text-xs font-mono font-bold text-cyan-300">
+              {metric}: {typeof val === "number" ? val.toFixed(4) : String(val)}
+            </span>
+          );
+        })()}
         {proposal.observation?.cost_eur != null && (
           <span className="text-xs text-emerald-400">{proposal.observation.cost_eur.toFixed(3)}€</span>
         )}
@@ -180,6 +198,18 @@ export default function ProposalCard({
               {proposal.observation.error && (
                 <div className="text-red-400 bg-red-950 p-2 rounded mt-1 break-all">
                   {proposal.observation.error.slice(0, 200)}
+                </div>
+              )}
+              {proposal.observation.artifact_paths?.video && proposal.observation_id && (
+                <div className="mt-2">
+                  <video
+                    src={`${process.env.NEXT_PUBLIC_API_URL || ""}/api/artifacts/${proposal.observation_id}/video`}
+                    controls
+                    muted
+                    loop
+                    className="w-full max-w-[300px] rounded border border-gray-700"
+                    preload="metadata"
+                  />
                 </div>
               )}
             </div>

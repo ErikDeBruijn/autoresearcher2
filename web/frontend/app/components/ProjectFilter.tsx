@@ -8,6 +8,8 @@ interface Project {
   name: string;
   description: string;
   active: boolean;
+  priority?: string;
+  expected_gain?: number | null;
   domain_config?: { target_metric?: string; optimize?: string } | null;
   energy_kwh?: number;
   cost_eur?: number;
@@ -270,16 +272,29 @@ function ProgressChart({ observations, metric, color, optimize = "minimize", sel
   );
 }
 
+const PRIORITY_OPTIONS = [
+  { value: "auto", label: "Auto", color: "text-blue-400" },
+  { value: "exclusive", label: "Exclusive", color: "text-red-400" },
+  { value: "high", label: "High", color: "text-yellow-400" },
+  { value: "normal", label: "Normal", color: "text-green-400" },
+  { value: "low", label: "Low", color: "text-gray-400" },
+  { value: "paused", label: "Paused", color: "text-gray-600" },
+] as const;
+
 export default function ProjectFilter({
   projects,
   visibleProjects,
   onToggle,
+  onToggleActive,
+  onSetPriority,
   selectedObservationId,
   onSelectObservation,
 }: {
   projects: Project[];
   visibleProjects: Set<string>;
   onToggle: (projectId: string) => void;
+  onToggleActive: (projectId: string, active: boolean) => void;
+  onSetPriority?: (projectId: string, priority: string) => void;
   selectedObservationId?: string;
   onSelectObservation?: (obsId: string) => void;
 }) {
@@ -322,6 +337,13 @@ export default function ProjectFilter({
 
   const getTargetMetric = (p: Project) => p.domain_config?.target_metric || "val_bpb";
 
+  const getProjectEmoji = (name: string) => {
+    const lower = name.toLowerCase();
+    if (lower.includes("atari") || lower.includes("breakout") || lower.includes("pong")) return "👾";
+    if (lower.includes("gpt") || lower.includes("llm") || lower.includes("nano")) return "💬";
+    return "🔬";
+  };
+
   return (
     <div className="bg-gray-900 border-b border-gray-800">
       {projects.map((p, i) => {
@@ -339,6 +361,30 @@ export default function ProjectFilter({
               className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-800/50 transition-colors"
               onClick={() => setExpandedProject(expanded ? null : p.id)}
             >
+              {/* Priority dropdown */}
+              <select
+                value={p.priority || "auto"}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  const priority = e.target.value;
+                  if (onSetPriority) {
+                    onSetPriority(p.id, priority);
+                  }
+                  // Also sync active flag: paused=inactive, everything else=active
+                  onToggleActive(p.id, priority !== "paused");
+                }}
+                className={`text-xs font-mono rounded border border-gray-700 bg-gray-800 px-1.5 py-0.5 cursor-pointer focus:outline-none focus:border-gray-500 ${
+                  PRIORITY_OPTIONS.find((o) => o.value === (p.priority || "auto"))?.color || "text-blue-400"
+                }`}
+                title={`Priority${p.priority === "auto" && p.expected_gain != null ? ` (gain: ${p.expected_gain.toFixed(2)})` : ""}`}
+              >
+                {PRIORITY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}{opt.value === "auto" && p.expected_gain != null ? ` (${p.expected_gain.toFixed(2)})` : ""}
+                  </option>
+                ))}
+              </select>
+
               {/* Visibility toggle (eye icon) */}
               <button
                 onClick={(e) => { e.stopPropagation(); onToggle(p.id); }}
@@ -350,7 +396,7 @@ export default function ProjectFilter({
 
               {/* Project name */}
               <span className={`flex items-center gap-1.5 text-xs font-medium ${visible ? "text-gray-200" : "text-gray-500"}`}>
-                <span className={`w-2 h-2 rounded-full ${color}`} />
+                <span>{getProjectEmoji(p.name)}</span>
                 {p.name}
               </span>
 
@@ -385,7 +431,6 @@ export default function ProjectFilter({
 
               <span className="text-xs text-gray-600">{expanded ? "▼" : "▶"}</span>
 
-              {!p.active && <span className="text-xs text-gray-600">(paused)</span>}
             </div>
 
             {/* Collapsible chart */}

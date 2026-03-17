@@ -139,8 +139,8 @@ def test_domain_config_reaches_prompt(store):
                       min_todo=2, n_proposals=2, domain=ATARI_DOMAIN)
     planner.tick()
 
-    # The generator prompt should mention Atari
+    # The generator prompt should mention CartPole
     gen_prompts = [p for p in prompts_seen if "Generate" in p]
     assert len(gen_prompts) > 0
-    assert "Atari" in gen_prompts[0]
+    assert "Breakout" in gen_prompts[0]
     assert "NanoGPT" not in gen_prompts[0]
