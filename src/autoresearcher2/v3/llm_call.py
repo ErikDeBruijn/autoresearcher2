@@ -5,12 +5,14 @@ Generic function that any component can use for LLM calls.
 
 import json
 import logging
+import os
 import re
 import subprocess
 
 logger = logging.getLogger(__name__)
 
-from autoresearcher2.v3.executors import _DEFAULT_SSH_HOST, _DEFAULT_SSH_KEY
+_DEFAULT_SSH_HOST = os.environ.get("AUTORESEARCHER_SSH_HOST", "root@dllm-experiment.local")
+_DEFAULT_SSH_KEY = os.environ.get("AUTORESEARCHER_SSH_KEY", "~/.ssh/pve03_key")
 
 
 def call_llm(
