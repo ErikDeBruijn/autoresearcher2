@@ -307,17 +307,7 @@ def get_world_model(project_id: str = None):
         if project_id:
             wm = store.load_world_model(project_id=project_id)
         else:
-            # Find the first active project with a world model
-            projects = store.list_projects(active_only=True)
-            wm = None
-            for p in projects:
-                candidate = store.load_world_model(project_id=p["id"])
-                if candidate.version > 0:
-                    if wm is None or candidate.version > wm.version:
-                        wm = candidate
-            if wm is None:
-                # Fallback to default (no project)
-                wm = store.load_world_model()
+            wm = store.load_best_world_model()
         return wm.to_dict()
 
 
@@ -335,13 +325,7 @@ def get_stats():
         observations = store.list_observations()
         history = store.get_world_model_history()
 
-        # Find the best world model across all active projects
-        wm = store.load_world_model()  # default (no project)
-        projects = store.list_projects(active_only=True)
-        for p in projects:
-            candidate = store.load_world_model(project_id=p["id"])
-            if candidate.version > wm.version:
-                wm = candidate
+        wm = store.load_best_world_model()
 
         # Worker stats
         worker_times: dict[str, list[float]] = {}

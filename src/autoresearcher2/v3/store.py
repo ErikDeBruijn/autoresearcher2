@@ -402,6 +402,15 @@ class Store:
         wm.version = row["version"]
         return wm
 
+    def load_best_world_model(self) -> WorldModel:
+        """Load the highest-version world model across all active projects."""
+        wm = self.load_world_model()
+        for p in self.list_projects(active_only=True):
+            candidate = self.load_world_model(project_id=p["id"])
+            if candidate.version > wm.version:
+                wm = candidate
+        return wm
+
     def save_world_model(self, wm: WorldModel, trigger_obs_id: str = None,
                          delta: dict = None, reasoning: str = None,
                          project_id: str = None):
