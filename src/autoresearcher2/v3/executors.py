@@ -83,6 +83,9 @@ def _apply_code_changes(run_cmd, spec: dict, work_dir: str) -> None:
                 raise RuntimeError(f"Failed to write {safe_name}: {out[-300:]}")
             logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
 
+_DEFAULT_SYMLINKS = [".venv", "data", "pyproject.toml", "uv.lock", ".python-version"]
+
+
 def make_sed_patch_executor(
     ssh_host: str = _DEFAULT_SSH_HOST,
     ssh_key: str = _DEFAULT_SSH_KEY,
@@ -93,6 +96,7 @@ def make_sed_patch_executor(
     metric_patterns: dict[str, str] = None,
     script_name: str = "train.py",
     extra_files: list[str] = None,
+    symlinks: list[str] = None,
 ):
     """Create an executor that patches a script's top-level assignments via sed.
 
@@ -106,7 +110,9 @@ def make_sed_patch_executor(
 
     Args:
         script_name: The main script filename to patch and run (default: "train.py").
-        extra_files: Additional files to copy to the per-GPU directory (e.g. ["prepare.py"]).
+        extra_files: Additional files to copy to the per-GPU directory.
+        symlinks: Files/dirs to symlink from base_dir into per-GPU dir.
+            Defaults to _DEFAULT_SYMLINKS (uv Python project layout).
         metric_patterns: Dict of {metric_name: regex_pattern} to extract from output.
             Each pattern should have one capture group for the numeric value.
             Defaults to empty (no metrics parsed).
@@ -114,7 +120,9 @@ def make_sed_patch_executor(
     if metric_patterns is None:
         metric_patterns = {}
     if extra_files is None:
-        extra_files = ["prepare.py"]
+        extra_files = []
+    if symlinks is None:
+        symlinks = _DEFAULT_SYMLINKS
 
     run_cmd = _make_run_cmd(
         ssh_host=None if local else ssh_host,
@@ -127,21 +135,16 @@ def make_sed_patch_executor(
     # Per-GPU working directory to avoid concurrent sed-patching
     work_dir = f"{base_dir}_gpu{cuda_device}"
 
-    # Create lightweight per-worker dir: symlink venv/data/config, copy script
+    # Create lightweight per-worker dir: symlink shared resources, copy script
+    symlink_cmds = " && ".join(f"ln -sf {base_dir}/{s} {work_dir}/{s}" for s in symlinks)
     copy_cmds = f"cp {base_dir}/{script_name} {work_dir}/{script_name}"
     for f in extra_files:
         copy_cmds += f" && cp {base_dir}/{f} {work_dir}/{f}"
-    rc, out = run_cmd(
-        f"test -d {work_dir} || ("
-        f"mkdir -p {work_dir} && "
-        f"ln -sf {base_dir}/.venv {work_dir}/.venv && "
-        f"ln -sf {base_dir}/data {work_dir}/data && "
-        f"ln -sf {base_dir}/pyproject.toml {work_dir}/pyproject.toml && "
-        f"ln -sf {base_dir}/uv.lock {work_dir}/uv.lock && "
-        f"ln -sf {base_dir}/.python-version {work_dir}/.python-version && "
-        f"{copy_cmds}"
-        f")"
-    )
+    setup_cmd = f"mkdir -p {work_dir}"
+    if symlink_cmds:
+        setup_cmd += f" && {symlink_cmds}"
+    setup_cmd += f" && {copy_cmds}"
+    rc, out = run_cmd(f"test -d {work_dir} || ({setup_cmd})")
     if rc != 0:
         logger.warning("Failed to create per-GPU dir %s: %s", work_dir, out)
         work_dir = base_dir  # Fallback to shared dir

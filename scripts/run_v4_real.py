@@ -201,6 +201,7 @@ def main():
                     cuda_device=cuda_dev,
                     local=args.local_llm,
                     metric_patterns=NANOGPT_METRIC_PATTERNS,
+                    extra_files=["prepare.py"],
                 ),
                 cuda_device=cuda_dev,
             )
