@@ -21,6 +21,13 @@ from autoresearcher2.v3.proposal import Proposal
 from autoresearcher2.v3.observation import Observation
 
 
+def _with_project_filter(query: str, params: tuple, project_id: str = None) -> tuple[str, tuple]:
+    """Append 'AND project_id = ?' to a query if project_id is set."""
+    if project_id:
+        return query + " AND project_id = ?", params + (project_id,)
+    return query, params
+
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS projects (
     id            TEXT PRIMARY KEY,
@@ -340,15 +347,10 @@ class Store:
         return self._row_to_observation(row)
 
     def list_observations(self, project_id: str = None) -> list[Observation]:
-        if project_id:
-            rows = self.conn.execute(
-                "SELECT * FROM observations WHERE project_id = ? ORDER BY created_at",
-                (project_id,),
-            ).fetchall()
-        else:
-            rows = self.conn.execute(
-                "SELECT * FROM observations ORDER BY created_at"
-            ).fetchall()
+        query, params = _with_project_filter(
+            "SELECT * FROM observations WHERE 1=1", (), project_id
+        )
+        rows = self.conn.execute(query + " ORDER BY created_at", params).fetchall()
         return [self._row_to_observation(r) for r in rows]
 
     def _row_to_observation(self, row) -> Observation:
@@ -430,15 +432,11 @@ class Store:
 
     def get_world_model_history(self, project_id: str = None) -> list[dict]:
         """Return all world model versions with deltas."""
-        if project_id:
-            rows = self.conn.execute(
-                "SELECT version, created_at, trigger_obs_id, delta, reasoning FROM world_model WHERE project_id = ? ORDER BY version",
-                (project_id,),
-            ).fetchall()
-        else:
-            rows = self.conn.execute(
-                "SELECT version, created_at, trigger_obs_id, delta, reasoning FROM world_model ORDER BY version"
-            ).fetchall()
+        query, params = _with_project_filter(
+            "SELECT version, created_at, trigger_obs_id, delta, reasoning FROM world_model WHERE 1=1",
+            (), project_id
+        )
+        rows = self.conn.execute(query + " ORDER BY version", params).fetchall()
         return [
             {
                 "version": r["version"],
@@ -502,29 +500,19 @@ class Store:
         self.conn.commit()
 
     def list_proposals(self, stage: str, project_id: str = None) -> list[Proposal]:
-        if project_id:
-            rows = self.conn.execute(
-                "SELECT * FROM queue WHERE stage = ? AND project_id = ? ORDER BY rank ASC NULLS LAST, created_at ASC",
-                (stage, project_id),
-            ).fetchall()
-        else:
-            rows = self.conn.execute(
-                "SELECT * FROM queue WHERE stage = ? ORDER BY rank ASC NULLS LAST, created_at ASC",
-                (stage,),
-            ).fetchall()
+        query, params = _with_project_filter(
+            "SELECT * FROM queue WHERE stage = ?", (stage,), project_id
+        )
+        rows = self.conn.execute(
+            query + " ORDER BY rank ASC NULLS LAST, created_at ASC", params
+        ).fetchall()
         return [self._row_to_proposal(r) for r in rows]
 
     def count_proposals(self, stage: str, project_id: str = None) -> int:
-        if project_id:
-            row = self.conn.execute(
-                "SELECT COUNT(*) FROM queue WHERE stage = ? AND project_id = ?",
-                (stage, project_id),
-            ).fetchone()
-        else:
-            row = self.conn.execute(
-                "SELECT COUNT(*) FROM queue WHERE stage = ?", (stage,)
-            ).fetchone()
-        return row[0]
+        query, params = _with_project_filter(
+            "SELECT COUNT(*) FROM queue WHERE stage = ?", (stage,), project_id
+        )
+        return self.conn.execute(query, params).fetchone()[0]
 
     def move_proposal(self, proposal: Proposal, new_stage: str):
         proposal.promote(new_stage)
