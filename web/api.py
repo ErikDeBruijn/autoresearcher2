@@ -233,9 +233,7 @@ def get_expected_gain(project_id: str):
 def get_queue():
     """Get all proposals grouped by stage, with worker_id for running and observation data for done/reviewed."""
     with get_store() as store:
-        # Pre-load world model history for delta lookups
-        wm_history = store.get_world_model_history()
-        delta_by_obs = {h["trigger_obs_id"]: h for h in wm_history if h["trigger_obs_id"]}
+        delta_by_obs = None  # Lazy-loaded when needed for done/reviewed proposals
 
         stages: dict[str, list] = {}
         for stage in QUEUE_STAGES:
@@ -269,6 +267,9 @@ def get_queue():
                             "artifact_paths": obs.artifact_paths or {},
                         }
                     # Find the world model update triggered by this observation
+                    if delta_by_obs is None:
+                        wm_history = store.get_world_model_history()
+                        delta_by_obs = {h["trigger_obs_id"]: h for h in wm_history if h["trigger_obs_id"]}
                     wm_update = delta_by_obs.get(p.observation_id)
                     if wm_update:
                         d["world_model_update"] = {
