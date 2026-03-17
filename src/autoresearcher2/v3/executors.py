@@ -83,7 +83,7 @@ def _apply_code_changes(run_cmd, spec: dict, work_dir: str) -> None:
                 raise RuntimeError(f"Failed to write {safe_name}: {out[-300:]}")
             logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
 
-_DEFAULT_SYMLINKS = [".venv", "data", "pyproject.toml", "uv.lock", ".python-version"]
+_DEFAULT_SYMLINKS = []
 
 
 def make_sed_patch_executor(
@@ -114,7 +114,7 @@ def make_sed_patch_executor(
         script_name: The main script filename to patch and run (default: "train.py").
         extra_files: Additional files to copy to the per-GPU directory.
         symlinks: Files/dirs to symlink from base_dir into per-GPU dir.
-            Defaults to _DEFAULT_SYMLINKS (uv Python project layout).
+            Defaults to empty list (no symlinks).
         metric_patterns: Dict of {metric_name: regex_pattern} to extract from output.
             Each pattern should have one capture group for the numeric value.
             Defaults to empty (no metrics parsed).

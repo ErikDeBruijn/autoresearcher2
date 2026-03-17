@@ -205,6 +205,7 @@ def main():
                     local=args.local_llm,
                     metric_patterns=NANOGPT_METRIC_PATTERNS,
                     extra_files=["prepare.py"],
+                    symlinks=[".venv", "data", "pyproject.toml", "uv.lock", ".python-version"],
                 ),
                 cuda_device=cuda_dev,
             )
