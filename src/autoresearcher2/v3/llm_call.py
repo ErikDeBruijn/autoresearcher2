@@ -1,7 +1,6 @@
 """Reusable LLM call wrapper via claude -p over SSH.
 
-Wraps the existing SSH pattern from llm/proposal.py into a generic
-function that any v3 component can use.
+Generic function that any component can use for LLM calls.
 """
 
 import json

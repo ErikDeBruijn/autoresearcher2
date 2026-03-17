@@ -1,4 +1,4 @@
-"""SQLite storage backend for v4.0.
+"""SQLite storage backend.
 
 Three-layer schema:
 - observations: append-only reality contact (layer 1)
