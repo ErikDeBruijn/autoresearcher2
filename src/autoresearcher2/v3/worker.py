@@ -12,8 +12,6 @@ import time
 
 from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.observation import Observation
-from autoresearcher2.v3.proposal import Proposal
-from autoresearcher2.research.environment import Environment
 
 logger = logging.getLogger(__name__)
 
