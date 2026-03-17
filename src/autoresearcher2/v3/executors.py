@@ -83,7 +83,7 @@ def _apply_code_changes(run_cmd, spec: dict, work_dir: str) -> None:
                 raise RuntimeError(f"Failed to write {safe_name}: {out[-300:]}")
             logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
 
-def make_trainpy_executor(
+def make_sed_patch_executor(
     ssh_host: str = _DEFAULT_SSH_HOST,
     ssh_key: str = _DEFAULT_SSH_KEY,
     remote_dir: str = "~/github.com/karpathy/autoresearch",
@@ -91,23 +91,30 @@ def make_trainpy_executor(
     timeout: int = 900,
     local: bool = False,
     metric_patterns: dict[str, str] = None,
+    script_name: str = "train.py",
+    extra_files: list[str] = None,
 ):
-    """Create an executor for train.py-style experiments.
+    """Create an executor that patches a script's top-level assignments via sed.
 
-    Handles config_change (patches train.py knobs) and probe (limited steps).
+    For config_change: patches `knob = value` lines in the script via sed.
+    For probe: also patches a `num_steps` assignment to limit run length.
+    For code_change: writes file_changes to the working directory.
     Set local=True when running on the VM itself to skip SSH.
 
-    Each executor gets its own working copy of train.py to avoid race
-    conditions when multiple workers run concurrently.
+    Each executor gets its own working copy to avoid race conditions
+    when multiple workers run concurrently on different GPUs.
 
     Args:
+        script_name: The main script filename to patch and run (default: "train.py").
+        extra_files: Additional files to copy to the per-GPU directory (e.g. ["prepare.py"]).
         metric_patterns: Dict of {metric_name: regex_pattern} to extract from output.
             Each pattern should have one capture group for the numeric value.
-            Defaults to empty (no metrics parsed). Callers should pass
-            domain-specific patterns.
+            Defaults to empty (no metrics parsed).
     """
     if metric_patterns is None:
         metric_patterns = {}
+    if extra_files is None:
+        extra_files = ["prepare.py"]
 
     run_cmd = _make_run_cmd(
         ssh_host=None if local else ssh_host,
@@ -117,60 +124,62 @@ def make_trainpy_executor(
 
     # Expand ~ for local execution
     base_dir = remote_dir.replace("~", "/root") if local else remote_dir
-    # Per-GPU working directory to avoid concurrent sed-patching of same train.py
-    train_dir = f"{base_dir}_gpu{cuda_device}"
+    # Per-GPU working directory to avoid concurrent sed-patching
+    work_dir = f"{base_dir}_gpu{cuda_device}"
 
-    # Create lightweight per-worker dir: symlink venv/data/config, copy only train.py
+    # Create lightweight per-worker dir: symlink venv/data/config, copy script
+    copy_cmds = f"cp {base_dir}/{script_name} {work_dir}/{script_name}"
+    for f in extra_files:
+        copy_cmds += f" && cp {base_dir}/{f} {work_dir}/{f}"
     rc, out = run_cmd(
-        f"test -d {train_dir} || ("
-        f"mkdir -p {train_dir} && "
-        f"ln -sf {base_dir}/.venv {train_dir}/.venv && "
-        f"ln -sf {base_dir}/data {train_dir}/data && "
-        f"ln -sf {base_dir}/pyproject.toml {train_dir}/pyproject.toml && "
-        f"ln -sf {base_dir}/uv.lock {train_dir}/uv.lock && "
-        f"ln -sf {base_dir}/.python-version {train_dir}/.python-version && "
-        f"cp {base_dir}/train.py {train_dir}/train.py && "
-        f"cp {base_dir}/prepare.py {train_dir}/prepare.py"
+        f"test -d {work_dir} || ("
+        f"mkdir -p {work_dir} && "
+        f"ln -sf {base_dir}/.venv {work_dir}/.venv && "
+        f"ln -sf {base_dir}/data {work_dir}/data && "
+        f"ln -sf {base_dir}/pyproject.toml {work_dir}/pyproject.toml && "
+        f"ln -sf {base_dir}/uv.lock {work_dir}/uv.lock && "
+        f"ln -sf {base_dir}/.python-version {work_dir}/.python-version && "
+        f"{copy_cmds}"
         f")"
     )
     if rc != 0:
-        logger.warning("Failed to create per-GPU dir %s: %s", train_dir, out)
-        train_dir = base_dir  # Fallback to shared dir
+        logger.warning("Failed to create per-GPU dir %s: %s", work_dir, out)
+        work_dir = base_dir  # Fallback to shared dir
 
     def execute(proposal: Proposal) -> dict:
         spec = proposal.intervention_spec
         itype = proposal.intervention_type
 
         if itype not in ("config_change", "probe", "code_change"):
-            logger.warning("trainpy executor: unsupported type %s, dry-run", itype)
+            logger.warning("sed_patch executor: unsupported type %s, dry-run", itype)
             return {"metrics": {"unsupported": True}, "raw_log": f"dry-run for {itype}"}
 
-        # Reset train.py from base dir (working copy may not be a git repo)
-        run_cmd(f"cp {base_dir}/train.py {train_dir}/train.py")
+        # Reset script from base dir (working copy may not be a git repo)
+        run_cmd(f"cp {base_dir}/{script_name} {work_dir}/{script_name}")
 
         if itype == "code_change":
-            _apply_code_changes(run_cmd, spec, train_dir)
+            _apply_code_changes(run_cmd, spec, work_dir)
         else:
-            # Patch knobs from intervention_spec
+            # Patch top-level assignments from intervention_spec
             for knob, value in spec.items():
                 if knob == "run_steps":
-                    continue  # Not a train.py knob
-                run_cmd(f"sed -i 's/^{knob} = .*/{knob} = {value}/' {train_dir}/train.py")
+                    continue  # Meta-key for probe step limit
+                run_cmd(f"sed -i 's/^{knob} = .*/{knob} = {value}/' {work_dir}/{script_name}")
 
             # For probes, limit steps
             if itype == "probe" and "run_steps" in spec:
                 run_steps = spec["run_steps"]
-                run_cmd(f"sed -i 's/^num_steps = .*/num_steps = {run_steps}/' {train_dir}/train.py")
+                run_cmd(f"sed -i 's/^num_steps = .*/num_steps = {run_steps}/' {work_dir}/{script_name}")
 
-        # Run training
+        # Run script
         start = time.time()
         rc, out = run_cmd(
-            f"cd {train_dir} && CUDA_VISIBLE_DEVICES={cuda_device} uv run train.py 2>&1"
+            f"cd {work_dir} && CUDA_VISIBLE_DEVICES={cuda_device} uv run {script_name} 2>&1"
         )
         wall_time = time.time() - start
 
         if rc != 0:
-            raise RuntimeError(f"train.py failed (exit {rc}): {out[-500:]}")
+            raise RuntimeError(f"{script_name} failed (exit {rc}): {out[-500:]}")
 
         result = {
             "metrics": _parse_metrics(out, metric_patterns),
@@ -181,6 +190,10 @@ def make_trainpy_executor(
         return result
 
     return execute
+
+
+# Backward-compatible alias
+make_trainpy_executor = make_sed_patch_executor
 
 
 def make_shell_executor(
