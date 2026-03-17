@@ -501,19 +501,33 @@ async def delete_proposal(proposal_id: str):
 # --- Chat endpoint ---
 
 def _execute_chat_commands(response_text: str) -> str:
-    """Detect and execute structured commands in LLM chat response."""
-    # Look for CREATE_PROJECT command
-    pattern = r'```command\s*\n\s*CREATE_PROJECT\s+(\{.*?\})\s*\n\s*```'
+    """Detect and execute structured commands in LLM chat response.
+
+    Handles CREATE_PROJECT commands both inside ```command fences and bare.
+    Only processes the first CREATE_PROJECT to prevent duplicates.
+    Promotes top-level target_metric/optimize into domain_config.
+    """
+    # Look for CREATE_PROJECT command (fenced first, then bare)
+    pattern = r'```command\s*\n\s*CREATE_PROJECT\s+'
     match = _re.search(pattern, response_text, _re.DOTALL)
     if not match:
-        # Also try without code fence (LLM might not wrap it)
-        pattern2 = r'CREATE_PROJECT\s+(\{.*?\})'
-        match = _re.search(pattern2, response_text)
+        pattern = r'CREATE_PROJECT\s+'
+        match = _re.search(pattern, response_text)
     if not match:
         return response_text
 
     try:
-        cmd = json.loads(match.group(1))
+        # Use raw_decode to handle nested JSON (e.g. domain_config dicts)
+        json_start = match.end()
+        decoder = json.JSONDecoder()
+        cmd, json_end = decoder.raw_decode(response_text, json_start)
+        # Determine the full match span (command keyword + JSON + optional closing fence)
+        end_pos = json_end
+        fence_match = _re.match(r'\s*\n\s*```', response_text[end_pos:])
+        if fence_match:
+            end_pos += fence_match.end()
+        match_start = match.start()
+        match_end = end_pos
         name = cmd.get("name", "Unnamed Project")
         description = cmd.get("description", "")
         domain_type = cmd.get("domain_type", "generic")
@@ -525,6 +539,12 @@ def _execute_chat_commands(response_text: str) -> str:
         elif parameters:
             domain_cfg["parameters"] = parameters
 
+        # Promote top-level target_metric/optimize into domain_config
+        if domain_cfg is not None:
+            for key in ("target_metric", "optimize"):
+                if key not in domain_cfg and key in cmd:
+                    domain_cfg[key] = cmd[key]
+
         with get_store() as store:
             pid = store.create_project(
                 name=name,
@@ -534,7 +554,7 @@ def _execute_chat_commands(response_text: str) -> str:
 
         # Replace command block with success message
         success_msg = f"\n\n**Project created:** {name} (id: `{pid}`, domain: {domain_type})"
-        response_text = response_text[:match.start()] + success_msg + response_text[match.end():]
+        response_text = response_text[:match_start] + success_msg + response_text[match_end:]
     except json.JSONDecodeError as e:
         response_text += f"\n\n(Failed to parse project command: {e})"
     except Exception as e:

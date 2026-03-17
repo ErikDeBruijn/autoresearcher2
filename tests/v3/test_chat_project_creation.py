@@ -130,3 +130,32 @@ CREATE_PROJECT {"name": "Custom Experiment", "description": "Optimize enzyme act
     assert cfg["name"] == "Enzyme optimization"
     assert cfg["target_metric"] == "activity_score"
     assert cfg["optimize"] == "maximize"
+
+
+def test_top_level_target_metric_promoted_to_domain_config(store):
+    """target_metric and optimize at top level are promoted into domain_config."""
+    response = 'CREATE_PROJECT {"name": "Plant Growth", "target_metric": "growth_cm", "optimize": "maximize", "parameters": "light,water"}'
+
+    with patch("api.get_store", return_value=store):
+        result = _execute_chat_commands(response)
+
+    assert "Project created" in result
+    projects = store.list_projects()
+    assert len(projects) == 1
+    cfg = projects[0]["domain_config"]
+    assert cfg["target_metric"] == "growth_cm"
+    assert cfg["optimize"] == "maximize"
+    assert cfg["parameters"] == "light,water"
+
+
+def test_domain_config_target_metric_not_overwritten(store):
+    """Top-level target_metric does not overwrite domain_config's own target_metric."""
+    response = '''```command
+CREATE_PROJECT {"name": "Test", "target_metric": "wrong", "domain_config": {"target_metric": "correct", "parameters": "x"}}
+```'''
+
+    with patch("api.get_store", return_value=store):
+        _execute_chat_commands(response)
+
+    projects = store.list_projects()
+    assert projects[0]["domain_config"]["target_metric"] == "correct"
