@@ -72,7 +72,7 @@ def test_orientation_adds_tension():
     def mock_llm(prompt):
         return {
             "tensions_added": [
-                {"beliefs": ["B1", "B2"], "nature": "lr and depth may interact", "salience": "high"}
+                {"beliefs": ["B1", "B2"], "nature": "lr and depth may interact", "salience": 0.8}
             ],
         }
 

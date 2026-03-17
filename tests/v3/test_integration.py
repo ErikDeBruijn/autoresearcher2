@@ -36,7 +36,7 @@ class MockLLM:
             ],
             "tensions_added": [
                 {"beliefs": ["B1", "B3"], "nature": "lr=0.04 is strong but WD also matters",
-                 "salience": "medium"},
+                 "salience": 0.5},
             ],
             "cost_beliefs_updated": {"config_change": {"wall_time_s": 310}},
         }

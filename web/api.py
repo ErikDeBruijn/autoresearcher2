@@ -288,16 +288,6 @@ def get_queue():
         return stages
 
 
-@app.get("/api/queue/counts")
-def get_queue_counts():
-    """Get proposal counts per stage."""
-    with get_store() as store:
-        return {
-            stage: store.count_proposals(stage)
-            for stage in QUEUE_STAGES
-        }
-
-
 @app.get("/api/observations")
 def get_observations():
     """Get all observations."""
@@ -315,13 +305,6 @@ def get_world_model(project_id: str = None):
         else:
             wm = store.load_best_world_model()
         return wm.to_dict()
-
-
-@app.get("/api/world-model/history")
-def get_world_model_history():
-    """Get world model version history."""
-    with get_store() as store:
-        return store.get_world_model_history()
 
 
 @app.get("/api/stats")

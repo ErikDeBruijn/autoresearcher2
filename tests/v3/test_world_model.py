@@ -1,6 +1,6 @@
 """Tests for WorldModel — structured epistemic state."""
 import pytest
-from autoresearcher2.v3.world_model import WorldModel, _normalize_salience
+from autoresearcher2.v3.world_model import WorldModel, _clamp_salience
 
 
 def test_empty_world_model():
@@ -148,30 +148,23 @@ def test_no_probe_fidelity_attribute():
 
 
 def test_no_top_level_salience_attribute():
-    """Top-level salience dict was never populated — it should not exist on WorldModel.
-
-    Note: individual tensions still have a 'salience' field, which IS used.
-    """
+    """Top-level salience dict was never populated — it should not exist on WorldModel."""
     wm = WorldModel()
     assert not hasattr(wm, "salience")
 
 
-def test_salience_normalization():
-    """String salience values from LLM responses get normalized to float."""
-    assert _normalize_salience("high") == 0.8
-    assert _normalize_salience("medium") == 0.5
-    assert _normalize_salience("low") == 0.2
-    assert _normalize_salience("High") == 0.8
-    assert _normalize_salience(0.7) == 0.7
-    assert _normalize_salience("0.6") == 0.6
-    assert _normalize_salience(1.5) == 1.0  # clamped
-    assert _normalize_salience(-0.1) == 0.0  # clamped
-    assert _normalize_salience("garbage") == 0.5  # default
-    assert _normalize_salience(None) == 0.5  # default
+def test_salience_clamping():
+    """Salience values are clamped to 0.0-1.0 float range."""
+    assert _clamp_salience(0.7) == 0.7
+    assert _clamp_salience("0.6") == 0.6
+    assert _clamp_salience(1.5) == 1.0  # clamped
+    assert _clamp_salience(-0.1) == 0.0  # clamped
+    assert _clamp_salience("garbage") == 0.5  # default
+    assert _clamp_salience(None) == 0.5  # default
 
-    # Verify add_tension normalizes
+    # Verify add_tension clamps
     wm = WorldModel()
-    wm.add_tension(belief_ids=["B1"], nature="test", salience="high")
+    wm.add_tension(belief_ids=["B1"], nature="test", salience=0.8)
     assert wm.tensions[0]["salience"] == 0.8
-    wm.add_tension(belief_ids=["B1"], nature="test2", salience="low")
-    assert wm.tensions[1]["salience"] == 0.2
+    wm.add_tension(belief_ids=["B1"], nature="test2", salience=1.5)
+    assert wm.tensions[1]["salience"] == 1.0
