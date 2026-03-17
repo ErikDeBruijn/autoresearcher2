@@ -307,29 +307,8 @@ def make_shell_executor(
                 logger.info("code_change: applied diff (%d bytes)", len(diff_content))
             else:
                 # Write full file replacements
-                # Inject a wall-time guard into Python scripts to prevent runaways
-                timeout_guard = (
-                    "import signal,sys\n"
-                    f"signal.signal(signal.SIGALRM,lambda s,f:(print('WALL TIME LIMIT EXCEEDED',file=sys.stderr),sys.exit(1)))\n"
-                    f"signal.alarm({timeout - 30})\n"
-                )
                 for filename, content in file_changes.items():
                     safe_name = filename.replace("/", "_").replace("..", "_")
-                    # Inject timeout guard after imports for .py files
-                    if safe_name.endswith(".py") and "signal.alarm" not in content:
-                        # Insert after the last top-level import block
-                        lines = content.split("\n")
-                        insert_idx = 0
-                        for i, line in enumerate(lines):
-                            stripped = line.strip()
-                            if stripped.startswith("import ") or stripped.startswith("from "):
-                                insert_idx = i + 1
-                            elif stripped and not stripped.startswith("#") and not stripped.startswith('"""') and not stripped.startswith("'''") and insert_idx > 0:
-                                break
-                        if insert_idx > 0:
-                            lines.insert(insert_idx, timeout_guard)
-                            content = "\n".join(lines)
-                            logger.info("code_change: injected %ds wall-time guard into %s", timeout - 30, safe_name)
                     # Cap total_timesteps and n_envs if limits are set
                     if safe_name.endswith(".py"):
                         if max_timesteps:
