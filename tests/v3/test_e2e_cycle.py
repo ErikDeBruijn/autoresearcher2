@@ -1,4 +1,4 @@
-"""End-to-end test: full OODA cycle through workspace.
+"""End-to-end test: full OODA cycle through store.
 
 Tests v3.2 criterion: observation → orientation → generator → critic →
 worker → observation completes without manual intervention.

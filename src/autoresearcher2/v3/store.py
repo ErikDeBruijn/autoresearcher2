@@ -1,11 +1,9 @@
 """SQLite storage backend for v4.0.
 
-Replaces filesystem-based workspace with SQLite tables:
+Three-layer schema:
 - observations: append-only reality contact (layer 1)
 - world_model: versioned epistemic state (layer 2)
 - queue: kanban workflow with stage mutations (layer 3)
-
-Same API surface as Workspace so planner/worker code stays unchanged.
 """
 import json
 import logging
@@ -128,7 +126,7 @@ MIGRATIONS = [
 
 
 class Store:
-    """SQLite-backed research workspace."""
+    """SQLite-backed research store."""
 
     def __init__(self, db_path: Path | str):
         self.db_path = Path(db_path)

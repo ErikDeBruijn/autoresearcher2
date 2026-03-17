@@ -1,4 +1,4 @@
-"""Tests for Store — SQLite-backed research workspace (v4.0)."""
+"""Tests for Store — SQLite-backed research store (v4.0)."""
 import json
 import pytest
 from autoresearcher2.v3.store import Store
