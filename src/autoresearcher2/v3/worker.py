@@ -10,7 +10,7 @@ Polling loop that:
 import logging
 import time
 
-from autoresearcher2.v3.workspace import Workspace
+from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.observation import Observation
 from autoresearcher2.v3.proposal import Proposal
 from autoresearcher2.research.environment import Environment
@@ -23,13 +23,13 @@ class Worker:
 
     def __init__(
         self,
-        workspace: Workspace,
+        store: Store,
         execute_fn=None,
         worker_id: str = "worker_0",
         project_ids: list[str] | None = None,
         post_complete_fn=None,
     ):
-        self.workspace = workspace
+        self.store = store
         self.execute_fn = execute_fn
         self.worker_id = worker_id
         self.project_ids = project_ids
@@ -37,7 +37,7 @@ class Worker:
 
     def tick(self) -> dict | None:
         """Try to claim and execute one todo item. Returns observation dict or None."""
-        proposal = self.workspace.claim_next_todo(self.worker_id, project_ids=self.project_ids)
+        proposal = self.store.claim_next_todo(self.worker_id, project_ids=self.project_ids)
         if proposal is None:
             return None
 
@@ -75,7 +75,7 @@ class Worker:
                 worker_id=self.worker_id,
             )
 
-        self.workspace.complete_proposal(proposal, obs)
+        self.store.complete_proposal(proposal, obs)
         logger.info("[%s] Completed %s: success=%s, %.1fs",
                     self.worker_id, proposal.id, obs.outcome_success, wall_time)
 

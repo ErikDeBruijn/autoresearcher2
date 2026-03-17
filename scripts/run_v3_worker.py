@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from autoresearcher2.v3.workspace import Workspace
+from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.worker import Worker
 from autoresearcher2.v3.proposal import Proposal
 
@@ -50,7 +50,7 @@ def make_execute_fn(ssh_host: str | None = None):
 
 def main():
     parser = argparse.ArgumentParser(description="v3 Worker loop")
-    parser.add_argument("workspace", type=Path, help="Path to workspace directory")
+    parser.add_argument("database", type=Path, help="Path to SQLite database")
     parser.add_argument("--interval", type=float, default=30.0, help="Seconds between polls when idle")
     parser.add_argument("--max-ticks", type=int, default=None, help="Stop after N ticks")
     parser.add_argument("--worker-id", type=str, default="worker_0", help="Worker identifier")
@@ -58,10 +58,10 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Log interventions without executing")
     args = parser.parse_args()
 
-    ws = Workspace(args.workspace)
+    store = Store(args.database)
     execute_fn = make_execute_fn(args.ssh_host)
 
-    worker = Worker(ws, execute_fn=execute_fn, worker_id=args.worker_id)
+    worker = Worker(store, execute_fn=execute_fn, worker_id=args.worker_id)
 
     logger.info("Starting worker %s: interval=%ss", args.worker_id, args.interval)
     worker.run(poll_interval=args.interval, max_ticks=args.max_ticks)
