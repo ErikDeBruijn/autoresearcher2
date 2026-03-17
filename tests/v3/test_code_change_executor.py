@@ -11,7 +11,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from autoresearcher2.v3.proposal import Proposal
-from autoresearcher2.v3.executors import make_trainpy_executor, make_dry_run_executor
+from autoresearcher2.v3.executors import make_sed_patch_executor, make_dry_run_executor
 
 # Test-local metric patterns (domain-specific patterns live in calling scripts)
 _TEST_METRIC_PATTERNS = {
@@ -51,7 +51,7 @@ def test_code_change_writes_files(train_env):
     # Create executor with local=True so it uses bash directly
     with patch("autoresearcher2.v3.cost_tracker._start_cost_job", return_value=None), \
          patch("autoresearcher2.v3.cost_tracker._stop_cost_job", return_value=None):
-        executor = make_trainpy_executor(
+        executor = make_sed_patch_executor(
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,
@@ -79,7 +79,7 @@ def test_code_change_no_file_changes_raises():
 
     with patch("autoresearcher2.v3.cost_tracker._start_cost_job", return_value=None), \
          patch("autoresearcher2.v3.cost_tracker._stop_cost_job", return_value=None):
-        executor = make_trainpy_executor(
+        executor = make_sed_patch_executor(
             remote_dir="/tmp/test_autoresearch",
             cuda_device="0",
             local=True,
@@ -102,7 +102,7 @@ def test_code_change_sanitizes_filename(train_env):
 
     with patch("autoresearcher2.v3.cost_tracker._start_cost_job", return_value=None), \
          patch("autoresearcher2.v3.cost_tracker._stop_cost_job", return_value=None):
-        executor = make_trainpy_executor(
+        executor = make_sed_patch_executor(
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,
@@ -142,7 +142,7 @@ def test_code_change_multiple_files(train_env):
 
     with patch("autoresearcher2.v3.cost_tracker._start_cost_job", return_value=None), \
          patch("autoresearcher2.v3.cost_tracker._stop_cost_job", return_value=None):
-        executor = make_trainpy_executor(
+        executor = make_sed_patch_executor(
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,
@@ -169,7 +169,7 @@ def test_config_change_still_works(train_env):
 
     with patch("autoresearcher2.v3.cost_tracker._start_cost_job", return_value=None), \
          patch("autoresearcher2.v3.cost_tracker._stop_cost_job", return_value=None):
-        executor = make_trainpy_executor(
+        executor = make_sed_patch_executor(
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,
@@ -193,7 +193,7 @@ def test_unsupported_type_still_dry_runs(train_env):
 
     with patch("autoresearcher2.v3.cost_tracker._start_cost_job", return_value=None), \
          patch("autoresearcher2.v3.cost_tracker._stop_cost_job", return_value=None):
-        executor = make_trainpy_executor(
+        executor = make_sed_patch_executor(
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,
@@ -217,7 +217,7 @@ def test_code_change_with_single_quotes(train_env):
 
     with patch("autoresearcher2.v3.cost_tracker._start_cost_job", return_value=None), \
          patch("autoresearcher2.v3.cost_tracker._stop_cost_job", return_value=None):
-        executor = make_trainpy_executor(
+        executor = make_sed_patch_executor(
             remote_dir=str(train_env["base"]),
             cuda_device="0",
             local=True,

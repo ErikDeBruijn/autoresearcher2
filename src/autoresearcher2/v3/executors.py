@@ -192,9 +192,6 @@ def make_sed_patch_executor(
     return execute
 
 
-# Backward-compatible alias
-make_trainpy_executor = make_sed_patch_executor
-
 
 def make_shell_executor(
     command_template: str,
