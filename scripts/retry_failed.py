@@ -40,7 +40,7 @@ def main():
 
     env = TrainPyEnvironment(
         schema=SCHEMA,
-        ssh_host="root@dllm-experiment.home",
+        ssh_host="root@dllm-experiment.local",
         ssh_key="~/.ssh/pve03_key",
         remote_dir="~/github.com/karpathy/autoresearch",
         cuda_device="1",

@@ -23,7 +23,7 @@ log = logging.getLogger(__name__).info
 
 RUN_ID = uuid.uuid4().hex[:8]
 
-DEFAULT_SSH_HOST = "root@dllm-experiment.home"
+DEFAULT_SSH_HOST = "root@dllm-experiment.local"
 DEFAULT_SSH_KEY = "~/.ssh/pve03_key"
 DEFAULT_REMOTE_DIR = "~/github.com/karpathy/autoresearch-v2"
 DEFAULT_CUDA_DEVICE = "0"

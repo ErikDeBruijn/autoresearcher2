@@ -173,7 +173,7 @@ def main():
     parser = argparse.ArgumentParser(description="v2.0 test runner — pure LLM on GPU 0")
     parser.add_argument("--n-experiments", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=3)
-    parser.add_argument("--ssh-host", default="root@dllm-experiment.home")
+    parser.add_argument("--ssh-host", default="root@dllm-experiment.local")
     parser.add_argument("--ssh-key", default="~/.ssh/pve03_key")
     args = parser.parse_args()
 

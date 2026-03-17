@@ -71,7 +71,7 @@ def seed_world_model(store):
 def main():
     parser = argparse.ArgumentParser(description="v4 real-world research loop")
     parser.add_argument("--database", type=Path, default="research_v4.db")
-    parser.add_argument("--ssh-host", type=str, default="root@dllm-experiment.home")
+    parser.add_argument("--ssh-host", type=str, default="root@dllm-experiment.local")
     parser.add_argument("--ssh-key", type=str, default="~/.ssh/pve03_key")
     parser.add_argument("--cuda-device", type=str, default="1",
                         help="DEPRECATED: use --cuda-devices instead")

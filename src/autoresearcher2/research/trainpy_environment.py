@@ -17,7 +17,7 @@ class TrainPyEnvironment(Environment):
     def __init__(
         self,
         schema: InterventionSchema,
-        ssh_host: str = "root@dllm-experiment.home",
+        ssh_host: str = "root@dllm-experiment.local",
         ssh_key: str = "~/.ssh/pve03_key",
         remote_dir: str = "~/github.com/karpathy/autoresearch",
         cuda_device: str = "1",

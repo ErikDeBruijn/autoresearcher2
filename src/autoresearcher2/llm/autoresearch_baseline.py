@@ -26,7 +26,7 @@ class AutoresearchLLMAgent(BaselineAgent):
         self,
         schema: InterventionSchema,
         seed: int | None = None,
-        ssh_host: str = "root@dllm-experiment.home",
+        ssh_host: str = "root@dllm-experiment.local",
         ssh_key: str = "~/.ssh/pve03_key",
     ):
         super().__init__(schema)

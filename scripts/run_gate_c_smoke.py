@@ -8,7 +8,7 @@ Usage:
     uv run python scripts/run_gate_c_smoke.py
 
 Requirements:
-    - SSH access: ssh -i ~/.ssh/pve03_key root@dllm-experiment.home
+    - SSH access: ssh -i ~/.ssh/pve03_key root@dllm-experiment.local
     - Data shards present on VM (~/.cache/autoresearch/data/)
     - GPU available on VM
 """
@@ -19,7 +19,7 @@ import time
 import re
 from pathlib import Path
 
-VM_HOST = "root@dllm-experiment.home"
+VM_HOST = "root@dllm-experiment.local"
 SSH_KEY = "~/.ssh/pve03_key"
 REMOTE_DIR = "~/github.com/karpathy/autoresearch"
 

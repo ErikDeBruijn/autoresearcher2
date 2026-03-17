@@ -19,7 +19,7 @@ def propose_experiments(
     schema: InterventionSchema,
     history: list[dict],  # [{config, val_bpb, outcome, appraisal}, ...]
     factor_importances: dict[str, float],
-    ssh_host: str = "root@dllm-experiment.home",
+    ssh_host: str = "root@dllm-experiment.local",
     ssh_key: str = "~/.ssh/pve03_key",
 ) -> list[dict]:
     """Ask Claude to analyze results and suggest next experiments.

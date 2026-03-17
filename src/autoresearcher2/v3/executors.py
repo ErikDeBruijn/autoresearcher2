@@ -20,7 +20,7 @@ from autoresearcher2.v3.proposal import Proposal
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_SSH_HOST = os.environ.get("AUTORESEARCHER_SSH_HOST", "root@dllm-experiment.home")
+_DEFAULT_SSH_HOST = os.environ.get("AUTORESEARCHER_SSH_HOST", "root@dllm-experiment.local")
 _DEFAULT_SSH_KEY = os.environ.get("AUTORESEARCHER_SSH_KEY", "~/.ssh/pve03_key")
 
 
