@@ -6,11 +6,7 @@ or created new ones. Low learntropy = the observation confirmed what we already 
 
 This is calculated AFTER orientation, by comparing world model versions N and N+1.
 """
-import logging
-
 from autoresearcher2.v3.world_model import WorldModel
-
-logger = logging.getLogger(__name__)
 
 
 def compute_learntropy(wm_before: WorldModel, wm_after: WorldModel, delta: dict) -> float:
