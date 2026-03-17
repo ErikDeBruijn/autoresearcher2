@@ -4,6 +4,7 @@ Serves the SQLite Store via REST API + WebSocket for live updates.
 """
 import asyncio
 import json
+import logging
 import os
 import re as _re
 import subprocess
@@ -27,6 +28,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from autoresearcher2.v3.store import Store, QUEUE_STAGES
 from autoresearcher2.v3.proposal import Proposal
 from autoresearcher2.v3.executors import COST_TRACKER_URL
+
+logger = logging.getLogger(__name__)
 
 # --- Config ---
 DB_PATH = Path(__file__).parent.parent / "research_v4.db"
@@ -71,7 +74,7 @@ async def poll_store_changes():
                 last_counts = counts
                 await manager.broadcast({"type": "queue_update", "counts": counts})
         except Exception:
-            pass
+            logger.debug("poll_store_changes failed", exc_info=True)
 
 
 @asynccontextmanager
@@ -771,7 +774,7 @@ def get_worker_status():
                     "active_jobs": data.get("active_jobs", {}),
                 }
         except Exception:
-            pass
+            logger.debug("Cost tracker status fetch failed", exc_info=True)
 
         return {
             "running": active,

@@ -187,6 +187,14 @@ def with_cost_tracking(execute_fn, cuda_device: str | None = None):
     return execute
 
 
+NANOGPT_METRIC_PATTERNS = {
+    "val_bpb": r"val_bpb:\s+([\d.]+)",
+    "total_tokens_M": r"total_tokens_M:\s+([\d.]+)",
+    "num_steps": r"num_steps:\s+(\d+)",
+    "num_params_M": r"num_params_M:\s+([\d.]+)",
+}
+
+
 def make_trainpy_executor(
     ssh_host: str = _DEFAULT_SSH_HOST,
     ssh_key: str = _DEFAULT_SSH_KEY,
@@ -207,15 +215,10 @@ def make_trainpy_executor(
     Args:
         metric_patterns: Dict of {metric_name: regex_pattern} to extract from output.
             Each pattern should have one capture group for the numeric value.
-            Defaults to NanoGPT patterns (val_bpb, total_tokens_M, etc.).
+            Defaults to NANOGPT_METRIC_PATTERNS.
     """
     if metric_patterns is None:
-        metric_patterns = {
-            "val_bpb": r"val_bpb:\s+([\d.]+)",
-            "total_tokens_M": r"total_tokens_M:\s+([\d.]+)",
-            "num_steps": r"num_steps:\s+(\d+)",
-            "num_params_M": r"num_params_M:\s+([\d.]+)",
-        }
+        metric_patterns = NANOGPT_METRIC_PATTERNS
 
     run_cmd = _make_run_cmd(
         ssh_host=None if local else ssh_host,
