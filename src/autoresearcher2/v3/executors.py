@@ -188,15 +188,29 @@ def make_trainpy_executor(
     cuda_device: str = "1",
     timeout: int = 900,
     local: bool = False,
+    metric_patterns: dict[str, str] = None,
 ):
-    """Create an executor for NanoGPT train.py experiments.
+    """Create an executor for train.py-style experiments.
 
     Handles config_change (patches train.py knobs) and probe (limited steps).
     Set local=True when running on the VM itself to skip SSH.
 
     Each executor gets its own working copy of train.py to avoid race
     conditions when multiple workers run concurrently.
+
+    Args:
+        metric_patterns: Dict of {metric_name: regex_pattern} to extract from output.
+            Each pattern should have one capture group for the numeric value.
+            Defaults to NanoGPT patterns (val_bpb, total_tokens_M, etc.).
     """
+    if metric_patterns is None:
+        metric_patterns = {
+            "val_bpb": r"val_bpb:\s+([\d.]+)",
+            "total_tokens_M": r"total_tokens_M:\s+([\d.]+)",
+            "num_steps": r"num_steps:\s+(\d+)",
+            "num_params_M": r"num_params_M:\s+([\d.]+)",
+        }
+
     run_cmd = _make_run_cmd(
         ssh_host=None if local else ssh_host,
         ssh_key=None if local else ssh_key,
@@ -260,21 +274,12 @@ def make_trainpy_executor(
         if rc != 0:
             raise RuntimeError(f"train.py failed (exit {rc}): {out[-500:]}")
 
-        # Parse metrics
+        # Parse metrics from output using configurable patterns
         metrics = {}
-        val_bpb_match = re.search(r"val_bpb:\s+([\d.]+)", out)
-        if val_bpb_match:
-            metrics["val_bpb"] = float(val_bpb_match.group(1))
-            metrics["outcome"] = 2.0 - metrics["val_bpb"]
-
-        for key, pattern in {
-            "total_tokens_M": r"total_tokens_M:\s+([\d.]+)",
-            "num_steps": r"num_steps:\s+(\d+)",
-            "num_params_M": r"num_params_M:\s+([\d.]+)",
-        }.items():
+        for name, pattern in metric_patterns.items():
             m = re.search(pattern, out)
             if m:
-                metrics[key] = float(m.group(1))
+                metrics[name] = float(m.group(1))
 
         result = {
             "metrics": metrics,
