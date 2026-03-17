@@ -158,7 +158,7 @@ export default function KanbanBoard() {
     const bestByProject: Record<string, number> = {};
     for (const p of sorted) {
       const pid = p.project_id || "__none__";
-      const cfg = p.project_id ? metricConfig[p.project_id] : { metric: "val_bpb", maximize: false };
+      const cfg = p.project_id ? metricConfig[p.project_id] : { metric: "target_metric", maximize: false };
       if (!cfg) continue;
       const val = p.observation!.outcome_metrics![cfg.metric];
       if (val == null) continue;
