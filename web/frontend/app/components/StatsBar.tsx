@@ -154,7 +154,7 @@ export default function StatsBar() {
           workers.map(([wid, w]) => (
             <div key={wid} className="flex items-center gap-1">
               <span className={`w-2 h-2 rounded-full ${w.experiments > 0 ? "bg-green-400 animate-pulse" : "bg-gray-600"}`} />
-              <span className="text-xs text-gray-400">{wid.replace("worker_dllm-experiment_", "GPU")}</span>
+              <span className="text-xs text-gray-400">{wid.replace(/^worker_[^_]+_/, "GPU")}</span>
             </div>
           ))
         ) : (
