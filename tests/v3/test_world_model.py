@@ -175,3 +175,18 @@ def test_apply_delta_missing_fields_is_safe():
     wm.apply_delta(delta)
     assert wm.version == 1
     assert len(wm.beliefs) == 1  # unchanged
+
+
+def test_no_probe_fidelity_attribute():
+    """probe_fidelity was never used — it should not exist on WorldModel."""
+    wm = WorldModel()
+    assert not hasattr(wm, "probe_fidelity")
+
+
+def test_no_top_level_salience_attribute():
+    """Top-level salience dict was never populated — it should not exist on WorldModel.
+
+    Note: individual tensions still have a 'salience' field, which IS used.
+    """
+    wm = WorldModel()
+    assert not hasattr(wm, "salience")

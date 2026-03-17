@@ -2,7 +2,7 @@
 import pytest
 from autoresearcher2.v3.world_model import WorldModel
 from autoresearcher2.v3.observation import Observation
-from autoresearcher2.v3.orientation import orient, build_orientation_prompt
+from autoresearcher2.v3.orientation import orient, build_orientation_prompt, DELTA_SCHEMA
 from autoresearcher2.v3.generator import DomainConfig
 
 
@@ -209,3 +209,13 @@ def test_orientation_prompt_default_domain_is_generic():
     instruction_section = prompt.split("UPDATE INSTRUCTIONS")[1].split("REQUIRED OUTPUT")[0]
     assert "Shelly meter" not in instruction_section
     assert "GPU sensors" not in instruction_section
+
+
+def test_delta_schema_has_no_expectations_revised():
+    """expectations_revised was never handled in apply_delta — remove from schema."""
+    assert "expectations_revised" not in DELTA_SCHEMA
+
+
+def test_delta_schema_has_no_salience_updated():
+    """salience_updated was never handled in apply_delta — remove from schema."""
+    assert "salience_updated" not in DELTA_SCHEMA
