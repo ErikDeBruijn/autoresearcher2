@@ -87,9 +87,9 @@ _DEFAULT_SYMLINKS = [".venv", "data", "pyproject.toml", "uv.lock", ".python-vers
 
 
 def make_sed_patch_executor(
+    remote_dir: str,
     ssh_host: str = _DEFAULT_SSH_HOST,
     ssh_key: str = _DEFAULT_SSH_KEY,
-    remote_dir: str = "~/github.com/karpathy/autoresearch",
     cuda_device: str = "1",
     timeout: int = 900,
     local: bool = False,

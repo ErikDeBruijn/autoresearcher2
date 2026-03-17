@@ -82,6 +82,8 @@ def main():
     parser.add_argument("--database", type=Path, default="research_v4.db")
     parser.add_argument("--ssh-host", type=str, default="root@dllm-experiment.local")
     parser.add_argument("--ssh-key", type=str, default="~/.ssh/pve03_key")
+    parser.add_argument("--remote-dir", type=str, default="~/github.com/karpathy/autoresearch",
+                        help="Remote directory containing the training script")
     parser.add_argument("--cuda-device", type=str, default="1",
                         help="DEPRECATED: use --cuda-devices instead")
     parser.add_argument("--cuda-devices", type=str, default=None,
@@ -196,6 +198,7 @@ def main():
             # NanoGPT executor (cost tracking via wrapper)
             nanogpt_exec = with_cost_tracking(
                 make_sed_patch_executor(
+                    remote_dir=args.remote_dir,
                     ssh_host=args.ssh_host,
                     ssh_key=args.ssh_key,
                     cuda_device=cuda_dev,
