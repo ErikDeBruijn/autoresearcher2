@@ -612,8 +612,13 @@ def _execute_chat_commands(response_text: str) -> str:
         domain_type = cmd.get("domain_type", "generic")
         parameters = cmd.get("parameters", "")
 
-        # Build domain_config from type + custom parameters
-        domain_cfg = dict(DOMAIN_CONFIGS.get(domain_type, DOMAIN_CONFIGS["generic"]))
+        # Accept a full domain_config dict, or fall back to template lookup
+        domain_cfg = cmd.get("domain_config")
+        if domain_cfg and isinstance(domain_cfg, dict):
+            # User/LLM provided a full custom domain config
+            pass
+        else:
+            domain_cfg = dict(DOMAIN_CONFIGS.get(domain_type, DOMAIN_CONFIGS["generic"]))
         if parameters:
             domain_cfg["parameters"] = parameters
 
