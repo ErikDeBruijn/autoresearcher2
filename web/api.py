@@ -4,6 +4,7 @@ Serves the SQLite Store via REST API + WebSocket for live updates.
 """
 import asyncio
 import json
+import os
 import re as _re
 import subprocess
 import time
@@ -718,7 +719,7 @@ async def chat(req: ChatRequest):
     prompt_json = json.dumps(conversation)
     repo_dir = str(Path(__file__).resolve().parent.parent)
     skill_bin = f"{repo_dir}/.claude/skills/research-management/bin"
-    env = {**__import__("os").environ, "PATH": f"{skill_bin}:{__import__('os').environ.get('PATH', '')}"}
+    env = {**os.environ, "PATH": f"{skill_bin}:{os.environ.get('PATH', '')}"}
     try:
         result = subprocess.run(
             [
