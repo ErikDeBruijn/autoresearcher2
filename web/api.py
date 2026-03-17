@@ -562,23 +562,29 @@ async def delete_proposal(proposal_id: str):
 
 # --- Chat endpoint ---
 
-# Domain type to DomainConfig mapping for project creation
+# Example domain templates for project creation (users can supply any domain_config dict)
 DOMAIN_CONFIGS = {
     "nanogpt": {
         "name": "NanoGPT training",
         "description": "We run NanoGPT training experiments.",
+        "target_metric": "val_bpb",
+        "optimize": "minimize",
         "intervention_types": "config_change, probe, code_change",
         "parameters": "DEPTH, MATRIX_LR, WEIGHT_DECAY, num_steps, batch_size",
     },
     "atari-rl": {
         "name": "Atari RL",
         "description": "We optimize Atari game agents using reinforcement learning.",
+        "target_metric": "mean_reward",
+        "optimize": "maximize",
         "intervention_types": "config_change, probe, code_change",
         "parameters": "game, learning_rate, network_size, algorithm, n_envs, total_timesteps",
     },
     "generic": {
         "name": "generic optimization",
         "description": "We run experiments to optimize a target metric.",
+        "target_metric": "target_metric",
+        "optimize": "minimize",
         "intervention_types": "config_change, probe, code_change",
         "parameters": "any key-value pairs relevant to the domain",
     },
@@ -632,26 +638,19 @@ def _execute_chat_commands(response_text: str) -> str:
     return response_text
 
 
-class ChatRequest(BaseModel):
-    messages: list[dict]  # [{"role": "user", "content": "..."}, ...]
+def _build_chat_system_prompt(store: Store) -> str:
+    """Build the chat agent system prompt dynamically from store data.
 
-
-@app.post("/api/chat")
-async def chat(req: ChatRequest):
-    """Chat with LLM about the research, grounded in current Store data."""
-    import subprocess
-
-    # Build context from Store
-    store = get_store()
-    try:
-        wm = store.load_world_model()
-        observations = store.list_observations()
-        counts = {
-            stage: store.count_proposals(stage)
-            for stage in ("backlog", "todo", "running", "done", "reviewed")
-        }
-    finally:
-        store.close()
+    Reads projects, world model, and observations to construct a prompt
+    that is domain-agnostic -- no hardcoded metric names or domain types.
+    """
+    wm = store.load_world_model()
+    observations = store.list_observations()
+    counts = {
+        stage: store.count_proposals(stage)
+        for stage in ("backlog", "todo", "running", "done", "reviewed")
+    }
+    projects = store.list_projects()
 
     def fmt_num(val):
         try:
@@ -667,29 +666,68 @@ async def chat(req: ChatRequest):
         f"  - [{fmt_num(t['salience'])}] {t['nature']}"
         for t in wm.tensions
     ) or "  None"
+
+    # Build project descriptions with their metrics
+    projects_text_lines = []
+    target_metrics = set()
+    project_descriptions = []
+    for p in projects:
+        dc = p.get("domain_config") or {}
+        metric = dc.get("target_metric", "target_metric")
+        optimize = dc.get("optimize", "minimize")
+        target_metrics.add(metric)
+        desc = dc.get("description", p.get("description", ""))
+        params = dc.get("parameters", "")
+        line = f"  - {p['name']} (id={p['id']}, active={p.get('active', True)}, metric={metric}, {optimize})"
+        if desc:
+            project_descriptions.append(desc)
+        projects_text_lines.append(line)
+    projects_text = "\n".join(projects_text_lines) or "  No projects yet"
+
+    # Build metric guidance
+    if target_metrics:
+        metric_lines = []
+        for p in projects:
+            dc = p.get("domain_config") or {}
+            m = dc.get("target_metric", "target_metric")
+            opt = dc.get("optimize", "minimize")
+            metric_lines.append(f"  - {p['name']}: {opt} {m}")
+        metric_guidance = "Optimization targets:\n" + "\n".join(metric_lines)
+    else:
+        metric_guidance = "No target metrics configured yet."
+
+    # Format observations using actual metrics from their projects
     recent_obs = observations[-5:]
     obs_lines = []
+    # Build a project lookup for metric display
+    proj_lookup = {p["id"]: p for p in projects}
     for o in recent_obs:
-        line = f"  - {o.intervention_type}: {json.dumps(o.intervention_spec)} → "
+        line = f"  - {o.intervention_type}: {json.dumps(o.intervention_spec)} -> "
         line += "success" if o.outcome_success else "FAIL"
         if o.outcome_metrics:
-            line += f" val_bpb={o.outcome_metrics.get('val_bpb', '?')}"
+            # Show the project's target metric first, then others
+            proj = proj_lookup.get(o.project_id, {})
+            dc = (proj.get("domain_config") or {})
+            primary_metric = dc.get("target_metric")
+            shown = []
+            if primary_metric and primary_metric in o.outcome_metrics:
+                shown.append(f"{primary_metric}={o.outcome_metrics[primary_metric]}")
+            for k, v in o.outcome_metrics.items():
+                if k != primary_metric:
+                    shown.append(f"{k}={v}")
+            if shown:
+                line += " " + ", ".join(shown)
         obs_lines.append(line)
     obs_text = "\n".join(obs_lines) or "  None yet"
     queue_text = ", ".join(f"{k}: {v}" for k, v in counts.items())
 
-    # Existing projects for context
-    store2 = get_store()
-    try:
-        projects = store2.list_projects()
-        projects_text = "\n".join(
-            f"  - {p['name']} (id={p['id']}, active={p.get('active', True)})"
-            for p in projects
-        ) or "  No projects yet"
-    finally:
-        store2.close()
+    # Build domain context from projects
+    domain_context = ""
+    if project_descriptions:
+        domain_context = "Research context: " + " ".join(project_descriptions)
 
     system = f"""You are a research assistant for AutoResearcher2, an autonomous experiment system.
+{domain_context}
 
 Current state (World Model v{wm.version}):
 
@@ -708,18 +746,38 @@ Total experiments: {len(observations)}, Success rate: {sum(1 for o in observatio
 Existing projects:
 {projects_text}
 
-Be concise and direct. Lower val_bpb is better.
+{metric_guidance}
+
+Be concise and direct.
 
 ## Actions (use Bash tool)
 
 You have CLI tools available. Use the Bash tool to run them:
 
-- `research-create-project --name "Name" --description "Desc" --domain nanogpt --parameters "DEPTH,LR"`
+- `research-create-project --name "Name" --description "Desc" --domain <domain_type_or_custom> --parameters "param1,param2"`
 - `research-list-projects`
 - `research-status`
-- `research-submit-proposal --project proj_id --intent "Test X" --type config_change --spec '{{"MATRIX_LR": "0.04"}}'`
+- `research-submit-proposal --project proj_id --intent "Test X" --type config_change --spec '{{"param": "value"}}'`
 
-Domains: nanogpt, atari-rl, generic. When creating a project, ask the user what they want to optimize and which parameters to vary before calling the tool."""
+Available domain templates: {", ".join(DOMAIN_CONFIGS.keys())}. You can also pass a custom domain_config dict. When creating a project, ask the user what they want to optimize and which parameters to vary before calling the tool."""
+    return system
+
+
+class ChatRequest(BaseModel):
+    messages: list[dict]  # [{"role": "user", "content": "..."}, ...]
+
+
+@app.post("/api/chat")
+async def chat(req: ChatRequest):
+    """Chat with LLM about the research, grounded in current Store data."""
+    import subprocess
+
+    # Build context from Store
+    store = get_store()
+    try:
+        system = _build_chat_system_prompt(store)
+    finally:
+        store.close()
 
     # Build conversation for LLM
     conversation = [{"role": "system", "content": system}]

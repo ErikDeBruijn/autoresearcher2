@@ -126,7 +126,7 @@ export default function ProposalCard({
           <span className="text-xs text-gray-500" title="Has gameplay video">🎬</span>
         )}
         {proposal.observation?.outcome_metrics && (() => {
-          const metric = proposal.target_metric || "val_bpb";
+          const metric = proposal.target_metric || "target_metric";
           const val = proposal.observation!.outcome_metrics![metric];
           if (val == null) return null;
           return (
@@ -188,7 +188,7 @@ export default function ProposalCard({
                   {Object.entries(proposal.observation.outcome_metrics).map(([k, v]) => (
                     <div key={k}>
                       <span className="text-gray-500">{k}:</span>{" "}
-                      <span className={k === "val_bpb" ? "text-cyan-300 font-bold" : ""}>
+                      <span className={k === proposal.target_metric ? "text-cyan-300 font-bold" : ""}>
                         {typeof v === "number" ? v.toFixed(4) : String(v)}
                       </span>
                     </div>
