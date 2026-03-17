@@ -214,8 +214,6 @@ export default function KanbanBoard() {
 
   // Update page title with active projects and their best scores
   useEffect(() => {
-    const getEmoji = () => "🔬";
-
     const activeProjects = projects.filter((p) => p.active);
     if (activeProjects.length === 0) {
       document.title = "AR2";
@@ -237,7 +235,7 @@ export default function KanbanBoard() {
           if (best === null || (maximize ? val > best : val < best)) best = val;
         }
       }
-      const emoji = getEmoji(proj.name);
+      const emoji = "🔬";
       const score = best != null ? best.toFixed(4) : "";
       return `${emoji}${score}`;
     });

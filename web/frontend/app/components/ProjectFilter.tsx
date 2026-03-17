@@ -337,8 +337,6 @@ export default function ProjectFilter({
 
   const getTargetMetric = (p: Project) => p.domain_config?.target_metric || "target_metric";
 
-  const getProjectEmoji = () => "🔬";
-
   return (
     <div className="bg-gray-900 border-b border-gray-800">
       {projects.map((p, i) => {
@@ -391,7 +389,7 @@ export default function ProjectFilter({
 
               {/* Project name */}
               <span className={`flex items-center gap-1.5 text-xs font-medium ${visible ? "text-gray-200" : "text-gray-500"}`}>
-                <span>{getProjectEmoji(p.name)}</span>
+                <span>{"🔬"}</span>
                 {p.name}
               </span>
 
