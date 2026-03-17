@@ -307,7 +307,7 @@ class Store:
             "docker_image": row["docker_image"],
             "created_at": row["created_at"],
             "active": bool(row["active"]),
-            "priority": row["priority"] if "priority" in row.keys() else "auto",
+            "priority": row["priority"],
         }
 
     # --- Layer 1: Observations (append-only) ---
@@ -368,12 +368,11 @@ class Store:
         )
         obs.id = row["id"]
         obs.created_at = row["created_at"]
-        obs.project_id = row["project_id"] if "project_id" in row.keys() else None
-        if "energy_kwh" in row.keys():
-            obs.energy_kwh = row["energy_kwh"]
-            obs.cost_eur = row["cost_eur"]
-            obs.avg_power_w = row["avg_power_w"]
-        if "artifact_paths" in row.keys() and row["artifact_paths"]:
+        obs.project_id = row["project_id"]
+        obs.energy_kwh = row["energy_kwh"]
+        obs.cost_eur = row["cost_eur"]
+        obs.avg_power_w = row["avg_power_w"]
+        if row["artifact_paths"]:
             obs.artifact_paths = json.loads(row["artifact_paths"])
         return obs
 
@@ -653,7 +652,7 @@ class Store:
         p.created_at = row["created_at"]
         p.status = row["stage"]
         p.observation_id = row["observation_id"]
-        p.project_id = row["project_id"] if "project_id" in row.keys() else None
+        p.project_id = row["project_id"]
         if row["critic_decision"]:
             p.critic = {
                 "decision": row["critic_decision"],

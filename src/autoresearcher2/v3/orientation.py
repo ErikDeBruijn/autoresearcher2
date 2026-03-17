@@ -118,8 +118,7 @@ def orient(world_model: WorldModel, observation: Observation, llm_call_fn, domai
 
     if delta:
         wm_before_dict = world_model.to_dict()
-        from autoresearcher2.v3.world_model import WorldModel as WM
-        wm_snapshot = WM.from_dict(wm_before_dict)
+        wm_snapshot = WorldModel.from_dict(wm_before_dict)
 
         world_model.apply_delta(delta)
 
