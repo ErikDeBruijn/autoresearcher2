@@ -20,6 +20,21 @@ from autoresearcher2.v3.proposal import Proposal
 logger = logging.getLogger(__name__)
 
 
+def _make_run_cmd(ssh_host: str | None = None, ssh_key: str | None = None, timeout: int = 900):
+    """Create a run_cmd function that executes commands locally or via SSH."""
+    def run_cmd(cmd: str) -> tuple[int, str]:
+        if ssh_host:
+            ssh_cmd = ["ssh"]
+            if ssh_key:
+                ssh_cmd += ["-i", ssh_key]
+            ssh_cmd += ["-o", "ConnectTimeout=10", ssh_host, cmd]
+            result = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=timeout)
+        else:
+            result = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True, timeout=timeout)
+        return result.returncode, result.stdout + result.stderr
+    return run_cmd
+
+
 def _apply_code_changes(run_cmd, spec: dict, work_dir: str) -> None:
     """Apply code changes from a proposal spec to a working directory.
 
@@ -178,18 +193,11 @@ def make_trainpy_executor(
     Each executor gets its own working copy of train.py to avoid race
     conditions when multiple workers run concurrently.
     """
-    def run_cmd(cmd: str) -> tuple[int, str]:
-        if local:
-            result = subprocess.run(
-                ["bash", "-c", cmd],
-                capture_output=True, text=True, timeout=timeout,
-            )
-        else:
-            result = subprocess.run(
-                ["ssh", "-i", ssh_key, "-o", "ConnectTimeout=10", ssh_host, cmd],
-                capture_output=True, text=True, timeout=timeout,
-            )
-        return result.returncode, result.stdout + result.stderr
+    run_cmd = _make_run_cmd(
+        ssh_host=None if local else ssh_host,
+        ssh_key=None if local else ssh_key,
+        timeout=timeout,
+    )
 
     # Expand ~ for local execution
     base_dir = remote_dir.replace("~", "/root") if local else remote_dir
@@ -302,16 +310,7 @@ def make_shell_executor(
     """
     metric_patterns = metric_patterns or {}
 
-    def run_cmd(cmd: str) -> tuple[int, str]:
-        if ssh_host:
-            ssh_cmd = ["ssh"]
-            if ssh_key:
-                ssh_cmd += ["-i", ssh_key]
-            ssh_cmd += ["-o", "ConnectTimeout=10", ssh_host, cmd]
-            result = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=timeout)
-        else:
-            result = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True, timeout=timeout)
-        return result.returncode, result.stdout + result.stderr
+    run_cmd = _make_run_cmd(ssh_host=ssh_host, ssh_key=ssh_key, timeout=timeout)
 
     def execute(proposal: Proposal) -> dict:
         spec = proposal.intervention_spec

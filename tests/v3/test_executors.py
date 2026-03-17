@@ -1,7 +1,30 @@
 """Tests for executors (without real SSH)."""
 import pytest
-from autoresearcher2.v3.executors import make_dry_run_executor, make_shell_executor
+from autoresearcher2.v3.executors import make_dry_run_executor, make_shell_executor, _make_run_cmd
 from autoresearcher2.v3.proposal import Proposal
+
+
+def test_make_run_cmd_local():
+    """_make_run_cmd with no ssh_host runs commands locally via bash."""
+    run_cmd = _make_run_cmd()
+    rc, out = run_cmd("echo hello")
+    assert rc == 0
+    assert "hello" in out
+
+
+def test_make_run_cmd_local_captures_stderr():
+    """_make_run_cmd merges stdout and stderr."""
+    run_cmd = _make_run_cmd()
+    rc, out = run_cmd("echo out && echo err >&2")
+    assert "out" in out
+    assert "err" in out
+
+
+def test_make_run_cmd_returns_nonzero():
+    """_make_run_cmd returns nonzero exit codes without raising."""
+    run_cmd = _make_run_cmd()
+    rc, out = run_cmd("exit 42")
+    assert rc == 42
 
 
 def test_dry_run_executor():

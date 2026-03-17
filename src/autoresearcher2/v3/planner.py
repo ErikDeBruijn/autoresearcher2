@@ -47,6 +47,21 @@ class Planner:
         self.project_id = project_id
         self._processed_observations = set()
 
+    def _run_critique_and_promote(self, backlog, pid) -> int:
+        """Run critic on backlog and promote accepted proposals to todo. Returns count promoted."""
+        self.store.set_pipeline_activity("critiquing", pid)
+        wm = self.store.load_world_model(project_id=pid)
+        accepted = critique_proposals(
+            wm, backlog, n_select=self.n_select, llm_call_fn=self.llm_call_fn,
+            domain=self.domain,
+        )
+        promoted = 0
+        for p in accepted:
+            self.store.move_proposal(p, "todo")
+            promoted += 1
+        self.store.clear_pipeline_activity()
+        return promoted
+
     def tick(self) -> dict:
         """Run one planning cycle. Pull-based: ensure todo and backlog stay stocked."""
         summary = {"oriented": 0, "generated": 0, "promoted": 0}
@@ -76,16 +91,7 @@ class Planner:
         if todo_count < self.min_todo:
             backlog = self.store.list_proposals("backlog", project_id=pid)
             if backlog:
-                self.store.set_pipeline_activity("critiquing", pid)
-                wm = self.store.load_world_model(project_id=pid)
-                accepted = critique_proposals(
-                    wm, backlog, n_select=self.n_select, llm_call_fn=self.llm_call_fn,
-                    domain=self.domain,
-                )
-                for p in accepted:
-                    self.store.move_proposal(p, "todo")
-                    summary["promoted"] += 1
-                self.store.clear_pipeline_activity()
+                summary["promoted"] += self._run_critique_and_promote(backlog, pid)
 
         # Phase 3: Generate — if backlog is low, produce new proposals
         backlog_count = self.store.count_proposals("backlog", project_id=pid)
@@ -107,16 +113,7 @@ class Planner:
             if todo_count < self.min_todo:
                 backlog = self.store.list_proposals("backlog", project_id=pid)
                 if backlog:
-                    self.store.set_pipeline_activity("critiquing", pid)
-                    wm = self.store.load_world_model(project_id=pid)
-                    accepted = critique_proposals(
-                        wm, backlog, n_select=self.n_select, llm_call_fn=self.llm_call_fn,
-                        domain=self.domain,
-                    )
-                    for p in accepted:
-                        self.store.move_proposal(p, "todo")
-                        summary["promoted"] += 1
-                    self.store.clear_pipeline_activity()
+                    summary["promoted"] += self._run_critique_and_promote(backlog, pid)
 
         return summary
 
