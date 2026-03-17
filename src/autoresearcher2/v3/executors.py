@@ -83,9 +83,6 @@ def _apply_code_changes(run_cmd, spec: dict, work_dir: str) -> None:
                 raise RuntimeError(f"Failed to write {safe_name}: {out[-300:]}")
             logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
 
-_DEFAULT_SYMLINKS = []
-
-
 def make_sed_patch_executor(
     remote_dir: str,
     ssh_host: str = _DEFAULT_SSH_HOST,
@@ -128,7 +125,7 @@ def make_sed_patch_executor(
     if extra_files is None:
         extra_files = []
     if symlinks is None:
-        symlinks = _DEFAULT_SYMLINKS
+        symlinks = []
 
     run_cmd = _make_run_cmd(
         ssh_host=None if local else ssh_host,
@@ -141,16 +138,14 @@ def make_sed_patch_executor(
     # Per-GPU working directory to avoid concurrent sed-patching
     work_dir = f"{base_dir}_gpu{cuda_device}"
 
-    # Create lightweight per-worker dir: symlink shared resources, copy script
-    symlink_cmds = " && ".join(f"ln -sf {base_dir}/{s} {work_dir}/{s}" for s in symlinks)
-    copy_cmds = f"cp {base_dir}/{script_name} {work_dir}/{script_name}"
-    for f in extra_files:
-        copy_cmds += f" && cp {base_dir}/{f} {work_dir}/{f}"
+    # Create per-worker dir: symlink shared resources, copy script
     setup_cmd = f"mkdir -p {work_dir}"
-    if symlink_cmds:
-        setup_cmd += f" && {symlink_cmds}"
-    setup_cmd += f" && {copy_cmds}"
-    rc, out = run_cmd(f"test -d {work_dir} || ({setup_cmd})")
+    for s in symlinks:
+        setup_cmd += f" && ln -sf {base_dir}/{s} {work_dir}/{s}"
+    setup_cmd += f" && cp {base_dir}/{script_name} {work_dir}/{script_name}"
+    for f in extra_files:
+        setup_cmd += f" && cp {base_dir}/{f} {work_dir}/{f}"
+    rc, out = run_cmd(setup_cmd)
     if rc != 0:
         logger.warning("Failed to create per-GPU dir %s: %s", work_dir, out)
         work_dir = base_dir  # Fallback to shared dir
