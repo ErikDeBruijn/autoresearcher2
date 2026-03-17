@@ -35,6 +35,47 @@ logger = logging.getLogger(__name__)
 DB_PATH = Path(__file__).parent.parent / "research_v4.db"
 FALLBACK_EUR_PER_KWH = 0.23  # Fallback electricity price for cost estimation
 
+
+def _compute_energy_totals(observations, fallback_power_w: float = None) -> dict:
+    """Compute energy/cost totals from observations with fallback estimation.
+
+    Tracked observations (with energy_kwh) use measured values.
+    Untracked observations estimate energy from avg_power_w * wall_time.
+
+    Returns dict with: energy_kwh, cost_eur, wall_time_s, avg_power_w (or None).
+    """
+    total_energy = 0.0
+    total_cost = 0.0
+    total_wall_time = 0.0
+    untracked_wall_time = 0.0
+    avg_power_samples = []
+
+    for obs in observations:
+        if obs.wall_time_s:
+            total_wall_time += obs.wall_time_s
+        if obs.energy_kwh:
+            total_energy += obs.energy_kwh
+            if obs.avg_power_w:
+                avg_power_samples.append(obs.avg_power_w)
+        elif obs.wall_time_s:
+            untracked_wall_time += obs.wall_time_s
+        if obs.cost_eur:
+            total_cost += obs.cost_eur
+
+    avg_power = (sum(avg_power_samples) / len(avg_power_samples)) if avg_power_samples else fallback_power_w
+
+    if untracked_wall_time > 0 and avg_power:
+        estimated_kwh = (avg_power * untracked_wall_time) / 3_600_000
+        total_energy += estimated_kwh
+        total_cost += estimated_kwh * FALLBACK_EUR_PER_KWH
+
+    return {
+        "energy_kwh": total_energy,
+        "cost_eur": total_cost,
+        "wall_time_s": total_wall_time,
+        "avg_power_w": avg_power,
+    }
+
 # --- WebSocket manager ---
 class ConnectionManager:
     def __init__(self):
@@ -142,35 +183,18 @@ def get_projects():
         projects = store.list_projects()
         observations = store.list_observations()
 
-        # Compute per-project energy stats
-        avg_power_samples = []
-        for obs in observations:
-            if obs.avg_power_w:
-                avg_power_samples.append(obs.avg_power_w)
-        fallback_power_w = (sum(avg_power_samples) / len(avg_power_samples)) if avg_power_samples else 400.0
+        # Compute global avg power for fallback estimation
+        global_totals = _compute_energy_totals(observations, fallback_power_w=400.0)
+        fallback_power = global_totals["avg_power_w"] or 400.0
 
         for proj in projects:
             pid = proj["id"]
             proj_obs = [o for o in observations if o.project_id == pid]
-            energy = 0.0
-            cost = 0.0
-            wall_time = 0.0
-            for o in proj_obs:
-                if o.wall_time_s:
-                    wall_time += o.wall_time_s
-                if o.energy_kwh:
-                    energy += o.energy_kwh
-                elif o.wall_time_s:
-                    energy += (fallback_power_w * o.wall_time_s) / 3_600_000
-                if o.cost_eur:
-                    cost += o.cost_eur
-                elif o.wall_time_s:
-                    cost += (fallback_power_w * o.wall_time_s) / 3_600_000 * FALLBACK_EUR_PER_KWH
-            proj["energy_kwh"] = round(energy, 4)
-            proj["cost_eur"] = round(cost, 4)
-            proj["wall_time_s"] = round(wall_time, 1)
+            totals = _compute_energy_totals(proj_obs, fallback_power_w=fallback_power)
+            proj["energy_kwh"] = round(totals["energy_kwh"], 4)
+            proj["cost_eur"] = round(totals["cost_eur"], 4)
+            proj["wall_time_s"] = round(totals["wall_time_s"], 1)
             proj["experiment_count"] = len(proj_obs)
-            # Compute expected gain for Auto priority display
             try:
                 proj["expected_gain"] = round(store.compute_expected_gain(proj["id"]), 3)
             except Exception:
@@ -319,17 +343,10 @@ def get_stats():
 
         wm = store.load_best_world_model()
 
-        # Worker stats
+        # Worker stats + success/failure counts
         worker_times: dict[str, list[float]] = {}
         success_count = 0
         failure_count = 0
-        total_wall_time = 0.0
-
-        total_energy_kwh = 0.0
-        total_cost_eur = 0.0
-        tracked_energy_kwh = 0.0
-        untracked_wall_time = 0.0
-        avg_power_samples = []
 
         for obs in observations:
             if obs.outcome_success:
@@ -337,25 +354,10 @@ def get_stats():
             else:
                 failure_count += 1
             if obs.wall_time_s:
-                total_wall_time += obs.wall_time_s
                 wid = obs.worker_id or "unknown"
                 worker_times.setdefault(wid, []).append(obs.wall_time_s)
-            if obs.energy_kwh:
-                tracked_energy_kwh += obs.energy_kwh
-                total_energy_kwh += obs.energy_kwh
-                if obs.avg_power_w:
-                    avg_power_samples.append(obs.avg_power_w)
-            elif obs.wall_time_s:
-                untracked_wall_time += obs.wall_time_s
-            if obs.cost_eur:
-                total_cost_eur += obs.cost_eur
 
-        # Estimate energy for untracked runs using average power from tracked runs
-        if untracked_wall_time > 0 and avg_power_samples:
-            avg_power_w = sum(avg_power_samples) / len(avg_power_samples)
-            estimated_kwh = (avg_power_w * untracked_wall_time) / 3_600_000
-            total_energy_kwh += estimated_kwh
-            total_cost_eur += estimated_kwh * FALLBACK_EUR_PER_KWH  # fallback price
+        energy_totals = _compute_energy_totals(observations)
 
         # Per-worker stats
         workers = {}
@@ -407,7 +409,7 @@ def get_stats():
             "success_count": success_count,
             "failure_count": failure_count,
             "success_rate": success_count / max(len(observations), 1),
-            "total_wall_time_s": total_wall_time,
+            "total_wall_time_s": energy_totals["wall_time_s"],
             "world_model_version": wm.version,
             "belief_count": len(wm.beliefs),
             "tension_count": len(wm.tensions),
@@ -416,8 +418,8 @@ def get_stats():
             "active_worker_ids": list(active_worker_ids),
             "learntropy_trace": learntropy_trace,
             "intervention_types": type_counts,
-            "total_energy_kwh": round(total_energy_kwh, 4),
-            "total_cost_eur": round(total_cost_eur, 4),
+            "total_energy_kwh": round(energy_totals["energy_kwh"], 4),
+            "total_cost_eur": round(energy_totals["cost_eur"], 4),
             "pipeline_activity": pipeline_activity,
         }
 
