@@ -749,7 +749,7 @@ async def chat(req: ChatRequest):
 
 # --- Worker management ---
 
-COST_TRACKER_URL = "http://pve03.local:8377"
+from autoresearcher2.v3.executors import COST_TRACKER_URL
 
 
 @app.get("/api/workers/status")

@@ -72,8 +72,8 @@ def _apply_code_changes(run_cmd, spec: dict, work_dir: str) -> None:
                 raise RuntimeError(f"Failed to write {safe_name}: {out[-300:]}")
             logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
 
-# gpu-cost-tracker service endpoint
-COST_TRACKER_URL = "http://pve03.local:8377"
+# gpu-cost-tracker service endpoint (override with COST_TRACKER_URL env var)
+COST_TRACKER_URL = __import__("os").environ.get("COST_TRACKER_URL", "http://pve03.local:8377")
 
 
 def _start_cost_job(gpu: int, label: str, client: str = "autoresearcher") -> str | None:
