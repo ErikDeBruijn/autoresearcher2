@@ -45,7 +45,7 @@ for p in s.list_projects(active_only=False):
     success = sorted([o for o in obs if o.outcome_success], key=lambda o: o.created_at)
 
     trajectory = []
-    target = (p.get("domain_config") or {}).get("target_metric", "val_bpb")
+    target = (p.get("domain_config") or {}).get("target_metric", "outcome")
     maximize = (p.get("domain_config") or {}).get("optimize") == "maximize"
     best_so_far = -float("inf") if maximize else float("inf")
     for i, o in enumerate(success):
@@ -106,7 +106,7 @@ def fetch_data_local(db_path):
         obs = [o for o in s.list_observations() if o.project_id == pid]
         success = sorted([o for o in obs if o.outcome_success], key=lambda o: o.created_at)
 
-        target = (p.get("domain_config") or {}).get("target_metric", "val_bpb")
+        target = (p.get("domain_config") or {}).get("target_metric", "outcome")
         maximize = (p.get("domain_config") or {}).get("optimize") == "maximize"
         best_so_far = -float("inf") if maximize else float("inf")
         trajectory = []
@@ -197,43 +197,60 @@ def generate_figures(data, output_dir):
         plt.close(fig)
         figures[f"{slug}_convergence"] = conv_path
 
-        # --- Heatmap: val_bpb by DEPTH × LR (NanoGPT specific) ---
-        if target == "val_bpb":
-            depths = sorted(set(t["spec"].get("DEPTH") for t in traj if t["spec"].get("DEPTH") is not None))
-            lrs = sorted(set(t["spec"].get("MATRIX_LR") for t in traj if t["spec"].get("MATRIX_LR") is not None))
+        # --- Heatmap: target metric by top-2 most-varied spec keys ---
+        # Find spec keys with multiple distinct values (data-driven)
+        spec_values = {}
+        for t in traj:
+            for k, v in t["spec"].items():
+                if v is not None:
+                    spec_values.setdefault(k, set()).add(v)
+        # Sort by number of unique values (descending), pick top 2
+        varied_keys = sorted(
+            ((k, vals) for k, vals in spec_values.items() if len(vals) >= 2),
+            key=lambda kv: -len(kv[1]),
+        )
 
-            if depths and lrs:
-                # Build grid: best val_bpb per (depth, lr)
-                grid = np.full((len(depths), len(lrs)), np.nan)
-                for t in traj:
-                    d, lr = t["spec"].get("DEPTH"), t["spec"].get("MATRIX_LR")
-                    if d is not None and lr is not None and t["value"] is not None:
-                        di, li = depths.index(d), lrs.index(lr)
-                        if np.isnan(grid[di, li]) or t["value"] < grid[di, li]:
-                            grid[di, li] = t["value"]
+        if len(varied_keys) >= 2:
+            row_key, row_vals = varied_keys[0][0], sorted(varied_keys[0][1])
+            col_key, col_vals = varied_keys[1][0], sorted(varied_keys[1][1])
 
-                fig, ax = plt.subplots(figsize=(6, 3))
-                im = ax.imshow(grid, cmap="RdYlGn_r", aspect="auto")
-                ax.set_xticks(range(len(lrs)))
-                ax.set_xticklabels([f"{lr}" for lr in lrs], fontsize=8, rotation=45)
-                ax.set_yticks(range(len(depths)))
-                ax.set_yticklabels([f"D={d}" for d in depths], fontsize=9)
-                ax.set_xlabel("MATRIX_LR", fontsize=10)
-                ax.set_ylabel("DEPTH", fontsize=10)
-                ax.set_title(f"{name}: Best val_bpb by DEPTH × LR", fontsize=11, fontweight="bold")
+            # Build grid: best metric per (row_key, col_key)
+            grid = np.full((len(row_vals), len(col_vals)), np.nan)
+            better = (lambda a, b: a > b) if maximize else (lambda a, b: a < b)
+            for t in traj:
+                rv, cv = t["spec"].get(row_key), t["spec"].get(col_key)
+                if rv is not None and cv is not None and t["value"] is not None:
+                    ri, ci = row_vals.index(rv), col_vals.index(cv)
+                    if np.isnan(grid[ri, ci]) or better(t["value"], grid[ri, ci]):
+                        grid[ri, ci] = t["value"]
 
-                for i in range(len(depths)):
-                    for j in range(len(lrs)):
-                        if not np.isnan(grid[i, j]):
-                            ax.text(j, i, f"{grid[i,j]:.4f}", ha="center", va="center", fontsize=7,
-                                    color="white" if grid[i, j] > np.nanmedian(grid) else "black")
+            fig, ax = plt.subplots(figsize=(6, 3))
+            cmap = "RdYlGn" if maximize else "RdYlGn_r"
+            im = ax.imshow(grid, cmap=cmap, aspect="auto")
+            ax.set_xticks(range(len(col_vals)))
+            ax.set_xticklabels([f"{v}" for v in col_vals], fontsize=8, rotation=45)
+            ax.set_yticks(range(len(row_vals)))
+            ax.set_yticklabels([f"{v}" for v in row_vals], fontsize=9)
+            ax.set_xlabel(str(col_key), fontsize=10)
+            ax.set_ylabel(str(row_key), fontsize=10)
+            direction_label = "higher is better" if maximize else "lower is better"
+            ax.set_title(
+                f"{name}: Best {target} by {row_key} x {col_key}",
+                fontsize=11, fontweight="bold",
+            )
 
-                fig.colorbar(im, ax=ax, shrink=0.8)
-                fig.tight_layout()
-                heat_path = output_dir / f"{slug}_heatmap.pdf"
-                fig.savefig(heat_path, dpi=150)
-                plt.close(fig)
-                figures[f"{slug}_heatmap"] = heat_path
+            for i in range(len(row_vals)):
+                for j in range(len(col_vals)):
+                    if not np.isnan(grid[i, j]):
+                        ax.text(j, i, f"{grid[i,j]:.4f}", ha="center", va="center", fontsize=7,
+                                color="white" if grid[i, j] > np.nanmedian(grid) else "black")
+
+            fig.colorbar(im, ax=ax, shrink=0.8)
+            fig.tight_layout()
+            heat_path = output_dir / f"{slug}_heatmap.pdf"
+            fig.savefig(heat_path, dpi=150)
+            plt.close(fig)
+            figures[f"{slug}_heatmap"] = heat_path
 
         # --- Belief confidence distribution ---
         if proj["beliefs"]:
@@ -304,6 +321,33 @@ def _get_version():
     return "unknown"
 
 
+def _build_glossary(projects):
+    """Build a LaTeX glossary from actual metrics and spec keys found in data."""
+    entries = []
+    metrics_seen = set()
+    spec_keys_seen = set()
+
+    for proj in projects:
+        target = proj.get("target_metric", "outcome")
+        direction = proj.get("optimize", "minimize")
+        if target not in metrics_seen:
+            metrics_seen.add(target)
+            direction_hint = "higher = better" if direction == "maximize" else "lower = better"
+            entries.append(
+                f"\\textbf{{{escape_latex(target)}}} --- target metric ({direction_hint})."
+            )
+        for t in proj.get("trajectory", []):
+            for k in t.get("spec", {}):
+                spec_keys_seen.add(k)
+
+    for key in sorted(spec_keys_seen):
+        entries.append(
+            f"\\textbf{{{escape_latex(key)}}} --- experiment parameter."
+        )
+
+    return "\n\n    ".join(entries) if entries else "No domain-specific terms found."
+
+
 def generate_latex(data, figures, output_dir):
     """Build the LaTeX document."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -372,7 +416,7 @@ Config: \\texttt{{{escape_latex(best_spec)}}}"""
 \\begin{{figure}}[h]
 \\centering
 \\includegraphics[width=0.85\\columnwidth]{{{heat_rel}}}
-\\caption{{Best {escape_latex(target)} per DEPTH $\\times$ MATRIX\\_LR cell. Lower (green) is better.}}
+\\caption{{Best {escape_latex(target)} heatmap over the two most-varied parameters. Green = better.}}
 \\end{{figure}}
 """
 
@@ -492,15 +536,7 @@ Type & Wall time (s) & Energy (Wh) & Cost (\\euro{{}}) \\\\
     \subsection*{Glossary}
     \small
 
-    \textbf{val\_bpb} --- validation bits-per-byte; lower = better language model.
-
-    \textbf{mean\_reward} --- average game score; higher = better agent.
-
-    \textbf{DEPTH} --- number of transformer layers (model capacity).
-
-    \textbf{MATRIX\_LR} --- learning rate for the main weight matrices.
-
-    \textbf{WEIGHT\_DECAY} --- regularization strength (prevents overfitting).
+    """ + _build_glossary(active_projects) + r"""
 
     \textbf{Confidence} --- heuristic 0--1 score assigned by the LLM based on evidence count and consistency. Not a calibrated probability; treat as a ranking signal.
 
@@ -543,7 +579,7 @@ Type & Wall time (s) & Energy (Wh) & Cost (\\euro{{}}) \\\\
     \begin{itemize}
         \item \textbf{Single seed}: no statistical significance; any result could be noise
         \item \textbf{No ablation}: the LLM's contribution vs.\ simpler optimization is untested
-        \item \textbf{Hardware-specific}: all runs on one GPU (RTX PRO 6000, 96\,GB VRAM)
+        \item \textbf{Hardware-specific}: all runs on a single GPU
         \item \textbf{Beliefs mix observation and inference}: claims like ``X explains Y''
               are the agent's interpretation, not proven causal links
         \item \textbf{Exploratory}: this memo reports what the agent found, not what is established

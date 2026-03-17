@@ -26,8 +26,20 @@ def seed():
 
     base_time = time.time() - 3600 * 6  # 6 hours ago
 
+    # --- Create project with domain_config ---
+    project_id = store.create_project(
+        name="NanoGPT Training",
+        description="Optimize NanoGPT training hyperparameters",
+        domain_config={
+            "name": "NanoGPT training",
+            "target_metric": "val_bpb",
+            "optimize": "minimize",
+            "parameters": ["DEPTH", "MATRIX_LR", "WEIGHT_DECAY"],
+        },
+    )
+
     # --- Seed world model with beliefs ---
-    wm = store.load_world_model()
+    wm = store.load_world_model(project_id=project_id)
     wm.add_belief("MATRIX_LR=0.04 produces best val_bpb at DEPTH=8", 0.75, ["obs_001", "obs_003"])
     wm.add_belief("DEPTH > 8 has diminishing returns for val_bpb", 0.45, ["obs_005"])
     wm.add_belief("WEIGHT_DECAY has minimal effect on outcome", 0.30, ["obs_002"], ["obs_006"])
@@ -37,7 +49,7 @@ def seed():
         "config_change": {"wall_time_s": 300, "compute_cost": 0.5},
         "probe": {"wall_time_s": 60, "compute_cost": 0.1},
     }
-    store.save_world_model(wm, delta={"seeded": True, "learntropy": 0.0}, reasoning="Initial beliefs from v1.5 evidence run")
+    store.save_world_model(wm, project_id=project_id, delta={"seeded": True, "learntropy": 0.0}, reasoning="Initial beliefs from v1.5 evidence run")
 
     # --- Seed observations ---
     configs = [
@@ -64,13 +76,14 @@ def seed():
             worker_id=wid,
         )
         obs.created_at = base_time + i * 1200
-        store.save_observation(obs)
+        store.save_observation(obs, project_id=project_id)
 
     # Update world model with learntropy after observations
-    wm2 = store.load_world_model()
+    wm2 = store.load_world_model(project_id=project_id)
     wm2.beliefs[0]["confidence"] = 0.85
     store.save_world_model(
         wm2,
+        project_id=project_id,
         trigger_obs_id=obs.id,
         delta={"beliefs_revised": [{"id": "B1", "new_confidence": 0.85}], "learntropy": 0.42},
         reasoning="Observation confirmed LR=0.04 at DEPTH=8 is best so far",
@@ -91,7 +104,7 @@ def seed():
             intervention_spec={"DEPTH": "8", "MATRIX_LR": "0.06"},
         )
         p.created_at = base_time + 5000
-        store.save_proposal(p)
+        store.save_proposal(p, project_id=project_id)
 
     # Todo (2 ranked proposals)
     for i, (intent, rationale) in enumerate([
@@ -106,7 +119,7 @@ def seed():
         p.set_critic_decision("accept", rank=i + 1, rationale="High value, low risk")
         p.promote("todo")
         p.created_at = base_time + 4000
-        store.save_proposal(p)
+        store.save_proposal(p, project_id=project_id)
 
     # Running (1 proposal)
     p = Proposal(
@@ -118,7 +131,7 @@ def seed():
     p.set_critic_decision("accept", rank=1, rationale="Low cost, high potential")
     p.promote("running")
     p.created_at = base_time + 3000
-    store.save_proposal(p)
+    store.save_proposal(p, project_id=project_id)
 
     # Done (3 completed proposals)
     for i, (intent, obs_id) in enumerate([
@@ -135,7 +148,7 @@ def seed():
         p.set_critic_decision("accept", rank=i + 1, rationale="Needed for baseline")
         p.promote("done")
         p.created_at = base_time + i * 1000
-        store.save_proposal(p)
+        store.save_proposal(p, project_id=project_id)
 
     # Reviewed (2 proposals)
     for intent in ["Test LR=0.02 (conservative)", "Test LR=0.08 (aggressive)"]:
@@ -149,7 +162,7 @@ def seed():
         p.promote("done")
         p.status = "reviewed"
         p.created_at = base_time
-        store.save_proposal(p)
+        store.save_proposal(p, project_id=project_id)
 
     store.close()
     print(f"Seeded demo data into {DB_PATH}")
