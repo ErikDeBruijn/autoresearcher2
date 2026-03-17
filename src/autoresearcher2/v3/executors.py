@@ -19,6 +19,44 @@ from autoresearcher2.v3.proposal import Proposal
 
 logger = logging.getLogger(__name__)
 
+
+def _apply_code_changes(run_cmd, spec: dict, work_dir: str) -> None:
+    """Apply code changes from a proposal spec to a working directory.
+
+    Handles two formats:
+    - "diff": a unified diff string applied via patch
+    - "file_changes": a dict of {filename: content} written as files
+
+    Raises ValueError if neither is present, RuntimeError on apply failure.
+    """
+    import base64
+
+    diff_content = spec.get("diff")
+    file_changes = spec.get("file_changes", {})
+
+    if not diff_content and not file_changes:
+        raise ValueError("code_change requires 'diff' or 'file_changes' in intervention_spec")
+
+    if diff_content:
+        b64 = base64.b64encode(diff_content.encode()).decode()
+        run_cmd(
+            f"python3 -c \"import base64; open('/tmp/_ar_patch.diff','w').write(base64.b64decode('{b64}').decode())\""
+        )
+        rc, out = run_cmd(f"cd {work_dir} && patch -p1 --no-backup-if-mismatch < /tmp/_ar_patch.diff")
+        if rc != 0:
+            raise RuntimeError(f"patch failed (exit {rc}): {out[-500:]}")
+        logger.info("code_change: applied diff (%d bytes)", len(diff_content))
+    else:
+        for filename, content in file_changes.items():
+            safe_name = filename.replace("/", "_").replace("..", "_")
+            b64 = base64.b64encode(content.encode()).decode()
+            rc, out = run_cmd(
+                f"python3 -c \"import base64; open('{work_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
+            )
+            if rc != 0:
+                raise RuntimeError(f"Failed to write {safe_name}: {out[-300:]}")
+            logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
+
 # gpu-cost-tracker service endpoint
 COST_TRACKER_URL = "http://pve03.local:8377"
 
@@ -187,31 +225,7 @@ def make_trainpy_executor(
         run_cmd(f"cp {base_dir}/train.py {train_dir}/train.py")
 
         if itype == "code_change":
-            import base64
-            diff_content = spec.get("diff")
-            file_changes = spec.get("file_changes", {})
-            if not diff_content and not file_changes:
-                raise ValueError("code_change requires 'diff' or 'file_changes' in intervention_spec")
-            if diff_content:
-                # Apply unified diff via patch
-                b64 = base64.b64encode(diff_content.encode()).decode()
-                run_cmd(
-                    f"python3 -c \"import base64; open('/tmp/_ar_patch.diff','w').write(base64.b64decode('{b64}').decode())\""
-                )
-                rc, out = run_cmd(f"cd {train_dir} && patch -p1 --no-backup-if-mismatch < /tmp/_ar_patch.diff")
-                if rc != 0:
-                    raise RuntimeError(f"patch failed (exit {rc}): {out[-500:]}")
-                logger.info("code_change: applied diff (%d bytes)", len(diff_content))
-            else:
-                for filename, content in file_changes.items():
-                    safe_name = filename.replace("/", "_").replace("..", "_")
-                    b64 = base64.b64encode(content.encode()).decode()
-                    rc, out = run_cmd(
-                        f"python3 -c \"import base64; open('{train_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
-                    )
-                    if rc != 0:
-                        raise RuntimeError(f"Failed to write {safe_name}: {out[-300:]}")
-                    logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
+            _apply_code_changes(run_cmd, spec, train_dir)
         else:
             # Patch knobs from intervention_spec
             for knob, value in spec.items():
@@ -286,8 +300,6 @@ def make_shell_executor(
         work_dir: Working directory for code_change file writes. Required for code_change.
         base_script: Path to the base training script to reset before each run.
     """
-    import base64 as b64mod
-
     metric_patterns = metric_patterns or {}
 
     def run_cmd(cmd: str) -> tuple[int, str]:
@@ -311,33 +323,7 @@ def make_shell_executor(
 
         # Handle code_change: apply diff or write file_changes before running
         if itype == "code_change" and work_dir:
-            diff_content = spec.get("diff")
-            file_changes = spec.get("file_changes", {})
-
-            if not diff_content and not file_changes:
-                raise ValueError("code_change requires 'diff' or 'file_changes' in intervention_spec")
-
-            if diff_content:
-                # Apply unified diff via patch
-                b64 = b64mod.b64encode(diff_content.encode()).decode()
-                run_cmd(
-                    f"python3 -c \"import base64; open('/tmp/_ar_patch.diff','w').write(base64.b64decode('{b64}').decode())\""
-                )
-                rc, out = run_cmd(f"cd {work_dir} && patch -p1 --no-backup-if-mismatch < /tmp/_ar_patch.diff")
-                if rc != 0:
-                    raise RuntimeError(f"patch failed (exit {rc}): {out[-500:]}")
-                logger.info("code_change: applied diff (%d bytes)", len(diff_content))
-            else:
-                # Write full file replacements
-                for filename, content in file_changes.items():
-                    safe_name = filename.replace("/", "_").replace("..", "_")
-                    b64 = b64mod.b64encode(content.encode()).decode()
-                    rc, out = run_cmd(
-                        f"python3 -c \"import base64; open('{work_dir}/{safe_name}','w').write(base64.b64decode('{b64}').decode())\""
-                    )
-                    if rc != 0:
-                        raise RuntimeError(f"Failed to write {safe_name}: {out[-300:]}")
-                    logger.info("code_change: wrote %s (%d bytes)", safe_name, len(content))
+            _apply_code_changes(run_cmd, spec, work_dir)
 
         # Build env vars from spec (skip file_changes and non-shell-safe values)
         safe_pairs = []
