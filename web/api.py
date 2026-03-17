@@ -601,34 +601,23 @@ def _build_chat_system_prompt(store: Store) -> str:
         for t in wm.tensions
     ) or "  None"
 
-    # Build project descriptions with their metrics
+    # Build project descriptions with their metrics and optimization targets
     projects_text_lines = []
-    target_metrics = set()
+    metric_lines = []
     project_descriptions = []
     for p in projects:
         dc = p.get("domain_config") or {}
         metric = dc.get("target_metric", "target_metric")
         optimize = dc.get("optimize", "minimize")
-        target_metrics.add(metric)
         desc = dc.get("description", p.get("description", ""))
-        params = dc.get("parameters", "")
-        line = f"  - {p['name']} (id={p['id']}, active={p.get('active', True)}, metric={metric}, {optimize})"
+        projects_text_lines.append(
+            f"  - {p['name']} (id={p['id']}, active={p.get('active', True)}, metric={metric}, {optimize})"
+        )
+        metric_lines.append(f"  - {p['name']}: {optimize} {metric}")
         if desc:
             project_descriptions.append(desc)
-        projects_text_lines.append(line)
     projects_text = "\n".join(projects_text_lines) or "  No projects yet"
-
-    # Build metric guidance
-    if target_metrics:
-        metric_lines = []
-        for p in projects:
-            dc = p.get("domain_config") or {}
-            m = dc.get("target_metric", "target_metric")
-            opt = dc.get("optimize", "minimize")
-            metric_lines.append(f"  - {p['name']}: {opt} {m}")
-        metric_guidance = "Optimization targets:\n" + "\n".join(metric_lines)
-    else:
-        metric_guidance = "No target metrics configured yet."
+    metric_guidance = ("Optimization targets:\n" + "\n".join(metric_lines)) if metric_lines else "No target metrics configured yet."
 
     # Format observations using actual metrics from their projects
     recent_obs = observations[-5:]
