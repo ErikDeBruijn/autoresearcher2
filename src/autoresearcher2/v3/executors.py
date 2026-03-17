@@ -85,6 +85,45 @@ def _stop_cost_job(job_id: str) -> dict | None:
         return None
 
 
+def with_cost_tracking(execute_fn, cuda_device: str | None = None):
+    """Wrap an executor to add GPU cost tracking around each execution.
+
+    Starts a cost tracking job before calling the inner executor and stops it
+    after, merging energy_kwh/cost_eur/avg_power_w into the result dict.
+    If the inner executor raises, the cost job is still stopped to avoid leaks.
+
+    Args:
+        execute_fn: The inner executor function (Proposal -> dict).
+        cuda_device: CUDA device ID string (e.g. "0", "1"). None to skip tracking.
+
+    Returns:
+        A wrapped executor function with the same signature.
+    """
+    if cuda_device is None or not cuda_device.isdigit():
+        return execute_fn
+
+    gpu_index = int(cuda_device)
+
+    def execute(proposal):
+        job_id = _start_cost_job(gpu=gpu_index, label=proposal.id)
+        try:
+            result = execute_fn(proposal)
+        except Exception:
+            if job_id:
+                _stop_cost_job(job_id)
+            raise
+
+        cost_data = _stop_cost_job(job_id) if job_id else None
+        if cost_data:
+            result["energy_kwh"] = cost_data.get("energy_kwh")
+            result["cost_eur"] = cost_data.get("cost_eur")
+            result["avg_power_w"] = cost_data.get("avg_power_w")
+
+        return result
+
+    return execute
+
+
 def make_trainpy_executor(
     ssh_host: str = "root@dllm-experiment.home",
     ssh_key: str = "~/.ssh/pve03_key",
@@ -185,19 +224,12 @@ def make_trainpy_executor(
                 run_steps = spec["run_steps"]
                 run_cmd(f"sed -i 's/^num_steps = .*/num_steps = {run_steps}/' {train_dir}/train.py")
 
-        # Start cost tracking
-        gpu_index = int(cuda_device) if cuda_device.isdigit() else 0
-        job_id = _start_cost_job(gpu=gpu_index, label=proposal.id)
-
         # Run training
         start = time.time()
         rc, out = run_cmd(
             f"cd {train_dir} && CUDA_VISIBLE_DEVICES={cuda_device} uv run train.py 2>&1"
         )
         wall_time = time.time() - start
-
-        # Stop cost tracking and collect data
-        cost_data = _stop_cost_job(job_id) if job_id else None
 
         if rc != 0:
             raise RuntimeError(f"train.py failed (exit {rc}): {out[-500:]}")
@@ -224,11 +256,6 @@ def make_trainpy_executor(
             "raw_log": out[-2000:] if len(out) > 2000 else out,
         }
 
-        if cost_data:
-            result["energy_kwh"] = cost_data.get("energy_kwh")
-            result["cost_eur"] = cost_data.get("cost_eur")
-            result["avg_power_w"] = cost_data.get("avg_power_w")
-
         return result
 
     return execute
@@ -240,7 +267,6 @@ def make_shell_executor(
     timeout: int = 900,
     ssh_host: str = None,
     ssh_key: str = None,
-    cuda_device: str = None,
     work_dir: str = None,
     base_script: str = None,
     max_timesteps: int = None,
@@ -350,17 +376,9 @@ def make_shell_executor(
         env_str = " ".join(safe_pairs)
         cmd = f"{env_str} {command_template}" if env_str else command_template
 
-        # Start cost tracking if GPU specified
-        job_id = None
-        if cuda_device and cuda_device.isdigit():
-            job_id = _start_cost_job(gpu=int(cuda_device), label=proposal.id)
-
         start = time.time()
         rc, out = run_cmd(cmd)
         wall_time = time.time() - start
-
-        # Stop cost tracking
-        cost_data = _stop_cost_job(job_id) if job_id else None
 
         if rc != 0:
             raise RuntimeError(f"Command failed (exit {rc}): {out[-500:]}")
@@ -384,11 +402,6 @@ def make_shell_executor(
 
         if artifact_paths:
             exec_result["artifact_paths"] = artifact_paths
-
-        if cost_data:
-            exec_result["energy_kwh"] = cost_data.get("energy_kwh")
-            exec_result["cost_eur"] = cost_data.get("cost_eur")
-            exec_result["avg_power_w"] = cost_data.get("avg_power_w")
 
         return exec_result
 
