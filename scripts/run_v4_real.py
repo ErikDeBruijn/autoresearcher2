@@ -219,8 +219,6 @@ def main():
                     timeout=900,
                     work_dir=atari_dir,
                     base_script=f"{atari_base}/train_atari.py",
-                    max_timesteps=500_000,
-                    max_n_envs=8,
                 ),
                 cuda_device=cuda_dev,
             )
