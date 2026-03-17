@@ -112,3 +112,59 @@ def test_code_change_does_not_inject_signal_alarm(tmp_path):
         "Executor should not inject signal.alarm into user scripts; "
         "subprocess.run timeout= is the correct timeout mechanism"
     )
+
+
+def test_shell_executor_rejects_rl_specific_params():
+    """make_shell_executor must not accept max_timesteps or max_n_envs.
+
+    These are RL-specific caps that don't belong in a generic shell executor.
+    The subprocess.run timeout already prevents runaways, and domain-specific
+    constraints should be handled by the caller before invoking the executor.
+    """
+    import inspect
+    sig = inspect.signature(make_shell_executor)
+    params = set(sig.parameters.keys())
+    assert "max_timesteps" not in params, (
+        "max_timesteps is RL-specific and should not be a shell executor parameter"
+    )
+    assert "max_n_envs" not in params, (
+        "max_n_envs is RL-specific and should not be a shell executor parameter"
+    )
+
+
+def test_shell_executor_code_change_no_regex_capping(tmp_path):
+    """Shell executor must not modify file contents with regex capping.
+
+    Values like total_timesteps and n_envs in written files should be preserved
+    exactly as provided — the executor is not responsible for domain constraints.
+    """
+    py_content = (
+        "total_timesteps = 10_000_000\n"
+        "n_envs = 64\n"
+        "print('done')\n"
+    )
+    work_dir = str(tmp_path / "workdir")
+    import os
+    os.makedirs(work_dir)
+
+    execute = make_shell_executor(
+        command_template=f"cat {work_dir}/train.py",
+        metric_patterns={},
+        work_dir=work_dir,
+        timeout=30,
+    )
+    p = Proposal(
+        intent="test no capping",
+        rationale="executor should not modify spec values",
+        expected_learning="files written verbatim",
+        intervention_type="code_change",
+        intervention_spec={"file_changes": {"train.py": py_content}},
+    )
+    result = execute(p)
+    written = open(os.path.join(work_dir, "train.py")).read()
+    assert "total_timesteps = 10_000_000" in written, (
+        "Executor should not cap total_timesteps — that's the caller's responsibility"
+    )
+    assert "n_envs = 64" in written, (
+        "Executor should not cap n_envs — that's the caller's responsibility"
+    )
