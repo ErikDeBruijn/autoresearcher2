@@ -98,11 +98,12 @@ def make_sed_patch_executor(
     extra_files: list[str] = None,
     symlinks: list[str] = None,
     run_command: str = "uv run",
+    probe_steps_var: str = "num_steps",
 ):
     """Create an executor that patches a script's top-level assignments via sed.
 
     For config_change: patches `knob = value` lines in the script via sed.
-    For probe: also patches a `num_steps` assignment to limit run length.
+    For probe: also patches the step-limit variable to limit run length.
     For code_change: writes file_changes to the working directory.
     Set local=True when running on the VM itself to skip SSH.
 
@@ -119,6 +120,8 @@ def make_sed_patch_executor(
             Defaults to empty (no metrics parsed).
         run_command: Command prefix to run the script (default: "uv run").
             Examples: "python", "poetry run", "uv run".
+        probe_steps_var: Variable name to patch for probe step limiting
+            (default: "num_steps"). Examples: "max_steps", "epochs", "n_iterations".
     """
     if metric_patterns is None:
         metric_patterns = {}
@@ -175,7 +178,7 @@ def make_sed_patch_executor(
             # For probes, limit steps
             if itype == "probe" and "run_steps" in spec:
                 run_steps = spec["run_steps"]
-                run_cmd(f"sed -i 's/^num_steps = .*/num_steps = {run_steps}/' {work_dir}/{script_name}")
+                run_cmd(f"sed -i 's/^{probe_steps_var} = .*/{probe_steps_var} = {run_steps}/' {work_dir}/{script_name}")
 
         # Run script
         start = time.time()
