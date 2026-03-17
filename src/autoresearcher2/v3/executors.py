@@ -134,7 +134,7 @@ def make_sed_patch_executor(
     )
 
     # Expand ~ for local execution
-    base_dir = remote_dir.replace("~", "/root") if local else remote_dir
+    base_dir = os.path.expanduser(remote_dir) if local else remote_dir
     # Per-GPU working directory to avoid concurrent sed-patching
     work_dir = f"{base_dir}_gpu{cuda_device}"
 
