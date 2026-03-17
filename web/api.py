@@ -668,7 +668,7 @@ Be concise and direct.
 
 You have CLI tools available. Use the Bash tool to run them:
 
-- `research-create-project --name "Name" --description "Desc" --domain <domain_type_or_custom> --parameters "param1,param2"`
+- `research-create-project --name "Name" --description "Desc" --parameters "param1,param2" --target-metric "metric_name" --optimize maximize`
 - `research-list-projects`
 - `research-status`
 - `research-submit-proposal --project proj_id --intent "Test X" --type config_change --spec '{{"param": "value"}}'`
