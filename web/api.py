@@ -53,12 +53,11 @@ async def poll_store_changes():
         if not manager.active:
             continue
         try:
-            store = get_store()
-            counts = {
-                stage: store.count_proposals(stage)
-                for stage in ("backlog", "todo", "running", "done", "reviewed")
-            }
-            store.close()
+            with get_store() as store:
+                counts = {
+                    stage: store.count_proposals(stage)
+                    for stage in ("backlog", "todo", "running", "done", "reviewed")
+                }
             if counts != last_counts:
                 last_counts = counts
                 await manager.broadcast({"type": "queue_update", "counts": counts})
@@ -69,9 +68,8 @@ async def poll_store_changes():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure DB exists with demo data if needed
-    store = get_store()
-    store.init()
-    store.close()
+    with get_store() as store:
+        store.init()
     app.state.start_time = time.time()
     # Start background poller for live updates
     task = asyncio.create_task(poll_store_changes())
@@ -111,28 +109,25 @@ class ChatMessage(BaseModel):
 def health():
     """Health check: service uptime, DB accessible, last experiment time."""
     import os
-    store = get_store()
-    try:
-        obs = store.list_observations()
-        last_obs_time = max((o.created_at for o in obs), default=None)
-        return {
-            "status": "ok",
-            "uptime_s": time.time() - app.state.start_time if hasattr(app.state, "start_time") else None,
-            "db_observations": len(obs),
-            "last_experiment_at": last_obs_time,
-            "seconds_since_last": round(time.time() - last_obs_time, 1) if last_obs_time else None,
-        }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
-    finally:
-        store.close()
+    with get_store() as store:
+        try:
+            obs = store.list_observations()
+            last_obs_time = max((o.created_at for o in obs), default=None)
+            return {
+                "status": "ok",
+                "uptime_s": time.time() - app.state.start_time if hasattr(app.state, "start_time") else None,
+                "db_observations": len(obs),
+                "last_experiment_at": last_obs_time,
+                "seconds_since_last": round(time.time() - last_obs_time, 1) if last_obs_time else None,
+            }
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
 
 
 @app.get("/api/projects")
 def get_projects():
     """Get all projects with energy stats."""
-    store = get_store()
-    try:
+    with get_store() as store:
         projects = store.list_projects()
         observations = store.list_observations()
 
@@ -171,21 +166,16 @@ def get_projects():
                 proj["expected_gain"] = None
 
         return projects
-    finally:
-        store.close()
 
 
 @app.get("/api/projects/{project_id}")
 def get_project(project_id: str):
     """Get a single project."""
-    store = get_store()
-    try:
+    with get_store() as store:
         project = store.get_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail=f"Project {project_id} not found")
         return project
-    finally:
-        store.close()
 
 
 class ProjectCreate(BaseModel):
@@ -197,8 +187,7 @@ class ProjectCreate(BaseModel):
 @app.post("/api/projects")
 async def create_project(data: ProjectCreate):
     """Create a new research project."""
-    store = get_store()
-    try:
+    with get_store() as store:
         pid = store.create_project(
             name=data.name,
             description=data.description,
@@ -207,8 +196,6 @@ async def create_project(data: ProjectCreate):
         project = store.get_project(pid)
         await manager.broadcast({"type": "project_created", "project": project})
         return project
-    finally:
-        store.close()
 
 
 class ProjectUpdate(BaseModel):
@@ -222,8 +209,7 @@ class ProjectUpdate(BaseModel):
 @app.patch("/api/projects/{project_id}")
 async def update_project(project_id: str, data: ProjectUpdate):
     """Update a project."""
-    store = get_store()
-    try:
+    with get_store() as store:
         updates = {k: v for k, v in data.model_dump().items() if v is not None}
         if not updates:
             raise HTTPException(status_code=400, detail="No fields to update")
@@ -231,26 +217,20 @@ async def update_project(project_id: str, data: ProjectUpdate):
         project = store.get_project(project_id)
         await manager.broadcast({"type": "project_updated", "project": project})
         return project
-    finally:
-        store.close()
 
 
 @app.get("/api/projects/{project_id}/expected_gain")
 def get_expected_gain(project_id: str):
     """Compute expected learning gain for a project."""
-    store = get_store()
-    try:
+    with get_store() as store:
         gain = store.compute_expected_gain(project_id)
         return {"project_id": project_id, "expected_gain": round(gain, 3)}
-    finally:
-        store.close()
 
 
 @app.get("/api/queue")
 def get_queue():
     """Get all proposals grouped by stage, with worker_id for running and observation data for done/reviewed."""
-    store = get_store()
-    try:
+    with get_store() as store:
         # Pre-load world model history for delta lookups
         wm_history = store.get_world_model_history()
         delta_by_obs = {h["trigger_obs_id"]: h for h in wm_history if h["trigger_obs_id"]}
@@ -302,39 +282,30 @@ def get_queue():
                 items.append(d)
             stages[stage] = items
         return stages
-    finally:
-        store.close()
 
 
 @app.get("/api/queue/counts")
 def get_queue_counts():
     """Get proposal counts per stage."""
-    store = get_store()
-    try:
+    with get_store() as store:
         return {
             stage: store.count_proposals(stage)
             for stage in ("backlog", "todo", "running", "done", "reviewed")
         }
-    finally:
-        store.close()
 
 
 @app.get("/api/observations")
 def get_observations():
     """Get all observations."""
-    store = get_store()
-    try:
+    with get_store() as store:
         obs = store.list_observations()
         return [o.to_dict() for o in obs]
-    finally:
-        store.close()
 
 
 @app.get("/api/world-model")
 def get_world_model(project_id: str = None):
     """Get current world model state. If no project_id, returns the first active project's WM."""
-    store = get_store()
-    try:
+    with get_store() as store:
         if project_id:
             wm = store.load_world_model(project_id=project_id)
         else:
@@ -350,25 +321,19 @@ def get_world_model(project_id: str = None):
                 # Fallback to default (no project)
                 wm = store.load_world_model()
         return wm.to_dict()
-    finally:
-        store.close()
 
 
 @app.get("/api/world-model/history")
 def get_world_model_history():
     """Get world model version history."""
-    store = get_store()
-    try:
+    with get_store() as store:
         return store.get_world_model_history()
-    finally:
-        store.close()
 
 
 @app.get("/api/stats")
 def get_stats():
     """Get research statistics."""
-    store = get_store()
-    try:
+    with get_store() as store:
         observations = store.list_observations()
         history = store.get_world_model_history()
 
@@ -481,15 +446,12 @@ def get_stats():
             "total_cost_eur": round(total_cost_eur, 4),
             "pipeline_activity": pipeline_activity,
         }
-    finally:
-        store.close()
 
 
 @app.post("/api/proposals")
 async def create_proposal(data: ProposalCreate):
     """Submit a new proposal to the backlog."""
-    store = get_store()
-    try:
+    with get_store() as store:
         p = Proposal(
             intent=data.intent,
             rationale=data.rationale,
@@ -501,15 +463,12 @@ async def create_proposal(data: ProposalCreate):
         store.save_proposal(p)
         await manager.broadcast({"type": "proposal_created", "proposal": p.to_dict()})
         return p.to_dict()
-    finally:
-        store.close()
 
 
 @app.post("/api/proposals/{proposal_id}/cancel")
 async def cancel_proposal(proposal_id: str):
     """Cancel a running proposal: move it back to backlog."""
-    store = get_store()
-    try:
+    with get_store() as store:
         if store.cancel_proposal(proposal_id):
             await manager.broadcast({
                 "type": "proposal_moved",
@@ -519,15 +478,12 @@ async def cancel_proposal(proposal_id: str):
             })
             return {"status": "ok", "proposal_id": proposal_id}
         raise HTTPException(status_code=404, detail=f"Proposal {proposal_id} not found in running stage")
-    finally:
-        store.close()
 
 
 @app.post("/api/proposals/{proposal_id}/promote")
 async def promote_proposal(proposal_id: str, target_stage: str = "todo"):
     """Move a proposal to a different stage."""
-    store = get_store()
-    try:
+    with get_store() as store:
         # Find the proposal
         for stage in ("backlog", "todo", "running", "done", "reviewed"):
             for p in store.list_proposals(stage):
@@ -541,23 +497,18 @@ async def promote_proposal(proposal_id: str, target_stage: str = "todo"):
                     })
                     return {"status": "ok", "proposal_id": proposal_id, "new_stage": target_stage}
         raise HTTPException(status_code=404, detail=f"Proposal {proposal_id} not found")
-    finally:
-        store.close()
 
 
 @app.delete("/api/proposals/{proposal_id}")
 async def delete_proposal(proposal_id: str):
     """Delete a proposal from any stage."""
-    store = get_store()
-    try:
+    with get_store() as store:
         result = store.conn.execute("DELETE FROM queue WHERE id = ?", (proposal_id,))
         store.conn.commit()
         if result.rowcount == 0:
             raise HTTPException(status_code=404, detail=f"Proposal {proposal_id} not found")
         await manager.broadcast({"type": "proposal_deleted", "proposal_id": proposal_id})
         return {"status": "ok", "proposal_id": proposal_id}
-    finally:
-        store.close()
 
 
 # --- Chat endpoint ---
@@ -604,15 +555,12 @@ def _execute_chat_commands(response_text: str) -> str:
         if parameters:
             domain_cfg["parameters"] = parameters
 
-        store = get_store()
-        try:
+        with get_store() as store:
             pid = store.create_project(
                 name=name,
                 description=description,
                 domain_config=domain_cfg,
             )
-        finally:
-            store.close()
 
         # Replace command block with success message
         success_msg = f"\n\n**Project created:** {name} (id: `{pid}`, domain: {domain_type})"
@@ -760,11 +708,8 @@ async def chat(req: ChatRequest):
     import subprocess
 
     # Build context from Store
-    store = get_store()
-    try:
+    with get_store() as store:
         system = _build_chat_system_prompt(store)
-    finally:
-        store.close()
 
     # Build conversation for LLM
     conversation = [{"role": "system", "content": system}]
@@ -986,8 +931,7 @@ def download_report(regenerate: bool = True):
 @app.get("/api/artifacts/{obs_id}/{artifact_name}")
 def get_artifact(obs_id: str, artifact_name: str):
     """Serve an artifact file (video, image, etc.) for an observation."""
-    store = get_store()
-    try:
+    with get_store() as store:
         obs = store.load_observation(obs_id)
         if not obs or not obs.artifact_paths:
             raise HTTPException(status_code=404, detail="Artifact not found")
@@ -1002,8 +946,6 @@ def get_artifact(obs_id: str, artifact_name: str):
         media_types = {".mp4": "video/mp4", ".webm": "video/webm", ".gif": "image/gif", ".png": "image/png", ".jpg": "image/jpeg"}
         media_type = media_types.get(suffix, "application/octet-stream")
         return FileResponse(file_path, media_type=media_type)
-    finally:
-        store.close()
 
 
 # --- Serve frontend static files with cache control ---

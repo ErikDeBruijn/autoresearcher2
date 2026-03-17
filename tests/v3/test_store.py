@@ -15,6 +15,25 @@ def store(tmp_path):
     s.close()
 
 
+# --- Context manager protocol ---
+
+def test_context_manager_closes_connection(tmp_path):
+    with Store(tmp_path / "cm.db") as s:
+        s.init()
+        assert s._conn is not None
+    assert s._conn is None
+
+
+def test_context_manager_closes_on_exception(tmp_path):
+    try:
+        with Store(tmp_path / "cm_exc.db") as s:
+            s.init()
+            raise ValueError("boom")
+    except ValueError:
+        pass
+    assert s._conn is None
+
+
 # --- Layer 1: Observations ---
 
 def test_save_and_load_observation(store):

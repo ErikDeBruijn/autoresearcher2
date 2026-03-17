@@ -208,6 +208,13 @@ class Store:
             self._conn.close()
             self._conn = None
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
+
     # --- Pipeline Activity ---
 
     def set_pipeline_activity(self, phase: str = None, project_id: str = None, proposal_id: str = None):
