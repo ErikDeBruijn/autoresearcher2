@@ -18,6 +18,7 @@ import logging
 from autoresearcher2.v3.world_model import WorldModel
 from autoresearcher2.v3.observation import Observation
 from autoresearcher2.v3.generator import DomainConfig
+from autoresearcher2.v3.learntropy import compute_learntropy
 
 logger = logging.getLogger(__name__)
 
@@ -103,8 +104,6 @@ def orient(world_model: WorldModel, observation: Observation, llm_call_fn, domai
     Returns:
         The delta that was applied (includes 'learntropy' score)
     """
-    from autoresearcher2.v3.learntropy import compute_learntropy
-
     prompt = build_orientation_prompt(world_model, observation, domain=domain)
 
     try:
@@ -117,8 +116,7 @@ def orient(world_model: WorldModel, observation: Observation, llm_call_fn, domai
     delta = _extract_delta(response)
 
     if delta:
-        wm_before_dict = world_model.to_dict()
-        wm_snapshot = WorldModel.from_dict(wm_before_dict)
+        wm_snapshot = WorldModel.from_dict(world_model.to_dict())
 
         world_model.apply_delta(delta)
 

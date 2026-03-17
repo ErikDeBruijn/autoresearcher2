@@ -50,6 +50,8 @@ class DomainConfig:
     base_script: str = ""  # Current training script content — shown to LLM for code_change proposals
     base_script_name: str = "script.py"  # Filename for the base script
 
+_DOMAIN_DEFAULTS = DomainConfig()
+
 
 def domain_config_from_project(project: dict) -> DomainConfig:
     """Build a DomainConfig from project metadata.
@@ -75,10 +77,10 @@ def domain_config_from_project(project: dict) -> DomainConfig:
 
     return DomainConfig(
         name=dc.get("name", project.get("name", "research experiment")),
-        description=dc.get("description", project.get("description", DomainConfig.description)),
-        intervention_types=dc.get("intervention_types", DomainConfig.intervention_types),
-        parameters=dc.get("parameters", DomainConfig.parameters),
-        diversity_hint=dc.get("diversity_hint", DomainConfig.diversity_hint),
+        description=dc.get("description", project.get("description", _DOMAIN_DEFAULTS.description)),
+        intervention_types=dc.get("intervention_types", _DOMAIN_DEFAULTS.intervention_types),
+        parameters=dc.get("parameters", _DOMAIN_DEFAULTS.parameters),
+        diversity_hint=dc.get("diversity_hint", _DOMAIN_DEFAULTS.diversity_hint),
         hardware=dc.get("hardware", ""),
         base_script=base_script,
         base_script_name=dc.get("base_script_name", "script.py"),
