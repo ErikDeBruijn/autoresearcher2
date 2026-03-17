@@ -19,12 +19,18 @@ def main():
     parser.add_argument("--name", required=True, help="Project name")
     parser.add_argument("--description", default="", help="Project description")
     parser.add_argument("--domain", default="generic", help="Domain type label")
-    parser.add_argument("--parameters", default=None, help="Comma-separated parameter names (overrides domain default)")
+    parser.add_argument("--parameters", default=None, help="Comma-separated parameter names")
+    parser.add_argument("--target-metric", default=None, help="Primary metric to optimize (e.g. taste_score, val_bpb)")
+    parser.add_argument("--optimize", default=None, choices=["minimize", "maximize"], help="Optimization direction")
     args = parser.parse_args()
 
     domain_cfg = dict(_DEFAULT_DOMAIN_CONFIG)
     if args.parameters:
         domain_cfg["parameters"] = args.parameters
+    if args.target_metric:
+        domain_cfg["target_metric"] = args.target_metric
+    if args.optimize:
+        domain_cfg["optimize"] = args.optimize
 
     body = json.dumps({
         "name": args.name,
