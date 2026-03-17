@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
-from autoresearcher2.v3.executors import make_trainpy_executor, make_shell_executor, make_dispatch_executor, make_dry_run_executor
+from autoresearcher2.v3.executors import make_trainpy_executor, make_shell_executor, make_dispatch_executor, make_dry_run_executor, with_cost_tracking
 from autoresearcher2.v3.llm_call import call_llm_json
 
 logging.basicConfig(
@@ -184,12 +184,15 @@ def main():
         if args.dry_run:
             execute_fn = make_dry_run_executor()
         else:
-            # NanoGPT executor
-            nanogpt_exec = make_trainpy_executor(
-                ssh_host=args.ssh_host,
-                ssh_key=args.ssh_key,
+            # NanoGPT executor (cost tracking via wrapper)
+            nanogpt_exec = with_cost_tracking(
+                make_trainpy_executor(
+                    ssh_host=args.ssh_host,
+                    ssh_key=args.ssh_key,
+                    cuda_device=cuda_dev,
+                    local=args.local_llm,
+                ),
                 cuda_device=cuda_dev,
-                local=args.local_llm,
             )
 
             # Atari Breakout executor (GPU-accelerated)
@@ -201,23 +204,25 @@ def main():
                  f"cp {atari_base}/train_atari.py {atari_dir}/train_atari.py"],
                 capture_output=True, text=True, timeout=30,
             )
-            atari_exec = make_shell_executor(
-                command_template=(
-                    f"cd {atari_dir} && "
-                    "source .venv/bin/activate && "
-                    f"CUDA_VISIBLE_DEVICES={cuda_dev} python train_atari.py 2>&1"
+            atari_exec = with_cost_tracking(
+                make_shell_executor(
+                    command_template=(
+                        f"cd {atari_dir} && "
+                        "source .venv/bin/activate && "
+                        f"CUDA_VISIBLE_DEVICES={cuda_dev} python train_atari.py 2>&1"
+                    ),
+                    metric_patterns={
+                        "mean_reward": r"mean_reward:\s+([\d.]+)",
+                        "std_reward": r"std_reward:\s+([\d.]+)",
+                        "fps": r"fps:\s+([\d.]+)",
+                    },
+                    timeout=900,
+                    work_dir=atari_dir,
+                    base_script=f"{atari_base}/train_atari.py",
+                    max_timesteps=500_000,
+                    max_n_envs=8,
                 ),
-                metric_patterns={
-                    "mean_reward": r"mean_reward:\s+([\d.]+)",
-                    "std_reward": r"std_reward:\s+([\d.]+)",
-                    "fps": r"fps:\s+([\d.]+)",
-                },
-                timeout=900,
                 cuda_device=cuda_dev,
-                work_dir=atari_dir,
-                base_script=f"{atari_base}/train_atari.py",
-                max_timesteps=500_000,
-                max_n_envs=8,
             )
 
             # Dispatch: RL projects → atari executor, everything else → NanoGPT
