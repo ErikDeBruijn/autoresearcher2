@@ -22,7 +22,7 @@ import uvicorn
 # Add src to path for Store access
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 
-from autoresearcher2.v3.store import Store
+from autoresearcher2.v3.store import Store, QUEUE_STAGES
 
 DB_PATH = Path(__file__).resolve().parent.parent.parent / "research_v4.db"
 
@@ -113,7 +113,7 @@ def build_system_message() -> str:
 
         counts = {
             stage: store.count_proposals(stage)
-            for stage in ("backlog", "todo", "running", "done", "reviewed")
+            for stage in QUEUE_STAGES
         }
         queue_text = ", ".join(f"{k}: {v}" for k, v in counts.items())
 

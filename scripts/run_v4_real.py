@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from autoresearcher2.v3.store import Store
+from autoresearcher2.v3.store import Store, QUEUE_STAGES
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
 from autoresearcher2.v3.executors import make_trainpy_executor, make_shell_executor, make_dispatch_executor, make_dry_run_executor, with_cost_tracking
@@ -410,7 +410,7 @@ def main():
     # Final report
     logger.info("=== Final Report ===")
     logger.info("Observations: %d", len(store.list_observations()))
-    for stage in ("backlog", "todo", "running", "done", "reviewed"):
+    for stage in QUEUE_STAGES:
         logger.info("  %s: %d", stage, store.count_proposals(stage))
 
     wm = store.load_world_model()

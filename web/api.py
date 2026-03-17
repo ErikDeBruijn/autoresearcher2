@@ -24,13 +24,12 @@ from starlette.responses import FileResponse
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from autoresearcher2.v3.store import Store
+from autoresearcher2.v3.store import Store, QUEUE_STAGES
 from autoresearcher2.v3.proposal import Proposal
 from autoresearcher2.v3.executors import COST_TRACKER_URL
 
 # --- Config ---
 DB_PATH = Path(__file__).parent.parent / "research_v4.db"
-QUEUE_STAGES = ("backlog", "todo", "running", "done", "reviewed")
 FALLBACK_EUR_PER_KWH = 0.23  # Fallback electricity price for cost estimation
 
 # --- WebSocket manager ---

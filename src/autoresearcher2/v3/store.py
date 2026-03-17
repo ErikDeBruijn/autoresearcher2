@@ -14,6 +14,8 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+QUEUE_STAGES = ("backlog", "todo", "running", "done", "reviewed")
+
 from autoresearcher2.v3.world_model import WorldModel
 from autoresearcher2.v3.proposal import Proposal
 from autoresearcher2.v3.observation import Observation

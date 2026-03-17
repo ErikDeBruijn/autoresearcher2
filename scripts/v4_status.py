@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from autoresearcher2.v3.store import Store
+from autoresearcher2.v3.store import Store, QUEUE_STAGES
 
 
 def main():
@@ -24,7 +24,7 @@ def main():
 
     # Queue status
     print("=== Queue ===")
-    for stage in ("backlog", "todo", "running", "done", "reviewed"):
+    for stage in QUEUE_STAGES:
         count = store.count_proposals(stage)
         print(f"  {stage}: {count}")
         if args.verbose and count > 0:
