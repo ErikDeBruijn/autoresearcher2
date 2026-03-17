@@ -45,6 +45,20 @@ def test_observation_serialize_roundtrip():
 
 
 
+def test_observation_project_id_roundtrip():
+    """project_id survives serialization roundtrip."""
+    obs = Observation(
+        intervention_type="config_change",
+        intervention_spec={"x": "1"},
+        outcome_success=True,
+    )
+    obs.project_id = "proj_abc123"
+    data = obs.to_dict()
+    assert data["project_id"] == "proj_abc123"
+    obs2 = Observation.from_dict(data)
+    assert obs2.project_id == "proj_abc123"
+
+
 def test_observation_with_raw_log():
     obs = Observation(
         intervention_type="config_change",

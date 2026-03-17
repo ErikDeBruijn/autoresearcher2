@@ -49,6 +49,19 @@ def test_proposal_serialize_roundtrip():
 
 
 
+def test_proposal_project_id_roundtrip():
+    """project_id survives serialization roundtrip."""
+    p = Proposal(
+        intent="test", rationale="test", expected_learning="test",
+        intervention_type="config_change", intervention_spec={"x": "1"},
+    )
+    p.project_id = "proj_abc123"
+    data = p.to_dict()
+    assert data["project_id"] == "proj_abc123"
+    p2 = Proposal.from_dict(data)
+    assert p2.project_id == "proj_abc123"
+
+
 def test_proposal_set_critic_decision():
     p = Proposal(
         intent="test", rationale="test", expected_learning="test",
