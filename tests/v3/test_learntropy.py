@@ -57,10 +57,10 @@ def test_retiring_belief_is_highly_informative():
 
 def test_tension_changes_increase_learntropy():
     wm_before = make_wm_with_beliefs(3)
-    wm_before.add_tension(belief_ids=["B0", "B1"], nature="conflict", salience="high")
+    wm_before.add_tension(belief_ids=["B0", "B1"], nature="conflict", salience=0.8)
 
     delta = {
-        "tensions_added": [{"beliefs": ["B1", "B2"], "nature": "new conflict", "salience": "medium"}],
+        "tensions_added": [{"beliefs": ["B1", "B2"], "nature": "new conflict", "salience": 0.5}],
         "tensions_resolved": [{"id": wm_before.tensions[0]["id"], "resolution": "resolved"}],
     }
     score = compute_learntropy(wm_before, wm_before, delta)
@@ -73,7 +73,7 @@ def test_massive_change_caps_at_one():
         "beliefs_added": [{"claim": f"new {i}", "confidence": 0.5} for i in range(10)],
         "beliefs_revised": [{"id": wm_before.beliefs[0]["id"], "new_confidence": 0.99}],
         "beliefs_retired": [{"id": "some_id", "reason": "wrong"}],
-        "tensions_added": [{"beliefs": ["a", "b"], "nature": "x", "salience": "high"}] * 5,
+        "tensions_added": [{"beliefs": ["a", "b"], "nature": "x", "salience": 0.8}] * 5,
         "cost_beliefs_updated": {"config_change": {"wall_time_s": 999}},
     }
     score = compute_learntropy(wm_before, wm_before, delta)

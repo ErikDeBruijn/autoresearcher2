@@ -25,7 +25,7 @@ DELTA_SCHEMA = {
     "beliefs_added": [{"claim": "str", "confidence": "0.0-1.0", "evidence_for": ["obs_id"]}],
     "beliefs_revised": [{"id": "str", "new_confidence": "0.0-1.0", "new_evidence_for": ["obs_id"], "reason": "str"}],
     "beliefs_retired": [{"id": "str", "reason": "str"}],
-    "tensions_added": [{"beliefs": ["B_ids"], "nature": "str", "salience": "high|medium|low"}],
+    "tensions_added": [{"beliefs": ["B_ids"], "nature": "str", "salience": "0.0-1.0"}],
     "tensions_resolved": [{"id": "str", "resolution": "str", "reasoning": "str"}],
     "cost_beliefs_updated": {"intervention_type": {"wall_time_s": "float", "energy_kwh": "float", "cost_eur": "float", "avg_power_w": "float"}},
 }

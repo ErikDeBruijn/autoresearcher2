@@ -29,7 +29,7 @@ def make_rich_world_model():
     wm.add_tension(
         belief_ids=["B1", "B3"],
         nature="If WD has minimal effect, why did obs_009 show big improvement with WD=0.1?",
-        salience="high",
+        salience=0.8,
     )
     wm.cost_beliefs = {
         "config_change": {"wall_time_s": 300, "compute_cost": 0.5},

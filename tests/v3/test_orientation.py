@@ -78,7 +78,7 @@ def test_orientation_adds_tension():
 
     orient(wm, obs, mock_llm)
     assert len(wm.tensions) == 1
-    assert wm.tensions[0]["salience"] == "high"
+    assert wm.tensions[0]["salience"] == 0.8
 
 
 def test_orientation_handles_llm_failure():

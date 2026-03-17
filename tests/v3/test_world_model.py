@@ -1,6 +1,6 @@
 """Tests for WorldModel — structured epistemic state."""
 import pytest
-from autoresearcher2.v3.world_model import WorldModel
+from autoresearcher2.v3.world_model import WorldModel, _normalize_salience
 
 
 def test_empty_world_model():
@@ -44,16 +44,17 @@ def test_add_tension():
     tid = wm.add_tension(
         belief_ids=["B1", "B3"],
         nature="B1 claims lr dominant but B3 shows network_size matters at large scale",
-        salience="high",
+        salience=0.8,
     )
     assert tid.startswith("T")
     assert len(wm.tensions) == 1
+    assert wm.tensions[0]["salience"] == 0.8
 
 
 def test_serialize_roundtrip():
     wm = WorldModel()
     wm.add_belief(claim="test", confidence=0.7, evidence_for=["obs_001"])
-    wm.add_tension(belief_ids=["B1"], nature="test tension", salience="low")
+    wm.add_tension(belief_ids=["B1"], nature="test tension", salience=0.2)
     wm.cost_beliefs = {"config_change": {"wall_time_s": 300}}
     data = wm.to_dict()
     wm2 = WorldModel.from_dict(data)
@@ -105,7 +106,7 @@ def test_apply_delta_tensions():
     wm.add_belief(claim="b", confidence=0.5, evidence_for=[])
     delta = {
         "tensions_added": [
-            {"beliefs": ["B1", "B2"], "nature": "contradictory", "salience": "high"}
+            {"beliefs": ["B1", "B2"], "nature": "contradictory", "salience": 0.8}
         ],
     }
     wm.apply_delta(delta)
@@ -153,3 +154,24 @@ def test_no_top_level_salience_attribute():
     """
     wm = WorldModel()
     assert not hasattr(wm, "salience")
+
+
+def test_salience_normalization():
+    """String salience values from LLM responses get normalized to float."""
+    assert _normalize_salience("high") == 0.8
+    assert _normalize_salience("medium") == 0.5
+    assert _normalize_salience("low") == 0.2
+    assert _normalize_salience("High") == 0.8
+    assert _normalize_salience(0.7) == 0.7
+    assert _normalize_salience("0.6") == 0.6
+    assert _normalize_salience(1.5) == 1.0  # clamped
+    assert _normalize_salience(-0.1) == 0.0  # clamped
+    assert _normalize_salience("garbage") == 0.5  # default
+    assert _normalize_salience(None) == 0.5  # default
+
+    # Verify add_tension normalizes
+    wm = WorldModel()
+    wm.add_tension(belief_ids=["B1"], nature="test", salience="high")
+    assert wm.tensions[0]["salience"] == 0.8
+    wm.add_tension(belief_ids=["B1"], nature="test2", salience="low")
+    assert wm.tensions[1]["salience"] == 0.2

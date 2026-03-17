@@ -9,6 +9,27 @@ JSON serialization is the persistence form, not the essence.
 
 import time
 
+_SALIENCE_MAP = {"high": 0.8, "medium": 0.5, "low": 0.2}
+
+
+def _normalize_salience(value) -> float:
+    """Normalize salience to a float in 0.0-1.0.
+
+    Accepts: float/int already in range, string enum ("high"/"medium"/"low"),
+    or a string that parses as float. Defaults to 0.5.
+    """
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return max(0.0, min(1.0, float(value)))
+    if isinstance(value, str):
+        lower = value.strip().lower()
+        if lower in _SALIENCE_MAP:
+            return _SALIENCE_MAP[lower]
+        try:
+            return max(0.0, min(1.0, float(lower)))
+        except ValueError:
+            pass
+    return 0.5
+
 
 class WorldModel:
     """Structured epistemic state: beliefs, tensions, costs."""
@@ -45,7 +66,7 @@ class WorldModel:
             "id": tid,
             "beliefs": list(belief_ids),
             "nature": nature,
-            "salience": salience,
+            "salience": _normalize_salience(salience),
         })
         return tid
 
@@ -85,7 +106,7 @@ class WorldModel:
             self.add_tension(
                 belief_ids=t.get("beliefs", []),
                 nature=t.get("nature", ""),
-                salience=t.get("salience", "medium"),
+                salience=t.get("salience", 0.5),
             )
 
         # Resolve tensions
