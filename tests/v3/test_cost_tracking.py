@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 from autoresearcher2.v3.store import Store
 from autoresearcher2.v3.observation import Observation
-from autoresearcher2.v3.executors import _start_cost_job, _stop_cost_job
+from autoresearcher2.v3.cost_tracker import _start_cost_job, _stop_cost_job
 
 
 @pytest.fixture
@@ -91,7 +91,7 @@ def _mock_urlopen(response_data):
     return mock_resp
 
 
-@patch("autoresearcher2.v3.executors.urllib.request.urlopen")
+@patch("autoresearcher2.v3.cost_tracker.urllib.request.urlopen")
 def test_start_cost_job(mock_urlopen):
     """_start_cost_job calls the API and returns job_id."""
     mock_urlopen.return_value = _mock_urlopen({"job_id": "abc123"})
@@ -100,7 +100,7 @@ def test_start_cost_job(mock_urlopen):
     mock_urlopen.assert_called_once()
 
 
-@patch("autoresearcher2.v3.executors.urllib.request.urlopen")
+@patch("autoresearcher2.v3.cost_tracker.urllib.request.urlopen")
 def test_stop_cost_job(mock_urlopen):
     """_stop_cost_job returns cost data from the API."""
     cost_data = {"energy_kwh": 0.15, "cost_eur": 0.04, "duration_s": 300, "avg_power_w": 290}
@@ -111,7 +111,7 @@ def test_stop_cost_job(mock_urlopen):
     assert result["avg_power_w"] == 290
 
 
-@patch("autoresearcher2.v3.executors.urllib.request.urlopen")
+@patch("autoresearcher2.v3.cost_tracker.urllib.request.urlopen")
 def test_start_cost_job_failure_returns_none(mock_urlopen):
     """Cost tracker failure is non-fatal — returns None."""
     mock_urlopen.side_effect = Exception("connection refused")
@@ -157,11 +157,11 @@ def test_worker_passes_cost_to_observation(store):
     assert obs.cost_eur == 0.06
 
 
-@patch("autoresearcher2.v3.executors._stop_cost_job")
-@patch("autoresearcher2.v3.executors._start_cost_job")
+@patch("autoresearcher2.v3.cost_tracker._stop_cost_job")
+@patch("autoresearcher2.v3.cost_tracker._start_cost_job")
 def test_with_cost_tracking_wraps_executor(mock_start, mock_stop):
     """with_cost_tracking wraps an executor and merges cost fields into result."""
-    from autoresearcher2.v3.executors import with_cost_tracking
+    from autoresearcher2.v3.cost_tracker import with_cost_tracking
     from autoresearcher2.v3.proposal import Proposal
 
     mock_start.return_value = "job_42"
@@ -195,11 +195,11 @@ def test_with_cost_tracking_wraps_executor(mock_start, mock_stop):
     mock_stop.assert_called_once_with("job_42")
 
 
-@patch("autoresearcher2.v3.executors._stop_cost_job")
-@patch("autoresearcher2.v3.executors._start_cost_job")
+@patch("autoresearcher2.v3.cost_tracker._stop_cost_job")
+@patch("autoresearcher2.v3.cost_tracker._start_cost_job")
 def test_with_cost_tracking_handles_tracker_failure(mock_start, mock_stop):
     """with_cost_tracking still returns executor result when tracker fails."""
-    from autoresearcher2.v3.executors import with_cost_tracking
+    from autoresearcher2.v3.cost_tracker import with_cost_tracking
     from autoresearcher2.v3.proposal import Proposal
 
     mock_start.return_value = None  # tracker unavailable
@@ -220,11 +220,11 @@ def test_with_cost_tracking_handles_tracker_failure(mock_start, mock_stop):
     mock_stop.assert_not_called()
 
 
-@patch("autoresearcher2.v3.executors._stop_cost_job")
-@patch("autoresearcher2.v3.executors._start_cost_job")
+@patch("autoresearcher2.v3.cost_tracker._stop_cost_job")
+@patch("autoresearcher2.v3.cost_tracker._start_cost_job")
 def test_with_cost_tracking_no_cuda_device(mock_start, mock_stop):
     """with_cost_tracking with no cuda_device skips cost tracking entirely."""
-    from autoresearcher2.v3.executors import with_cost_tracking
+    from autoresearcher2.v3.cost_tracker import with_cost_tracking
     from autoresearcher2.v3.proposal import Proposal
 
     def inner_executor(proposal):
@@ -243,11 +243,11 @@ def test_with_cost_tracking_no_cuda_device(mock_start, mock_stop):
     mock_stop.assert_not_called()
 
 
-@patch("autoresearcher2.v3.executors._stop_cost_job")
-@patch("autoresearcher2.v3.executors._start_cost_job")
+@patch("autoresearcher2.v3.cost_tracker._stop_cost_job")
+@patch("autoresearcher2.v3.cost_tracker._start_cost_job")
 def test_with_cost_tracking_propagates_executor_exception(mock_start, mock_stop):
     """with_cost_tracking stops cost job even when executor raises."""
-    from autoresearcher2.v3.executors import with_cost_tracking
+    from autoresearcher2.v3.cost_tracker import with_cost_tracking
     from autoresearcher2.v3.proposal import Proposal
 
     mock_start.return_value = "job_99"

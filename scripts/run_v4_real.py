@@ -25,7 +25,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from autoresearcher2.v3.store import Store, QUEUE_STAGES
 from autoresearcher2.v3.planner import Planner
 from autoresearcher2.v3.worker import Worker
-from autoresearcher2.v3.executors import make_trainpy_executor, make_shell_executor, make_dispatch_executor, make_dry_run_executor, with_cost_tracking
+from autoresearcher2.v3.executors import make_trainpy_executor, make_shell_executor, make_dispatch_executor, make_dry_run_executor
+from autoresearcher2.v3.cost_tracker import with_cost_tracking
 from autoresearcher2.v3.llm_call import call_llm_json
 
 logging.basicConfig(

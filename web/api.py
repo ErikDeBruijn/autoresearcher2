@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from autoresearcher2.v3.store import Store, QUEUE_STAGES
 from autoresearcher2.v3.proposal import Proposal
-from autoresearcher2.v3.executors import COST_TRACKER_URL
+from autoresearcher2.v3.cost_tracker import COST_TRACKER_URL
 
 logger = logging.getLogger(__name__)
 
