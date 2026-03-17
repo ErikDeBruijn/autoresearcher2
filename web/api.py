@@ -25,6 +25,7 @@ from autoresearcher2.v3.proposal import Proposal
 # --- Config ---
 DB_PATH = Path(__file__).parent.parent / "research_v4.db"
 QUEUE_STAGES = ("backlog", "todo", "running", "done", "reviewed")
+FALLBACK_EUR_PER_KWH = 0.23  # Fallback electricity price for cost estimation
 
 # --- WebSocket manager ---
 class ConnectionManager:
@@ -156,7 +157,7 @@ def get_projects():
                 if o.cost_eur:
                     cost += o.cost_eur
                 elif o.wall_time_s:
-                    cost += (fallback_power_w * o.wall_time_s) / 3_600_000 * 0.23
+                    cost += (fallback_power_w * o.wall_time_s) / 3_600_000 * FALLBACK_EUR_PER_KWH
             proj["energy_kwh"] = round(energy, 4)
             proj["cost_eur"] = round(cost, 4)
             proj["wall_time_s"] = round(wall_time, 1)
@@ -363,7 +364,7 @@ def get_stats():
             avg_power_w = sum(avg_power_samples) / len(avg_power_samples)
             estimated_kwh = (avg_power_w * untracked_wall_time) / 3_600_000
             total_energy_kwh += estimated_kwh
-            total_cost_eur += estimated_kwh * 0.23  # fallback price
+            total_cost_eur += estimated_kwh * FALLBACK_EUR_PER_KWH  # fallback price
 
         # Per-worker stats
         workers = {}
